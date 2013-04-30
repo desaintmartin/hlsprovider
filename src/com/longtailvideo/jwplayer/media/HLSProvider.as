@@ -61,7 +61,7 @@ package com.longtailvideo.jwplayer.media {
         };
 
 
-        /** Update video A/R on manifest lod. **/
+        /** Update video A/R on manifest load. **/
         private function _manifestHandler(event:AdaptiveEvent):void {
             _levels = event.levels;
             if(_adaptive.getType() == AdaptiveTypes.LIVE) {

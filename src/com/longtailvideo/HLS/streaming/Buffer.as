@@ -37,8 +37,8 @@ package com.longtailvideo.HLS.streaming {
         private var _loading:Boolean;
         /** Interval for checking buffer and position. **/
         private var _interval:Number;
-        /** Next loading fragment. **/
-        private var _next:Number;
+        /** Next loading fragment sequence number. **/
+        private var _nextseqnum:Number;
         /** Current position. **/
         private var _position:Number;
         /** Timestamp of the first tag in the buffer. **/
@@ -76,20 +76,31 @@ package com.longtailvideo.HLS.streaming {
 
         /** Check the bufferlength. **/
         private function _checkBuffer():void {
-            var buffer:Number = 0;         
+            var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
                 buffer = _buffer[_buffer.length-1].pts/1000 - _stream.time - _firstTag.pts/1000;
                 _loader.setBuffer(buffer);
                 _setPosition();
             }
-            var maxIndex:Number = _levels[0].fragments.length-1;
+            
+            var minseqnum:Number = _levels[0].minseqnum;
+            var maxseqnum:Number = _levels[0].maxseqnum;
             for (var i:Number = 1; i < _levels.length; i++) {
-               maxIndex = Math.min(maxIndex,_levels[i].fragments.length-1);
+               minseqnum = Math.max(minseqnum,_levels[i].minseqnum);
+               maxseqnum = Math.min(maxseqnum,_levels[i].maxseqnum);
             }
+            //Log.txt("min/next/max seqnum:" + minseqnum + "/" + _nextseqnum + "/" + maxseqnum);
+            
+            if(_nextseqnum < minseqnum) {
+               Log.txt("long pause on live stream (reseek)" + _nextseqnum + "/" + minseqnum);
+               seek(0);
+               return;
+            }
+            
             // Load new tags from fragment.
-            if(buffer < Buffer.LENGTH && _next <= maxIndex && !_loading) {
-                _loader.load(_next,_loaderCallback,_buffer.length);
+            if(buffer < Buffer.LENGTH && _nextseqnum <= maxseqnum && !_loading) {
+                _loader.load(_nextseqnum,_loaderCallback,_buffer.length);
                 _loading = true;
             }
             // Append tags to buffer.
@@ -107,7 +118,7 @@ package com.longtailvideo.HLS.streaming {
                         _errorHandler(new Error(_buffer[_tag].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_adaptive.getType() == AdaptiveTypes.VOD && _next == length && _tag == _buffer.length - 1) {
+                    if (_adaptive.getType() == AdaptiveTypes.VOD && _nextseqnum == length && _tag == _buffer.length - 1) {
                         _stream.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         _stream.appendBytes(new ByteArray());
                     }
@@ -116,7 +127,7 @@ package com.longtailvideo.HLS.streaming {
             }
             // Set playback state and complete.
             if(_stream.bufferLength < Buffer.LENGTH / 10) {
-                if(_next == length) {
+                if(_nextseqnum == length) {
                     if(_stream.bufferLength == 0) {
                         _complete();
                     }
@@ -168,7 +179,7 @@ package com.longtailvideo.HLS.streaming {
 			if(!_firstTag) {
 				_firstTag = _buffer[0];
 			}
-            _next++;
+            _nextseqnum++;
             _loading = false;
         };
 
@@ -258,11 +269,13 @@ package com.longtailvideo.HLS.streaming {
                 _stream.seek(0);
                 _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
 				// For live streams, start at fragment N-2 instead of 0
-				if( _adaptive.getType() == AdaptiveTypes.LIVE )
-					_next = Math.max(0,_levels[_level].fragments.length - 3);
-				else
-                _next = _levels[_level].indexOf(position);
-                _start = _levels[_level].fragments[_next].start;
+				if( _adaptive.getType() == AdaptiveTypes.LIVE ) {
+               _nextseqnum = Math.max(_levels[_level].minseqnum,_levels[_level].maxseqnum - 3);
+				} else {
+               _nextseqnum = _levels[_level].getseqnum(position);
+            }
+            var _fragment:Number = _levels[_level].getindex(_nextseqnum);
+            _start = _levels[_level].fragments[_fragment].start;
 				_setState(AdaptiveStates.BUFFERING);
                 clearInterval(_interval);
                 _interval = setInterval(_checkBuffer,100);

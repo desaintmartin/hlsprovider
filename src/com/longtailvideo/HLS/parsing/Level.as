@@ -25,7 +25,10 @@ package com.longtailvideo.HLS.parsing {
         public var url:String;
         /** Width of the video in this level. **/
         public var width:Number;
-
+        /** min sequence number from M3U8. **/
+        public var minseqnum:Number;
+        /** max sequence number from M3U8. **/
+        public var maxseqnum:Number;
 
         /** Create the quality level. **/
         public function Level(bitrate:Number=150000, height:Number=90, width:Number=160):void {
@@ -46,16 +49,26 @@ package com.longtailvideo.HLS.parsing {
         };
 
 
-        /** Return the chunk index of a time position. **/
-        public function indexOf(position:Number):Number {
+        /** Return the fragment sequence number of a time position. **/
+        public function getseqnum(position:Number):Number {
             for(var i:Number = 0; i < fragments.length; i++) {
                 if(fragments[i].start <= position && fragments[i].start + fragments[i].duration > position) {
-                    return i;
+                    return fragments[i].seqnum;
                 }
             }
-            return fragments.length - 1;
+            return fragments[fragments.length - 1].seqnum;
         };
 
+        /** Return the fragment index from fragment sequence number **/
+        public function getindex(seqnum:Number):Number {
+            var index:Number;
+            if(seqnum >= minseqnum && seqnum <= maxseqnum) {
+               index =fragments.length-1 - (maxseqnum - seqnum);
+            } else {
+               index = -1;
+            }
+            return index;
+        };
 
         /** Add a chunk to the level. **/
         public function push(fragment:Fragment):void {

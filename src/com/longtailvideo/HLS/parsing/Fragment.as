@@ -1,7 +1,7 @@
 package com.longtailvideo.HLS.parsing {
 
 
-    /** Adaptive streaming bitrate chunk. **/
+    /** Adaptive streaming chunk. **/
     public class Fragment {
 
 
@@ -9,18 +9,19 @@ package com.longtailvideo.HLS.parsing {
         public var duration:Number;
         /** Starttime of this chunk. **/
         public var start:Number;
+        /** sequence number of this chunk. **/
+        public var seqnum:Number;
         /** URL to this chunk. **/
         public var url:String;
 
 
-        /** Create the bitrate fragment. **/
-        public function Fragment(url:String, duration:Number, start:Number=0):void {
+        /** Create the fragment. **/
+        public function Fragment(url:String, duration:Number, seqnum:Number,start:Number=0):void {
             this.duration = duration;
             this.url = url;
+            this.seqnum = seqnum;
             this.start = start;
         };
-
-
     }
 
 

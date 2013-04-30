@@ -92,47 +92,42 @@ package com.longtailvideo.HLS.streaming {
         private function _loaderHandler(event:Event):void {
             _loadManifest(String(event.target.data));
         };
-
-
-
-        /** First Load M3U8 playlist. **/
+        
+        /** load a playlist **/
         private function _loadPlaylist(string:String,url:String,index:Number):void {
             if(string != null && string.length != 0) {
                var frags:Array = Manifest.getFragments(string,url);
-               for(var i:Number = 0; i<frags.length; i++) {
-                   _levels[index].push(frags[i]);
+               //Log.txt("found " + frags.length + " frag for index " + index + " seqnum:" + frags[0].seqnum);
+               var index_new:Number = 0;
+               // check for overlapping between previous fragments and new ones
+               // this happens if first parsed fragment seqnum is smaller or equal to max seqnum
+               var lastmaxseqnum:Number = _levels[index].maxseqnum;
+               if (frags[0].seqnum <= lastmaxseqnum) {
+                  index_new = frags.length + lastmaxseqnum - frags[frags.length-1].seqnum;
                }
-            }
-            if(--_toLoad == 0) {
-               /** Loading all playlists has been completed. **/
-               _levels.sortOn('bitrate',Array.NUMERIC);
-               _allLoadCompleted(string);
-            }
-        };
-        
-        /** Compare a reloaded playlist to the original. **/
-        private function _reloadPlaylist(string:String,url:String,index:Number):void {
-            if(string != null && string.length != 0) {
-               var frags:Array = Manifest.getFragments(string,url);
-               var newFragIdx:Number = 0;
-               if (_levels[index].fragments.length > 0) {
-                  // retrieve last URL from level context
-                  var lastURL:String = _levels[index].fragments[_levels[index].fragments.length-1].url;
-                  // look for last URL in new fragments
-                  for(newFragIdx = 0; newFragIdx < frags.length ; newFragIdx++) {
-                     if(frags[newFragIdx].url == lastURL) {
-                        newFragIdx++;
-                        break;
-                     }
-                  }
-               }
-               // we need to push all URLs from newFragIdx
-               for(var j:Number = newFragIdx; j < frags.length; j++) {
+               // we need to push all fragment from index_new to end
+               for(var j:Number = index_new; j < frags.length; j++) {
                    _levels[index].push(frags[j]);
                }
+               // update sequence number range
+               _levels[index].minseqnum = frags[0].seqnum;
+               _levels[index].maxseqnum = frags[frags.length-1].seqnum;
             }
             if(--_toLoad == 0) {
-              _allLoadCompleted(string);
+            // Check whether the stream is live or not finished yet
+            if(Manifest.hasEndlist(string)) {
+                _type = AdaptiveTypes.VOD;
+            } else {
+                _type = AdaptiveTypes.LIVE;
+                var timeout:Number = Math.max(100,_reload_playlists_timer + _fragmentDuration - getTimer());
+                Log.txt("Live Playlist parsing finished: reload in " + timeout + " ms");
+                _timeoutID = setTimeout(_loadPlaylists,timeout);
+            }
+               if (!_canStart && (_canStart =_areFirstLevelsFilled())) {
+                  Log.txt("first 2 levels are filled with at least 2 fragments, notify event");
+                  _fragmentDuration = _levels[0].fragments[0].duration*1000;
+                  _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST,_levels));
+              }
             }
         };
 
@@ -151,11 +146,7 @@ package com.longtailvideo.HLS.streaming {
                 } else if(string.indexOf(Manifest.LEVEL) > 0) {
                   //adaptative playlist, extract levels from playlist, get them and parse them
                   _levels = Manifest.extractLevels(string,_url);
-                  _toLoad = _levels.length;
-                  Log.txt("adaptive Playlist, with " + _toLoad + " levels");
-                  for(var i:Number = 0; i < _levels.length; i++) {
-                      new Manifest().loadPlaylist(_levels[i].url,_loadPlaylist,_errorHandler,i);
-                  }
+                  _loadPlaylists();
                 }
             } else {
                 var message:String = "Manifest is not a valid M3U8 file" + _url;
@@ -163,32 +154,15 @@ package com.longtailvideo.HLS.streaming {
             }
         };
 
-        /** Reload all M3U8 playlists (for live). **/
-        private function _reloadPlaylists():void {
+        /** load/reload all M3U8 playlists **/
+        private function _loadPlaylists():void {
             _reload_playlists_timer = getTimer();
             _toLoad = _levels.length;
+            //Log.txt("adaptive Playlist, with " + _toLoad + " levels");
             for(var i:Number = 0; i < _levels.length; i++) {
-                new Manifest().loadPlaylist(_levels[i].url,_reloadPlaylist,_errorHandler,i);
+                new Manifest().loadPlaylist(_levels[i].url,_loadPlaylist,_errorHandler,i);
             }
         };
-
-        /** Compare a reloaded playlist to the original. **/
-        private function _allLoadCompleted(string:String):void {
-            // Check whether the stream is live or not finished yet
-            if(Manifest.hasEndlist(string)) {
-                _type = AdaptiveTypes.VOD;
-            } else {
-                _type = AdaptiveTypes.LIVE;
-                var timeout:Number = Math.max(100,_reload_playlists_timer + _fragmentDuration - getTimer());
-                Log.txt("Live Playlist parsing finished: reload in " + timeout + " ms");
-                _timeoutID = setTimeout(_reloadPlaylists,timeout);
-            }
-               if (!_canStart && (_canStart =_areFirstLevelsFilled())) {
-                  Log.txt("first 2 levels are filled with at least 2 fragments, notify event");
-                  _fragmentDuration = _levels[0].fragments[0].duration*1000;
-                  _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST,_levels));
-              }
-        }
 
         /** When the framework idles out, reloading is cancelled. **/
         public function _stateHandler(event:AdaptiveEvent):void {

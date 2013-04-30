@@ -16,8 +16,10 @@ package com.longtailvideo.HLS.parsing {
         /** Starttag for a level. **/
         public static const LEVEL:String = '#EXT-X-STREAM-INF:';
         /** Tag that delimits the end of a playlist. **/
-        public static const ENDLIST:String = '#EXT-X-ENDLIST';
-
+        public static const ENDLIST:String = '#EXT-X-ENDLIST';	
+        /** Tag that provides the sequence number. **/
+        private static const SEQNUM:String = '#EXT-X-MEDIA-SEQUENCE:';
+        
 
         /** Index in the array with levels. **/
         private var _index:Number;
@@ -51,7 +53,18 @@ package com.longtailvideo.HLS.parsing {
         public static function getFragments(data:String,base:String=''):Array {
             var fragments:Array = [];
             var lines:Array = data.split("\n");
+            var seqnum:Number = 0;
             var i:Number = 0;
+            
+            // first look for sequence number
+            while (i < lines.length) {
+                if(lines[i].indexOf(Manifest.SEQNUM) == 0) {
+                    seqnum = Number(lines[i].substr(Manifest.SEQNUM.length));
+                    break;
+                 }
+                 i++;
+               }
+            i = 0;
             while (i < lines.length) {
                 if(lines[i].indexOf(Manifest.FRAGMENT) == 0) {
                     var duration:Number = lines[i].substr(8,lines[i].indexOf(',') - 8);
@@ -61,7 +74,7 @@ package com.longtailvideo.HLS.parsing {
 						i++;
 					}
                     var url:String = Manifest._extractURL(lines[i],base);
-                    fragments.push(new Fragment(url,duration));
+                    fragments.push(new Fragment(url,duration,seqnum++));
                 }
                 i++;
             }
@@ -108,6 +121,9 @@ package com.longtailvideo.HLS.parsing {
             if(levels.length == 0) {
                 throw new Error("No playlists found in Manifest: " + base);
             }
+            levels.minseqnum = -1;
+            levels.maxseqnum = -1;
+            levels.sortOn('bitrate',Array.NUMERIC);
             return levels;
         };
 

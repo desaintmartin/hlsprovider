@@ -110,10 +110,8 @@ package com.longtailvideo.HLS.streaming {
         };
 
 
-        /** Load a fragment. **/
-        public function load(fragment:Number, callback:Function, buffer:Number):void {
-            _fragment = fragment;
-            _callback = callback;
+        /** Load a fragment **/
+        public function load(seqnum:Number, callback:Function, buffer:Number):void {
             if(buffer == 0) {
                 _switchlevel = true;
             }
@@ -122,7 +120,10 @@ package com.longtailvideo.HLS.streaming {
             }
             _started = new Date().valueOf();
             _updateLevel();
-            Log.txt("Loading frag "+ fragment +  "/" + (_levels[_level].fragments.length-1) + ",level "+ _level);
+            
+            _fragment = _levels[_level].getindex(seqnum);
+            _callback = callback;
+            Log.txt("Loading frag "+ _fragment +  "/" + (_levels[_level].fragments.length-1) + ",level "+ _level + " seqnum " + seqnum + "/" + _levels[_level].maxseqnum);
             //Log.txt("loading "+_levels[_level].fragments[_fragment].url);
             try {
                _urlstreamloader.load(new URLRequest(_levels[_level].fragments[_fragment].url));

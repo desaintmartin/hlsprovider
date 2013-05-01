@@ -97,19 +97,8 @@ package com.longtailvideo.HLS.streaming {
         private function _loadPlaylist(string:String,url:String,index:Number):void {
             if(string != null && string.length != 0) {
                var frags:Array = Manifest.getFragments(string,url);
-               //Log.txt("found " + frags.length + " frag for index " + index + " seqnum:" + frags[0].seqnum);
-               var index_new:Number = 0;
-               // check for overlapping between previous fragments and new ones
-               // this happens if first parsed fragment seqnum is smaller or equal to max seqnum
-               var lastmaxseqnum:Number = _levels[index].maxseqnum;
-               if (frags[0].seqnum <= lastmaxseqnum) {
-                  index_new = frags.length + lastmaxseqnum - frags[frags.length-1].seqnum;
-               }
-               // we need to push all fragment from index_new to end
-               for(var j:Number = index_new; j < frags.length; j++) {
-                   _levels[index].push(frags[j]);
-               }
-               // update sequence number range
+               // set fragment and update sequence number range
+               _levels[index].setFragments(frags);
                _levels[index].minseqnum = frags[0].seqnum;
                _levels[index].maxseqnum = frags[frags.length-1].seqnum;
             }
@@ -125,7 +114,7 @@ package com.longtailvideo.HLS.streaming {
             }
                if (!_canStart && (_canStart =_areFirstLevelsFilled())) {
                   Log.txt("first 2 levels are filled with at least 2 fragments, notify event");
-                  _fragmentDuration = _levels[0].fragments[0].duration*1000;
+                  _fragmentDuration = frags[0].duration*1000;
                   _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST,_levels));
               }
             }

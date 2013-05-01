@@ -4,6 +4,7 @@ package com.longtailvideo.HLS.streaming {
     import com.longtailvideo.HLS.*;
     import com.longtailvideo.HLS.muxing.*;
     import com.longtailvideo.HLS.streaming.*;
+    import com.longtailvideo.HLS.parsing.*;
     import com.longtailvideo.HLS.utils.*;
     
     import flash.media.*;
@@ -79,9 +80,9 @@ package com.longtailvideo.HLS.streaming {
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
-                buffer = _buffer[_buffer.length-1].pts/1000 - _stream.time - _firstTag.pts/1000;
+                buffer = (_buffer[_buffer.length-1].pts/1000 - _firstTag.pts/1000) - _stream.time; 
                 _loader.setBuffer(buffer);
-                _setPosition();
+                _updatePosition();
             }
             
             var minseqnum:Number = _levels[0].minseqnum;
@@ -100,7 +101,7 @@ package com.longtailvideo.HLS.streaming {
             
             // Load new tags from fragment.
             if(buffer < Buffer.LENGTH && _nextseqnum <= maxseqnum && !_loading) {
-                _loader.load(_nextseqnum,_loaderCallback,_buffer.length);
+                _loader.load(_nextseqnum,_loaderCallback,(_buffer.length == 0));
                 _loading = true;
             }
             // Append tags to buffer.
@@ -213,8 +214,8 @@ package com.longtailvideo.HLS.streaming {
         };
 
 
-        /** Set current position. **/
-        private function _setPosition():void {
+        /** update current position. **/
+        private function _updatePosition():void {
             var position:Number = Math.round(_stream.time*100 + _start*100)/100;
             if(position != _position && _adaptive.getType() == AdaptiveTypes.VOD) {
                 _position = position;
@@ -268,14 +269,9 @@ package com.longtailvideo.HLS.streaming {
                 startPosition = 0;
                 _stream.seek(0);
                 _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
-				// For live streams, start at fragment N-2 instead of 0
-				if( _adaptive.getType() == AdaptiveTypes.LIVE ) {
-               _nextseqnum = Math.max(_levels[_level].minseqnum,_levels[_level].maxseqnum - 3);
-				} else {
-               _nextseqnum = _levels[_level].getseqnum(position);
-            }
-            var _fragment:Number = _levels[_level].getindex(_nextseqnum);
-            _start = _levels[_level].fragments[_fragment].start;
+                var frag:Fragment = _levels[_level].getFragmentfromPosition(position);
+               _nextseqnum = frag.seqnum;
+               _start = frag.start;
 				_setState(AdaptiveStates.BUFFERING);
                 clearInterval(_interval);
                 _interval = setInterval(_checkBuffer,100);

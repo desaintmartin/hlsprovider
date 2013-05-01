@@ -3,6 +3,7 @@ package com.longtailvideo.HLS.streaming {
 
     import com.longtailvideo.HLS.*;
     import com.longtailvideo.HLS.muxing.*;
+    import com.longtailvideo.HLS.parsing.*;
     import com.longtailvideo.HLS.streaming.*;
     import com.longtailvideo.HLS.utils.*;
     
@@ -31,8 +32,8 @@ package com.longtailvideo.HLS.streaming {
         private var _bandwidth:int = 0;
         /** Callback for passing forward the fragment tags. **/
         private var _callback:Function;
-        /** Fragment that's currently loading. **/
-        private var _fragment:Number;
+        /** sequence number that's currently loading. **/
+        private var _seqnum:Number;
         /** Quality level of the last fragment load. **/
         private var _level:int = 0;
         /** Reference to the manifest levels. **/
@@ -111,8 +112,9 @@ package com.longtailvideo.HLS.streaming {
 
 
         /** Load a fragment **/
-        public function load(seqnum:Number, callback:Function, buffer:Number):void {
-            if(buffer == 0) {
+        public function load(seqnum:Number, callback:Function, restart:Boolean):void {
+            _callback = callback;
+            if(restart == true) {
                 _switchlevel = true;
             }
             if(_urlstreamloader.connected) {
@@ -121,12 +123,12 @@ package com.longtailvideo.HLS.streaming {
             _started = new Date().valueOf();
             _updateLevel();
             
-            _fragment = _levels[_level].getindex(seqnum);
-            _callback = callback;
-            Log.txt("Loading frag "+ _fragment +  "/" + (_levels[_level].fragments.length-1) + ",level "+ _level + " seqnum " + seqnum + "/" + _levels[_level].maxseqnum);
-            //Log.txt("loading "+_levels[_level].fragments[_fragment].url);
+            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
+            _seqnum = frag.seqnum;
+            Log.txt("Loading SN "+ _seqnum +  "/" + (_levels[_level].maxseqnum) + ",level "+ _level);
+            //Log.txt("loading "+frag.url);
             try {
-               _urlstreamloader.load(new URLRequest(_levels[_level].fragments[_fragment].url));
+               _urlstreamloader.load(new URLRequest(frag.url));
             } catch (error:Error) {
                 _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, error.message));
             }
@@ -157,13 +159,13 @@ package com.longtailvideo.HLS.streaming {
 			if(_switchlevel) {
 				if (_ts.videoTags.length > 0) {
 					// Audio only file don't have videoTags[0]
-					var avccTag:Tag = new Tag(Tag.AVC_HEADER,_ts.videoTags[0].pts,_ts.videoTags[0].dts,true,_level,_fragment);
+					var avccTag:Tag = new Tag(Tag.AVC_HEADER,_ts.videoTags[0].pts,_ts.videoTags[0].dts,true,_level,_seqnum);
 					avccTag.push(_levels[_level].avcc,0,_levels[_level].avcc.length);
 					_tags.push(avccTag);
 				}
 				if (_ts.audioTags.length > 0) {
 					if(_ts.audioTags[0].type == Tag.AAC_RAW) {
-						var adifTag:Tag = new Tag(Tag.AAC_HEADER,_ts.audioTags[0].pts,_ts.audioTags[0].dts,true,_level,_fragment);
+						var adifTag:Tag = new Tag(Tag.AAC_HEADER,_ts.audioTags[0].pts,_ts.audioTags[0].dts,true,_level,_seqnum);
 						adifTag.push(_levels[_level].adif,0,2)
 						_tags.push(adifTag);
 					}
@@ -172,12 +174,12 @@ package com.longtailvideo.HLS.streaming {
 			// Push regular tags into buffer.
 			for(var i:Number=0; i < _ts.videoTags.length; i++) {
 				_ts.videoTags[i].level = _level;
-				_ts.videoTags[i].fragment = _fragment;
+				_ts.videoTags[i].seqnum = _seqnum;
 				_tags.push(_ts.videoTags[i]);
 			}
 			for(var j:Number=0; j < _ts.audioTags.length; j++) {
 				_ts.audioTags[j].level = _level;
-				_ts.audioTags[j].fragment = _fragment;
+				_ts.audioTags[j].seqnum = _seqnum;
 				_tags.push(_ts.audioTags[j]);
 			}
 			

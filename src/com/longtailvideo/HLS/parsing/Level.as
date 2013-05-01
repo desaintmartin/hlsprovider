@@ -18,7 +18,7 @@ package com.longtailvideo.HLS.parsing {
         /** Bitrate of the video in this level. **/
         public var bitrate:Number;
         /** Array with fragments for this level. **/
-        public var fragments:Array;
+        private var fragments:Array;
         /** Height of the video in this level. **/
         public var height:Number;
         /** URL of this bitrate level (for M3U8). **/
@@ -38,48 +38,30 @@ package com.longtailvideo.HLS.parsing {
             this.fragments = new Array();
         };
 
-
-        /** Return the duration. **/
-        public function get duration():Number {
-            var duration:Number = 0;
-            for(var i:Number = 0; i < fragments.length; i++) {
-                duration += fragments[i].duration;
-            }
-            return duration;
-        };
-
-
-        /** Return the fragment sequence number of a time position. **/
-        public function getseqnum(position:Number):Number {
+        /** Return the fragment matching with a time position. **/
+        public function getFragmentfromPosition(position:Number):Fragment {
             for(var i:Number = 0; i < fragments.length; i++) {
                 if(fragments[i].start <= position && fragments[i].start + fragments[i].duration > position) {
-                    return fragments[i].seqnum;
+                    return fragments[i];
                 }
             }
-            return fragments[fragments.length - 1].seqnum;
+            return null;
         };
 
         /** Return the fragment index from fragment sequence number **/
-        public function getindex(seqnum:Number):Number {
+        public function getFragmentfromSeqNum(seqnum:Number):Fragment {
             var index:Number;
             if(seqnum >= minseqnum && seqnum <= maxseqnum) {
                index =fragments.length-1 - (maxseqnum - seqnum);
+               return fragments[index];
             } else {
-               index = -1;
+               return null;
             }
-            return index;
         };
 
-        /** Add a chunk to the level. **/
-        public function push(fragment:Fragment):void {
-            if(!fragment.start) {
-                fragment.start = duration;
-            }
-            fragments.push(fragment);
+        /** set Fragments **/
+        public function setFragments(_fragments:Array):void {
+            fragments = _fragments;
         };
-
-
     }
-
-
 }

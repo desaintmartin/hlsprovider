@@ -54,6 +54,7 @@ package com.longtailvideo.HLS.parsing {
             var fragments:Array = [];
             var lines:Array = data.split("\n");
             var seqnum:Number = 0;
+            var start:Number = 0;
             var i:Number = 0;
             
             // first look for sequence number
@@ -74,7 +75,8 @@ package com.longtailvideo.HLS.parsing {
 						i++;
 					}
                     var url:String = Manifest._extractURL(lines[i],base);
-                    fragments.push(new Fragment(url,duration,seqnum++));
+                    fragments.push(new Fragment(url,duration,seqnum++,start));
+                    start+=duration;
                 }
                 i++;
             }

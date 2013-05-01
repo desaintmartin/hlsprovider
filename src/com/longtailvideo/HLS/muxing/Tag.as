@@ -22,8 +22,8 @@ package com.longtailvideo.HLS.muxing {
         public static const MP3_RAW:String = 'MP3 RAW';
 
 
-        /** Fragment number the tag belongs to. **/
-        public var fragment:Number;
+        /** sequence number the tag belongs to. **/
+        public var seqnum:Number;
         /** Is this an AVC keyframe. **/
         public var keyframe:Boolean;
         /** Quality level the tag belongs to. **/
@@ -39,13 +39,13 @@ package com.longtailvideo.HLS.muxing {
         
 
         /** Save the frame data and parameters. **/
-        public function Tag(typ:String, stp_p:Number, stp_d:Number, key:Boolean, lvl:Number=0, frg:Number=0) {
+        public function Tag(typ:String, stp_p:Number, stp_d:Number, key:Boolean, lvl:Number=0, sn:Number=0) {
             type = typ;
             pts = stp_p;
             dts = stp_d;
             keyframe = key;
             level = lvl;
-            fragment = frg;
+            seqnum = sn;
         };
 
 

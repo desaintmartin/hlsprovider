@@ -18,7 +18,7 @@ package com.longtailvideo.HLS.parsing {
         /** Bitrate of the video in this level. **/
         public var bitrate:Number;
         /** Array with fragments for this level. **/
-        private var fragments:Array;
+        public var fragments:Array;
         /** Height of the video in this level. **/
         public var height:Number;
         /** URL of this bitrate level (for M3U8). **/
@@ -26,9 +26,11 @@ package com.longtailvideo.HLS.parsing {
         /** Width of the video in this level. **/
         public var width:Number;
         /** min sequence number from M3U8. **/
-        public var minseqnum:Number;
+        public var start_seqnum:Number;
         /** max sequence number from M3U8. **/
-        public var maxseqnum:Number;
+        public var end_seqnum:Number;
+        /** playlist duration **/
+        public var duration:Number;
 
         /** Create the quality level. **/
         public function Level(bitrate:Number=150000, height:Number=90, width:Number=160):void {
@@ -51,8 +53,8 @@ package com.longtailvideo.HLS.parsing {
         /** Return the fragment index from fragment sequence number **/
         public function getFragmentfromSeqNum(seqnum:Number):Fragment {
             var index:Number;
-            if(seqnum >= minseqnum && seqnum <= maxseqnum) {
-               index =fragments.length-1 - (maxseqnum - seqnum);
+            if(seqnum >= start_seqnum && seqnum <= end_seqnum) {
+               index =fragments.length-1 - (end_seqnum - seqnum);
                return fragments[index];
             } else {
                return null;

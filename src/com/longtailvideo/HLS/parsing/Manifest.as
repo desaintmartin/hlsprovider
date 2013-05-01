@@ -123,8 +123,8 @@ package com.longtailvideo.HLS.parsing {
             if(levels.length == 0) {
                 throw new Error("No playlists found in Manifest: " + base);
             }
-            levels.minseqnum = -1;
-            levels.maxseqnum = -1;
+            levels.start_seqnum = -1;
+            levels.end_seqnum = -1;
             levels.sortOn('bitrate',Array.NUMERIC);
             return levels;
         };

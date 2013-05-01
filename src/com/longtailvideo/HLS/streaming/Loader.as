@@ -125,7 +125,7 @@ package com.longtailvideo.HLS.streaming {
             
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
             _seqnum = frag.seqnum;
-            Log.txt("Loading SN "+ _seqnum +  "/" + (_levels[_level].maxseqnum) + ",level "+ _level);
+            Log.txt("Loading SN "+ _seqnum +  "/" + (_levels[_level].end_seqnum) + ",level "+ _level);
             //Log.txt("loading "+frag.url);
             try {
                _urlstreamloader.load(new URLRequest(frag.url));

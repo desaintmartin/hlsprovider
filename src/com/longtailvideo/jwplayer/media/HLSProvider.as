@@ -2,7 +2,7 @@ package com.longtailvideo.jwplayer.media {
 
 
     import com.longtailvideo.HLS.*;
-
+    
     import com.longtailvideo.jwplayer.events.MediaEvent;
     import com.longtailvideo.jwplayer.model.PlayerConfig;
     import com.longtailvideo.jwplayer.model.PlaylistItem;
@@ -64,17 +64,15 @@ package com.longtailvideo.jwplayer.media {
         /** Update video A/R on manifest load. **/
         private function _manifestHandler(event:AdaptiveEvent):void {
             _levels = event.levels;
-            if(_adaptive.getType() == AdaptiveTypes.LIVE) {
-                sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: -1});
-            } else {
-                item.duration = _levels[_levels.length-1].duration;
-                _adaptive.addEventListener(AdaptiveEvent.POSITION,_positionHandler);
-            }
+            item.duration = _levels[0].duration;
+	    sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: item.duration});
+            _adaptive.addEventListener(AdaptiveEvent.POSITION,_positionHandler);
         };
 
 
         /** Update playback position. **/
         private function _positionHandler(event:AdaptiveEvent):void {
+            item.duration = _levels[0].duration;
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {
                 position: event.position, 
                 duration: item.duration
@@ -196,9 +194,7 @@ package com.longtailvideo.jwplayer.media {
 
         /** Seek to a certain position in the item. **/
         override public function seek(pos:Number):void {
-            if(_adaptive.getType() == AdaptiveTypes.VOD) {
-                _adaptive.seek(pos);
-            }
+            _adaptive.seek(pos);
         };
 
 

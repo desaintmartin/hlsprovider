@@ -39,7 +39,9 @@ package com.longtailvideo.HLS.streaming {
         /** Interval for checking buffer and position. **/
         private var _interval:Number;
         /** Next loading fragment sequence number. **/
-        private var _nextseqnum:Number;
+        private var _next_seqnum:Number;
+        /** playback start first sequence number. **/
+        private var _start_seqnum:Number;
         /** Current position. **/
         private var _position:Number;
         /** Timestamp of the first tag in the buffer. **/
@@ -80,28 +82,36 @@ package com.longtailvideo.HLS.streaming {
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
-                buffer = (_buffer[_buffer.length-1].pts/1000 - _firstTag.pts/1000) - _stream.time; 
-                _loader.setBuffer(buffer);
-                _updatePosition();
+               buffer = (_buffer[_buffer.length-1].pts/1000 - _firstTag.pts/1000) - _stream.time; 
+               _loader.setBuffer(buffer);
+               var position:Number = (Math.round(_stream.time*100 + _start*100)/100);
+               //Log.txt("position :" + position + ",diff seqnum: " +10*(_levels[0].start_seqnum - _start_seqnum));
+               position-=_levels[0].fragments[0].duration*(_levels[0].start_seqnum - _start_seqnum) ;
+               if (position <0)
+                  position = 0;
+               if(position != _position) {
+                   _position = position;
+                   _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.POSITION,_position));
+               }
             }
             
-            var minseqnum:Number = _levels[0].minseqnum;
-            var maxseqnum:Number = _levels[0].maxseqnum;
+            var start_seqnum:Number = _levels[0].start_seqnum;
+            var end_seqnum:Number = _levels[0].end_seqnum;
             for (var i:Number = 1; i < _levels.length; i++) {
-               minseqnum = Math.max(minseqnum,_levels[i].minseqnum);
-               maxseqnum = Math.min(maxseqnum,_levels[i].maxseqnum);
+               start_seqnum = Math.max(start_seqnum,_levels[i].start_seqnum);
+               end_seqnum = Math.min(end_seqnum,_levels[i].end_seqnum);
             }
-            //Log.txt("min/next/max seqnum:" + minseqnum + "/" + _nextseqnum + "/" + maxseqnum);
+            //Log.txt("min/next/max seqnum:" + start_seqnum + "/" + _next_seqnum + "/" + end_seqnum);
             
-            if(_nextseqnum < minseqnum) {
-               Log.txt("long pause on live stream (reseek)" + _nextseqnum + "/" + minseqnum);
+            if(_next_seqnum < start_seqnum) {
+               Log.txt("long pause on live stream (reseek)" + _next_seqnum + "/" + start_seqnum);
                seek(0);
                return;
             }
             
             // Load new tags from fragment.
-            if(buffer < Buffer.LENGTH && _nextseqnum <= maxseqnum && !_loading) {
-                _loader.load(_nextseqnum,_loaderCallback,(_buffer.length == 0));
+            if(buffer < Buffer.LENGTH && _next_seqnum <= end_seqnum && !_loading) {
+                _loader.load(_next_seqnum,_loaderCallback,(_buffer.length == 0));
                 _loading = true;
             }
             // Append tags to buffer.
@@ -119,7 +129,7 @@ package com.longtailvideo.HLS.streaming {
                         _errorHandler(new Error(_buffer[_tag].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_adaptive.getType() == AdaptiveTypes.VOD && _nextseqnum == length && _tag == _buffer.length - 1) {
+                    if (_adaptive.getType() == AdaptiveTypes.VOD && _next_seqnum == length && _tag == _buffer.length - 1) {
                         _stream.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         _stream.appendBytes(new ByteArray());
                     }
@@ -128,7 +138,7 @@ package com.longtailvideo.HLS.streaming {
             }
             // Set playback state and complete.
             if(_stream.bufferLength < Buffer.LENGTH / 10) {
-                if(_nextseqnum == length) {
+                if(_next_seqnum == length) {
                     if(_stream.bufferLength == 0) {
                         _complete();
                     }
@@ -180,7 +190,7 @@ package com.longtailvideo.HLS.streaming {
 			if(!_firstTag) {
 				_firstTag = _buffer[0];
 			}
-            _nextseqnum++;
+            _next_seqnum++;
             _loading = false;
         };
 
@@ -212,17 +222,6 @@ package com.longtailvideo.HLS.streaming {
                 _stream.pause();
             }
         };
-
-
-        /** update current position. **/
-        private function _updatePosition():void {
-            var position:Number = Math.round(_stream.time*100 + _start*100)/100;
-            if(position != _position && _adaptive.getType() == AdaptiveTypes.VOD) {
-                _position = position;
-                _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.POSITION,_position));
-            }
-        };
-
 
         /** Change playback state. **/
         private function _setState(state:String):void {
@@ -269,9 +268,12 @@ package com.longtailvideo.HLS.streaming {
                 startPosition = 0;
                 _stream.seek(0);
                 _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
-                var frag:Fragment = _levels[_level].getFragmentfromPosition(position);
-               _nextseqnum = frag.seqnum;
+               var frag:Fragment = _levels[_level].getFragmentfromPosition(0);
+               _start_seqnum = frag.seqnum;
+               frag = _levels[_level].getFragmentfromPosition(position);
+               _next_seqnum = frag.seqnum;
                _start = frag.start;
+
 				_setState(AdaptiveStates.BUFFERING);
                 clearInterval(_interval);
                 _interval = setInterval(_checkBuffer,100);

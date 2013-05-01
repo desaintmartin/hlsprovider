@@ -99,8 +99,9 @@ package com.longtailvideo.HLS.streaming {
                var frags:Array = Manifest.getFragments(string,url);
                // set fragment and update sequence number range
                _levels[index].setFragments(frags);
-               _levels[index].minseqnum = frags[0].seqnum;
-               _levels[index].maxseqnum = frags[frags.length-1].seqnum;
+               _levels[index].start_seqnum = frags[0].seqnum;
+               _levels[index].end_seqnum = frags[frags.length-1].seqnum;
+               _levels[index].duration = frags[frags.length-1].start + frags[frags.length-1].duration;
             }
             if(--_toLoad == 0) {
             // Check whether the stream is live or not finished yet

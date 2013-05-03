@@ -5,7 +5,7 @@ package com.longtailvideo.HLS.parsing {
     import flash.utils.ByteArray;
 
 
-    /** Adaptive streaming quality level. **/
+    /** HLS streaming quality level. **/
     public class Level {
 
 

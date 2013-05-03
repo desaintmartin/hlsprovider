@@ -1,7 +1,7 @@
 package com.longtailvideo.HLS.parsing {
 
 
-    /** Adaptive streaming chunk. **/
+    /** HLS streaming chunk. **/
     public class Fragment {
 
 

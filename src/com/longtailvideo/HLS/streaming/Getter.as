@@ -9,12 +9,12 @@ package com.longtailvideo.HLS.streaming {
     import flash.utils.*;
 
 
-    /** Loader for adaptive streaming manifests. **/
+    /** Loader for hls streaming manifests. **/
     public class Getter {
 
 
-        /** Reference to the adaptive framework controller. **/
-        private var _adaptive:Adaptive;
+        /** Reference to the hls framework controller. **/
+        private var _hls:HLS;
         /** Array with levels. **/
         private var _levels:Array = [];
         /** Object that fetches the manifest. **/
@@ -35,9 +35,9 @@ package com.longtailvideo.HLS.streaming {
         private var _reload_playlists_timer:uint;
 
         /** Setup the loader. **/
-        public function Getter(adaptive:Adaptive) {
-            _adaptive = adaptive;
-            _adaptive.addEventListener(AdaptiveEvent.STATE,_stateHandler);
+        public function Getter(hls:HLS) {
+            _hls = hls;
+            _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _levels = [];
             _urlloader = new URLLoader();
             _urlloader.addEventListener(Event.COMPLETE,_loaderHandler);
@@ -54,7 +54,7 @@ package com.longtailvideo.HLS.streaming {
             } else if (event is IOErrorEvent) {
                 txt = "Cannot load M3U8: 404 not found";
             }
-            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR,txt));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR,txt));
         };
 
         /** return true if first two levels contain at least 2 fragments **/
@@ -106,9 +106,9 @@ package com.longtailvideo.HLS.streaming {
             if(--_toLoad == 0) {
             // Check whether the stream is live or not finished yet
             if(Manifest.hasEndlist(string)) {
-                _type = AdaptiveTypes.VOD;
+                _type = HLSTypes.VOD;
             } else {
-                _type = AdaptiveTypes.LIVE;
+                _type = HLSTypes.LIVE;
                 var timeout:Number = Math.max(100,_reload_playlists_timer + _fragmentDuration - getTimer());
                 Log.txt("Live Playlist parsing finished: reload in " + timeout + " ms");
                 _timeoutID = setTimeout(_loadPlaylists,timeout);
@@ -116,7 +116,7 @@ package com.longtailvideo.HLS.streaming {
                if (!_canStart && (_canStart =_areFirstLevelsFilled())) {
                   Log.txt("first 2 levels are filled with at least 2 fragments, notify event");
                   _fragmentDuration = frags[0].duration*1000;
-                  _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST,_levels));
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST,_levels));
               }
             }
         };
@@ -140,7 +140,7 @@ package com.longtailvideo.HLS.streaming {
                 }
             } else {
                 var message:String = "Manifest is not a valid M3U8 file" + _url;
-                _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR,message));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR,message));
             }
         };
 
@@ -148,15 +148,15 @@ package com.longtailvideo.HLS.streaming {
         private function _loadPlaylists():void {
             _reload_playlists_timer = getTimer();
             _toLoad = _levels.length;
-            //Log.txt("adaptive Playlist, with " + _toLoad + " levels");
+            //Log.txt("HLS Playlist, with " + _toLoad + " levels");
             for(var i:Number = 0; i < _levels.length; i++) {
                 new Manifest().loadPlaylist(_levels[i].url,_loadPlaylist,_errorHandler,i);
             }
         };
 
         /** When the framework idles out, reloading is cancelled. **/
-        public function _stateHandler(event:AdaptiveEvent):void {
-            if(event.state == AdaptiveStates.IDLE) {
+        public function _stateHandler(event:HLSEvent):void {
+            if(event.state == HLSStates.IDLE) {
                 clearTimeout(_timeoutID);
             }
         };

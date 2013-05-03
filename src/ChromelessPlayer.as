@@ -15,7 +15,7 @@ package {
 
 
         /** reference to the framework. **/
-        private var _adaptive:Adaptive;
+        private var _hls:HLS;
         /** Sheet to place on top of the video. **/
         private var _sheet:Sprite;
         /** Reference to the video element. **/
@@ -65,42 +65,42 @@ package {
 
         /** Notify javascript the framework is ready. **/
         private function _pingJavascript():void {
-            ExternalInterface.call("onAdaptiveReady",ExternalInterface.objectID);
+            ExternalInterface.call("onHLSReady",ExternalInterface.objectID);
         };
 
 
         /** Forward events from the framework. **/
-        private function _completeHandler(event:AdaptiveEvent):void {
+        private function _completeHandler(event:HLSEvent):void {
             if(_callbacks.oncomplete) {
                 ExternalInterface.call(_callbacks.oncomplete);
             }
         };
-        private function _errorHandler(event:AdaptiveEvent):void {
+        private function _errorHandler(event:HLSEvent):void {
             if(_callbacks.onerror) {
                 ExternalInterface.call(_callbacks.onerror,event.message);
             }
         };
-        private function _fragmentHandler(event:AdaptiveEvent):void {
+        private function _fragmentHandler(event:HLSEvent):void {
             if(_callbacks.onfragment) {
                 ExternalInterface.call(_callbacks.onfragment,event.metrics);
             }
         };
-        private function _manifestHandler(event:AdaptiveEvent):void {
+        private function _manifestHandler(event:HLSEvent):void {
             if(_callbacks.onmanifest) {
                 ExternalInterface.call(_callbacks.onmanifest,event.levels);
             }
         };
-        private function _positionHandler(event:AdaptiveEvent):void {
+        private function _positionHandler(event:HLSEvent):void {
             if(_callbacks.onposition) {
                 ExternalInterface.call(_callbacks.onposition,event.position);
             }
         };
-        private function _stateHandler(event:AdaptiveEvent):void {
+        private function _stateHandler(event:HLSEvent):void {
             if(_callbacks.onstate) {
                 ExternalInterface.call(_callbacks.onstate,event.state);
             }
         };
-        private function _switchHandler(event:AdaptiveEvent):void {
+        private function _switchHandler(event:HLSEvent):void {
             if(_callbacks.onswitch) {
                 ExternalInterface.call(_callbacks.onswitch,event.level);
             }
@@ -108,20 +108,20 @@ package {
 
 
         /** Javascript getters. **/
-        private function _getLevel():Number { return _adaptive.getLevel(); };
-        private function _getLevels():Array { return _adaptive.getLevels(); };
-        private function _getMetrics():Object { return _adaptive.getMetrics(); };
-        private function _getPosition():Number { return _adaptive.getPosition(); };
-        private function _getState():String { return _adaptive.getState(); };
-        private function _getType():String { return _adaptive.getType(); };
+        private function _getLevel():Number { return _hls.getLevel(); };
+        private function _getLevels():Array { return _hls.getLevels(); };
+        private function _getMetrics():Object { return _hls.getMetrics(); };
+        private function _getPosition():Number { return _hls.getPosition(); };
+        private function _getState():String { return _hls.getState(); };
+        private function _getType():String { return _hls.getType(); };
 
 
         /** Javascript calls. **/
-        private function _play(url:String,start:Number=0):void { _adaptive.play(url,start); };
-        private function _pause():void { _adaptive.pause(); };
-        private function _seek(position:Number):void { _adaptive.seek(position); };
-        private function _stop():void { _adaptive.stop(); };
-        private function _volume(percent:Number):void { _adaptive.volume(percent); };
+        private function _play(url:String,start:Number=0):void { _hls.play(url,start); };
+        private function _pause():void { _hls.pause(); };
+        private function _seek(position:Number):void { _hls.seek(position); };
+        private function _stop():void { _hls.stop(); };
+        private function _volume(percent:Number):void { _hls.volume(percent); };
 
 
         /** Javascript event subscriptions. **/
@@ -136,13 +136,13 @@ package {
 
         /** Mouse click handler. **/
         private function _clickHandler(event:MouseEvent):void {
-            // new FileReference().save(_adaptive.getFile(),'video.flv');
+            // new FileReference().save(_hls.getFile(),'video.flv');
             if(stage.displayState == StageDisplayState.FULL_SCREEN) {
                 stage.displayState = StageDisplayState.NORMAL;
             } else {
                 stage.displayState = StageDisplayState.FULL_SCREEN;
             }
-            _adaptive.setWidth(stage.stageWidth);
+            _hls.setWidth(stage.stageWidth);
         };
 
 
@@ -150,15 +150,15 @@ package {
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
             _video = stage.stageVideos[0];
             _video.viewPort = new Rectangle(0,0,stage.stageWidth,stage.stageHeight);
-            _adaptive = new Adaptive(_video);
-            _adaptive.setWidth(stage.stageWidth);
-            _adaptive.addEventListener(AdaptiveEvent.COMPLETE,_completeHandler);
-            _adaptive.addEventListener(AdaptiveEvent.ERROR,_errorHandler);
-            _adaptive.addEventListener(AdaptiveEvent.FRAGMENT,_fragmentHandler);
-            _adaptive.addEventListener(AdaptiveEvent.MANIFEST,_manifestHandler);
-            _adaptive.addEventListener(AdaptiveEvent.POSITION,_positionHandler);
-            _adaptive.addEventListener(AdaptiveEvent.STATE,_stateHandler);
-            _adaptive.addEventListener(AdaptiveEvent.SWITCH,_switchHandler);
+            _hls = new HLS(_video);
+            _hls.setWidth(stage.stageWidth);
+            _hls.addEventListener(HLSEvent.COMPLETE,_completeHandler);
+            _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT,_fragmentHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
+            _hls.addEventListener(HLSEvent.POSITION,_positionHandler);
+            _hls.addEventListener(HLSEvent.STATE,_stateHandler);
+            _hls.addEventListener(HLSEvent.SWITCH,_switchHandler);
         };
 
 

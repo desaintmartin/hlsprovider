@@ -15,12 +15,12 @@ package com.longtailvideo.jwplayer.media {
 	import flash.events.Event;
 
 
-    /** JW Player provider for adaptive streaming. **/
+    /** JW Player provider for hls streaming. **/
     public class HLSProvider extends MediaProvider {
 
 
         /** Reference to the framework. **/
-        private var _adaptive:Adaptive;
+        private var _hls:HLS;
         /** Current quality level. **/
         private var _level:Number;
         /** Reference to the quality levels. **/
@@ -30,24 +30,24 @@ package com.longtailvideo.jwplayer.media {
 
 
         public function HLSProvider() {
-            super('adaptive');
+            super('hls');
         };
 
 
         /** Forward completes from the framework. **/
-        private function _completeHandler(event:AdaptiveEvent):void {
+        private function _completeHandler(event:HLSEvent):void {
             complete();
         };
 
 
         /** Forward playback errors from the framework. **/
-        private function _errorHandler(event:AdaptiveEvent):void {
+        private function _errorHandler(event:HLSEvent):void {
             super.error(event.message);
         };
 
 
         /** Forward QOS metrics on fragment load. **/
-        private function _fragmentHandler(event:AdaptiveEvent):void {
+        private function _fragmentHandler(event:HLSEvent):void {
             _level = event.metrics.level;
             resize(_width,_height);
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_META, { metadata: {
@@ -62,16 +62,16 @@ package com.longtailvideo.jwplayer.media {
 
 
         /** Update video A/R on manifest load. **/
-        private function _manifestHandler(event:AdaptiveEvent):void {
+        private function _manifestHandler(event:HLSEvent):void {
             _levels = event.levels;
             item.duration = _levels[0].duration;
 	    sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: item.duration});
-            _adaptive.addEventListener(AdaptiveEvent.POSITION,_positionHandler);
+            _hls.addEventListener(HLSEvent.POSITION,_positionHandler);
         };
 
 
         /** Update playback position. **/
-        private function _positionHandler(event:AdaptiveEvent):void {
+        private function _positionHandler(event:HLSEvent):void {
             item.duration = _levels[0].duration;
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {
                 position: event.position, 
@@ -80,7 +80,7 @@ package com.longtailvideo.jwplayer.media {
         };
 
         /** Update playback position. **/
-        private function _bufferHandler(event:AdaptiveEvent):void {
+        private function _bufferHandler(event:HLSEvent):void {
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_META, { metadata: {
                 buffer: event.metrics.buffer
             }});
@@ -88,19 +88,19 @@ package com.longtailvideo.jwplayer.media {
 
 
         /** Forward state changes from the framework. **/
-        private function _stateHandler(event:AdaptiveEvent):void {
+        private function _stateHandler(event:HLSEvent):void {
             switch(event.state) {
-                case AdaptiveStates.IDLE:
+                case HLSStates.IDLE:
                     setState(PlayerState.IDLE);
                     break;
-                case AdaptiveStates.BUFFERING:
+                case HLSStates.BUFFERING:
                     setState(PlayerState.BUFFERING);
                     break;
-                case AdaptiveStates.PLAYING:
+                case HLSStates.PLAYING:
                     _video.visible = true;
                     setState(PlayerState.PLAYING);
                     break;
-                case AdaptiveStates.PAUSED:
+                case HLSStates.PAUSED:
                     setState(PlayerState.PAUSED);
                     break;
             }
@@ -118,15 +118,15 @@ package com.longtailvideo.jwplayer.media {
             super.initializeMediaProvider(cfg);
             _video = new Video(320,180);
             _video.smoothing = true;
-            _adaptive = new Adaptive(_video);
-            _adaptive.volume(cfg.volume);
-            _adaptive.addEventListener(AdaptiveEvent.COMPLETE,_completeHandler);
-            _adaptive.addEventListener(AdaptiveEvent.ERROR,_errorHandler);
-            _adaptive.addEventListener(AdaptiveEvent.FRAGMENT,_fragmentHandler);
-            _adaptive.addEventListener(AdaptiveEvent.MANIFEST,_manifestHandler);
-            _adaptive.addEventListener(AdaptiveEvent.STATE,_stateHandler);
-            _adaptive.addEventListener(AdaptiveEvent.AUDIO, _audioHandler);
-            _adaptive.addEventListener(AdaptiveEvent.BUFFER,_bufferHandler);
+            _hls = new HLS(_video);
+            _hls.volume(cfg.volume);
+            _hls.addEventListener(HLSEvent.COMPLETE,_completeHandler);
+            _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT,_fragmentHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
+            _hls.addEventListener(HLSEvent.STATE,_stateHandler);
+            _hls.addEventListener(HLSEvent.AUDIO, _audioHandler);
+            _hls.addEventListener(HLSEvent.BUFFER,_bufferHandler);
             _level = 0;
 			mute(cfg.mute);
         };
@@ -165,23 +165,23 @@ package com.longtailvideo.jwplayer.media {
         /** Resume playback of a paused item. **/
         override public function play():void {
             if(state == PlayerState.PAUSED) {
-                _adaptive.pause();
+                _hls.pause();
             } else {
                 setState(PlayerState.BUFFERING);
-                _adaptive.play(item.file,item.start);
+                _hls.play(item.file,item.start);
             }
         };
 
 
         /** Pause a playing item. **/
         override public function pause():void {
-            _adaptive.pause();
+            _hls.pause();
         };
 
 
         /** Do a resize on the video. **/
         override public function resize(width:Number,height:Number):void {
-            _adaptive.setWidth(width);
+            _hls.setWidth(width);
             _height = height;
             _width = width;
             if(_levels && _levels[_level] && _levels[_level].width) {
@@ -194,22 +194,22 @@ package com.longtailvideo.jwplayer.media {
 
         /** Seek to a certain position in the item. **/
         override public function seek(pos:Number):void {
-            _adaptive.seek(pos);
+            _hls.seek(pos);
         };
 
 
         /** Change the playback volume of the item. **/
         override public function setVolume(vol:Number):void {
-            _adaptive.volume(vol);
+            _hls.volume(vol);
             super.setVolume(vol);
         };
 
 
         /** Stop playback. **/
         override public function stop():void {
-            _adaptive.stop();
+            _hls.stop();
             super.stop();
-            _adaptive.removeEventListener(AdaptiveEvent.POSITION,_positionHandler);
+            _hls.removeEventListener(HLSEvent.POSITION,_positionHandler);
             _level = 0;
         };
 

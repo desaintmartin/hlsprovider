@@ -10,7 +10,7 @@ package com.longtailvideo.HLS {
 
 
     /** Class that manages the streaming process. **/
-    public class Adaptive extends EventDispatcher {
+    public class HLS extends EventDispatcher {
 
 
         /** The playback buffer. **/
@@ -24,7 +24,7 @@ package com.longtailvideo.HLS {
 
 
         /** Create and connect all components. **/
-        public function Adaptive(video:Object):void {
+        public function HLS(video:Object):void {
             _video = video;
             _getter = new Getter(this);
             _loader = new Loader(this);
@@ -34,8 +34,8 @@ package com.longtailvideo.HLS {
 
         /** Forward internal errors. **/
         override public function dispatchEvent(event:Event):Boolean {
-            if(event.type == AdaptiveEvent.ERROR) {
-                Log.txt(AdaptiveEvent(event).message);
+            if(event.type == HLSEvent.ERROR) {
+                Log.txt(HLSEvent(event).message);
                 stop();
             }
             return super.dispatchEvent(event);
@@ -78,7 +78,7 @@ package com.longtailvideo.HLS {
         };
 
 
-        /** Start playing an new adaptive stream. **/
+        /** Start playing an new HLS stream. **/
         public function play(url:String,start:Number=0):void {
             _buffer.stop();
             _buffer.startPosition = start;

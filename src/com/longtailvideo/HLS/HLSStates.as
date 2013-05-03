@@ -2,7 +2,7 @@ package com.longtailvideo.HLS {
 
 
     /** Identifiers for the different playback states. **/
-    public class AdaptiveStates {
+    public class HLSStates {
 
 
         /** Identifiers for the idle state. **/

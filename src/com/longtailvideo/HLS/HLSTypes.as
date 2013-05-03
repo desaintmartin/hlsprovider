@@ -2,7 +2,7 @@ package com.longtailvideo.HLS {
 
 
     /** Identifiers for the different stream types. **/
-    public class AdaptiveTypes {
+    public class HLSTypes {
 
 
         /** Identifier for live events. **/

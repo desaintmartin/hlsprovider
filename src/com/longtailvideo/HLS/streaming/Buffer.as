@@ -23,7 +23,7 @@ package com.longtailvideo.HLS.streaming {
         private var restart_length:Number = 8;
 
         /** Reference to the framework controller. **/
-        private var _adaptive:Adaptive;
+        private var _hls:HLS;
         /** The buffer with video tags. **/
         private var _buffer:Vector.<Tag>;
         /** NetConnection legacy stuff. **/
@@ -63,16 +63,16 @@ package com.longtailvideo.HLS.streaming {
 
 
         /** Create the buffer. **/
-        public function Buffer(adaptive:Adaptive, loader:Loader, video:Object):void {
-            _adaptive = adaptive;
+        public function Buffer(hls:HLS, loader:Loader, video:Object):void {
+            _hls = hls;
             _loader = loader;
             _video = video;
-            _adaptive.addEventListener(AdaptiveEvent.MANIFEST,_manifestHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
             _connection = new NetConnection();
             _connection.connect(null);
             _transform = new SoundTransform();
             _transform.volume = 0.9;
-            _setState(AdaptiveStates.IDLE);
+            _setState(HLSStates.IDLE);
 			_firstTag = null;
         };
 
@@ -91,7 +91,7 @@ package com.longtailvideo.HLS.streaming {
                   position = 0;
                if(position != _position) {
                    _position = position;
-                   _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.POSITION,_position));
+                   _hls.dispatchEvent(new HLSEvent(HLSEvent.POSITION,_position));
                }
             }
             
@@ -115,8 +115,8 @@ package com.longtailvideo.HLS.streaming {
                 _loading = true;
             }
             // Append tags to buffer.
-            if((_state == AdaptiveStates.PLAYING && _stream.bufferLength < Buffer.LENGTH / 3) || 
-               (_state == AdaptiveStates.BUFFERING && buffer > restart_length))
+            if((_state == HLSStates.PLAYING && _stream.bufferLength < Buffer.LENGTH / 3) || 
+               (_state == HLSStates.BUFFERING && buffer > restart_length))
              {
                 //Log.txt("appending data");
                 while(_tag < _buffer.length && _stream.bufferLength < Buffer.LENGTH * 2 / 3) {
@@ -129,7 +129,7 @@ package com.longtailvideo.HLS.streaming {
                         _errorHandler(new Error(_buffer[_tag].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_adaptive.getType() == AdaptiveTypes.VOD && _next_seqnum == length && _tag == _buffer.length - 1) {
+                    if (_hls.getType() == HLSTypes.VOD && _next_seqnum == length && _tag == _buffer.length - 1) {
                         _stream.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         _stream.appendBytes(new ByteArray());
                     }
@@ -142,27 +142,27 @@ package com.longtailvideo.HLS.streaming {
                     if(_stream.bufferLength == 0) {
                         _complete();
                     }
-                } else if(_state == AdaptiveStates.PLAYING) {
-                    _setState(AdaptiveStates.BUFFERING);
+                } else if(_state == HLSStates.PLAYING) {
+                    _setState(HLSStates.BUFFERING);
                 }
-            } else if (_state == AdaptiveStates.BUFFERING) {
-                _setState(AdaptiveStates.PLAYING);
+            } else if (_state == HLSStates.BUFFERING) {
+                _setState(HLSStates.PLAYING);
             }
         };
 
 
         /** The video completed playback. **/
         private function _complete():void {
-            _setState(AdaptiveStates.IDLE);
+            _setState(HLSStates.IDLE);
             clearInterval(_interval);
             // _stream.pause();
-            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.COMPLETE));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.COMPLETE));
         };
 
 
         /** Dispatch an error to the controller. **/
         private function _errorHandler(error:Error):void { 
-            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR,error.toString()));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR,error.toString()));
         };
 
 
@@ -195,8 +195,8 @@ package com.longtailvideo.HLS.streaming {
         };
 
         /** Start streaming on manifest load. **/
-        private function _manifestHandler(event:AdaptiveEvent):void {
-            if(_state == AdaptiveStates.IDLE) {
+        private function _manifestHandler(event:HLSEvent):void {
+            if(_state == HLSStates.IDLE) {
                 _levels = event.levels;
                 _stream = new NetStream(_connection);
                 _video.attachNetStream(_stream);
@@ -213,12 +213,12 @@ package com.longtailvideo.HLS.streaming {
         /** Toggle playback. **/
         public function pause():void {
             clearInterval(_interval);
-            if(_state == AdaptiveStates.PAUSED) { 
-                _setState(AdaptiveStates.BUFFERING);
+            if(_state == HLSStates.PAUSED) { 
+                _setState(HLSStates.BUFFERING);
                 _stream.resume();
                 _interval = setInterval(_checkBuffer,100);
-            } else if(_state == AdaptiveStates.PLAYING) {
-                _setState(AdaptiveStates.PAUSED);
+            } else if(_state == HLSStates.PLAYING) {
+                _setState(HLSStates.PAUSED);
                 _stream.pause();
             }
         };
@@ -227,7 +227,7 @@ package com.longtailvideo.HLS.streaming {
         private function _setState(state:String):void {
             if(state != _state) {
                 _state = state;
-                _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.STATE,_state));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.STATE,_state));
             }
         };
 
@@ -274,7 +274,7 @@ package com.longtailvideo.HLS.streaming {
                _next_seqnum = frag.seqnum;
                _start = frag.start;
 
-				_setState(AdaptiveStates.BUFFERING);
+				_setState(HLSStates.BUFFERING);
                 clearInterval(_interval);
                 _interval = setInterval(_checkBuffer,100);
             }
@@ -289,7 +289,7 @@ package com.longtailvideo.HLS.streaming {
             _loading = false;
             clearInterval(_interval);
             _levels = [];
-            _setState(AdaptiveStates.IDLE);
+            _setState(HLSStates.IDLE);
         };
 
 

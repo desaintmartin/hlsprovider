@@ -5,27 +5,27 @@ package com.longtailvideo.HLS {
 
 
     /** Event fired when an error prevents playback. **/
-    public class AdaptiveEvent extends Event {
+    public class HLSEvent extends Event {
 
 
         /** Identifier for a playback complete event. **/
-        public static const COMPLETE:String = "adaptiveEventComplete";
+        public static const COMPLETE:String = "hlsEventComplete";
         /** Identifier for a playback error event. **/
-        public static const ERROR:String = "adaptiveEventError";
+        public static const ERROR:String = "hlsEventError";
         /** Identifier for a fragment load event. **/
-        public static const FRAGMENT:String = "adaptiveEventFragment";
+        public static const FRAGMENT:String = "hlsEventFragment";
         /** Identifier for a manifest (re)load event. **/
-        public static const MANIFEST:String = "adaptiveEventManifest";
+        public static const MANIFEST:String = "hlsEventManifest";
         /** Identifier for a playback position change event. **/
-        public static const POSITION:String = "adaptiveEventPosition";
+        public static const POSITION:String = "hlsEventPosition";
         /** Identifier for a playback state switch event. **/
-        public static const STATE:String = "adaptiveEventState";
+        public static const STATE:String = "hlsEventState";
         /** Identifier for a quality level switch event. **/
-        public static const SWITCH:String = "adaptiveEventLevel";
+        public static const SWITCH:String = "hlsEventLevel";
         /** Identifier for a audio only fragment **/
         public static const AUDIO:String = "audioOnly";
         /** Identifier for a quality level switch event. **/
-        public static const BUFFER:String = "adaptiveEventBuffer";
+        public static const BUFFER:String = "hlsEventBuffer";
 
 
         /** The current quality level. **/
@@ -43,27 +43,27 @@ package com.longtailvideo.HLS {
 
 
         /** Assign event parameter and dispatch. **/
-        public function AdaptiveEvent(type:String, parameter:*=null) {
+        public function HLSEvent(type:String, parameter:*=null) {
             switch(type) {
-                case AdaptiveEvent.ERROR:
+                case HLSEvent.ERROR:
                     message = parameter as String;
                     break;
-                case AdaptiveEvent.FRAGMENT:
+                case HLSEvent.FRAGMENT:
                     metrics = parameter as Object;
                     break;
-                case AdaptiveEvent.MANIFEST:
+                case HLSEvent.MANIFEST:
                     levels = parameter as Array;
                     break;
-                case AdaptiveEvent.POSITION:
+                case HLSEvent.POSITION:
                     position = parameter as Number;
                     break;
-                case AdaptiveEvent.STATE:
+                case HLSEvent.STATE:
                     state = parameter as String;
                     break;
-                case AdaptiveEvent.SWITCH:
+                case HLSEvent.SWITCH:
                     level = parameter as Number;
                     break;
-                case AdaptiveEvent.BUFFER:
+                case HLSEvent.BUFFER:
                     metrics = parameter as Object;
                     break;
             }

@@ -26,8 +26,8 @@ package com.longtailvideo.HLS.streaming {
         public static const WIDTH_FACTOR:Number = 1.50;
 
 
-        /** Reference to the adaptive controller. **/
-        private var _adaptive:Adaptive;
+        /** Reference to the HLS controller. **/
+        private var _hls:HLS;
         /** Bandwidth of the last fragment load. **/
         private var _bandwidth:int = 0;
         /** Callback for passing forward the fragment tags. **/
@@ -57,9 +57,9 @@ package com.longtailvideo.HLS.streaming {
 
 
         /** Create the loader. **/
-        public function Loader(adaptive:Adaptive):void {
-            _adaptive = adaptive;
-            _adaptive.addEventListener(AdaptiveEvent.MANIFEST, _levelsHandler);
+        public function Loader(hls:HLS):void {
+            _hls = hls;
+            _hls.addEventListener(HLSEvent.MANIFEST, _levelsHandler);
             _urlstreamloader = new URLStream();
             _urlstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
             _urlstreamloader.addEventListener(Event.COMPLETE, _completeHandler);
@@ -95,7 +95,7 @@ package com.longtailvideo.HLS.streaming {
 
         /** Catch IO and security errors. **/
         private function _errorHandler(event:ErrorEvent):void {
-            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, event.toString()));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, event.toString()));
         };
 
 
@@ -130,12 +130,12 @@ package com.longtailvideo.HLS.streaming {
             try {
                _urlstreamloader.load(new URLRequest(frag.url));
             } catch (error:Error) {
-                _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, error.message));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
             }
         };
 
         /** Store the manifest data. **/
-        private function _levelsHandler(event:AdaptiveEvent):void {
+        private function _levelsHandler(event:HLSEvent):void {
             _levels = event.levels;
         };
 
@@ -185,15 +185,15 @@ package com.longtailvideo.HLS.streaming {
 			
 			// change the media to null if the file is only audio.
 			if(_ts.videoTags.length == 0) {
-				_adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.AUDIO));
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO));
 			}
 			
 			try {
 				_switchlevel = false;
 				_callback(_tags);
-				_adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT, getMetrics()));
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
 			} catch (error:Error) {
-				_adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, error.toString()));
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
 			}
 		}
 
@@ -228,7 +228,7 @@ package com.longtailvideo.HLS.streaming {
                     _level = level;
                 }
                 _switchlevel = true;
-                _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.SWITCH,_level));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.SWITCH,_level));
             }
             ///Log.txt("updated Level " + _level);
         };
@@ -253,7 +253,7 @@ package com.longtailvideo.HLS.streaming {
         /** Provide the loader with buffer information. **/
         public function setBuffer(buffer:Number):void {
             _buffer = buffer;
-            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.BUFFER, getMetrics()));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.BUFFER, getMetrics()));
         }
     }
 }

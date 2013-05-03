@@ -1,9 +1,9 @@
-package com.longtailvideo.HLS.parsing {
+package com.mangui.HLS.parsing {
 
 
     import flash.events.*;
     import flash.net.*;
-    import com.longtailvideo.HLS.utils.*;
+    import com.mangui.HLS.utils.*;
 
     /** Helpers for parsing M3U8 files. **/
     public class Manifest {

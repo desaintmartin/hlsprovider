@@ -1,4 +1,4 @@
-package com.longtailvideo.HLS.parsing {
+package com.mangui.HLS.parsing {
 
 
     /** HLS streaming chunk. **/

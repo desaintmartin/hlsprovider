@@ -1,8 +1,8 @@
-package com.longtailvideo.HLS.muxing {
+package com.mangui.HLS.muxing {
 	
 	
-	import com.longtailvideo.HLS.muxing.*;
-	import com.longtailvideo.HLS.utils.Log;
+	import com.mangui.HLS.muxing.*;
+	import com.mangui.HLS.utils.Log;
 	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;

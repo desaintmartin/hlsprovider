@@ -1,7 +1,7 @@
 package { 
 
 
-    import com.longtailvideo.HLS.*;
+    import com.mangui.HLS.*;
     import flash.display.*;
     import flash.events.*;
     import flash.external.ExternalInterface;

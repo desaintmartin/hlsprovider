@@ -1,11 +1,12 @@
-package com.longtailvideo.jwplayer.media {
+package com.mangui.jwplayer.media {
 
 
-    import com.longtailvideo.HLS.*;
+    import com.mangui.HLS.*;
     
     import com.longtailvideo.jwplayer.events.MediaEvent;
     import com.longtailvideo.jwplayer.model.PlayerConfig;
     import com.longtailvideo.jwplayer.model.PlaylistItem;
+    import com.longtailvideo.jwplayer.media.*;
 	import com.longtailvideo.jwplayer.player.PlayerState;
 	import com.longtailvideo.jwplayer.utils.Stretcher;
 

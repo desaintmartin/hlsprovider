@@ -1,4 +1,4 @@
-package com.longtailvideo.HLS {
+package com.mangui.HLS {
 
 
     /** Identifiers for the different stream types. **/

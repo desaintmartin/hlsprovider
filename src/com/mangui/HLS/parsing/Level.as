@@ -1,7 +1,7 @@
-package com.longtailvideo.HLS.parsing {
+package com.mangui.HLS.parsing {
 
 
-    import com.longtailvideo.HLS.parsing.Fragment;
+    import com.mangui.HLS.parsing.Fragment;
     import flash.utils.ByteArray;
 
 

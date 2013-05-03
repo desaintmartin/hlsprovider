@@ -1,7 +1,7 @@
-package com.longtailvideo.HLS.muxing {
+package com.mangui.HLS.muxing {
 
 
-    import com.longtailvideo.HLS.utils.*;
+    import com.mangui.HLS.utils.*;
     import flash.utils.ByteArray;
 
 

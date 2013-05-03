@@ -1,4 +1,4 @@
-package com.longtailvideo.HLS {
+package com.mangui.HLS {
 
 
     import flash.events.Event;

@@ -1,9 +1,9 @@
-package com.longtailvideo.HLS {
+package com.mangui.HLS {
 
 
-    import com.longtailvideo.HLS.*;
-    import com.longtailvideo.HLS.streaming.*;
-    import com.longtailvideo.HLS.utils.*;
+    import com.mangui.HLS.*;
+    import com.mangui.HLS.streaming.*;
+    import com.mangui.HLS.utils.*;
     import flash.display.Sprite;
     import flash.events.*;
     import flash.media.*;

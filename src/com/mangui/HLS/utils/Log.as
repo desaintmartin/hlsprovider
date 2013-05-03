@@ -1,4 +1,4 @@
-package com.longtailvideo.HLS.utils {
+package com.mangui.HLS.utils {
 
 
     import flash.external.ExternalInterface;

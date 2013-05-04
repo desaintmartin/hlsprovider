@@ -79,6 +79,7 @@ package com.mangui.HLS.streaming {
 
         /** Check the bufferlength. **/
         private function _checkBuffer():void {
+            var reachedend:Boolean = false;
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
@@ -93,24 +94,27 @@ package com.mangui.HLS.streaming {
                }
             }
             
-            var start_seqnum:Number = _levels[0].start_seqnum;
-            var end_seqnum:Number = _levels[0].end_seqnum;
-            for (var i:Number = 1; i < _levels.length; i++) {
-               start_seqnum = Math.max(start_seqnum,_levels[i].start_seqnum);
-               end_seqnum = Math.min(end_seqnum,_levels[i].end_seqnum);
-            }
-            //Log.txt("min/next/max seqnum:" + start_seqnum + "/" + _next_seqnum + "/" + end_seqnum);
-            
-            if(_next_seqnum < start_seqnum) {
-               Log.txt("long pause on live stream (reseek)" + _next_seqnum + "/" + start_seqnum);
-               seek(0);
-               return;
-            }
-            
             // Load new tags from fragment.
-            if(buffer < Buffer.LENGTH && _next_seqnum <= end_seqnum && !_loading) {
-                _loader.load(_next_seqnum,_loaderCallback,(_buffer.length == 0));
-                _loading = true;
+            if(buffer < Buffer.LENGTH && !_loading) {
+               var loadstatus:Number = _loader.loadfragment(_next_seqnum,_loaderCallback,(_buffer.length == 0));
+               if (loadstatus == 0) {
+                  // good, new fragment being loaded
+                  _loading = true;
+               } else  if (loadstatus < 0) {
+                  /* it means sequence number requested is smaller than any seqnum available. 
+                     it could happen on live playlist in 2 scenarios :
+                     if bandwidth available is lower than lowest quality needed bandwidth
+                     after long pause
+                     => call seek(0) to force a restart of the playback session */
+                  seek(0);
+                  return;
+               } else if(loadstatus > 0) {
+                  //seqnum not available in playlist
+                  if (_hls.getType() == HLSTypes.VOD) {
+                     // if VOD playlist, it means we reached the end, on live playlist do nothing and wait ...
+                     reachedend = true;
+                  }
+               }
             }
             // Append tags to buffer.
             if((_state == HLSStates.PLAYING && _stream.bufferLength < Buffer.LENGTH / 3) || 
@@ -127,7 +131,7 @@ package com.mangui.HLS.streaming {
                         _errorHandler(new Error(_buffer[_tag].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_hls.getType() == HLSTypes.VOD && _next_seqnum > end_seqnum && _tag == _buffer.length - 1) {
+                    if (reachedend ==true && _tag == _buffer.length - 1) {
                         _stream.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         _stream.appendBytes(new ByteArray());
                     }
@@ -136,7 +140,7 @@ package com.mangui.HLS.streaming {
             }
             // Set playback state and complete.
             if(_stream.bufferLength < Buffer.LENGTH / 10) {
-                if((_next_seqnum > end_seqnum) && _hls.getType() == HLSTypes.VOD) {
+                if(reachedend ==true) {
                     if(_stream.bufferLength == 0) {
                         _complete();
                     }

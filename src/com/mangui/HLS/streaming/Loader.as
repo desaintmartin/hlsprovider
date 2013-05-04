@@ -110,17 +110,32 @@ package com.mangui.HLS.streaming {
 
 
         /** Load a fragment **/
-        public function load(seqnum:Number, callback:Function, restart:Boolean):void {
-            _callback = callback;
-            if(restart == true) {
-                _switchlevel = true;
-            }
+        public function loadfragment(seqnum:Number, callback:Function, restart:Boolean):Number {
             if(_urlstreamloader.connected) {
                 _urlstreamloader.close();
             }
+            var level:Number = _getbestlevel();
+            if(seqnum < _levels[level].start_seqnum) {
+               Log.txt("long pause on live stream or bad network quality: " + seqnum + "/" + _levels[level].start_seqnum);
+               return -1;
+            }
+  
+            if(seqnum > _levels[level].end_seqnum) {
+               //Log.txt("seqnum not ready yet");
+               return 1;
+            }
+
+            _callback = callback;
+            if(level != _level) {
+                _level = level;
+                _switchlevel = true;
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.SWITCH,_level));
+            }
+
+            if(restart == true) {
+                _switchlevel = true;
+            }
             _started = new Date().valueOf();
-            _updateLevel();
-            
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
             _seqnum = frag.seqnum;
             Log.txt("Loading SN "+ _seqnum +  "/" + (_levels[_level].end_seqnum) + ",level "+ _level);
@@ -130,6 +145,7 @@ package com.mangui.HLS.streaming {
             } catch (error:Error) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
             }
+            return 0;
         };
 
         /** Store the manifest data. **/
@@ -197,7 +213,7 @@ package com.mangui.HLS.streaming {
 
 
         /** Update the quality level for the next fragment load. **/
-        private function _updateLevel():void {
+        private function _getbestlevel():Number {
             var level:Number = -1;
             // Select the lowest non-audio level.
             for(var i:Number = 0; i < _levels.length; i++) {
@@ -207,42 +223,19 @@ package com.mangui.HLS.streaming {
                 }
             }
             if(level == -1) {
-				Log.txt("No other quality levels are available"); 
-				return;
+                Log.txt("No other quality levels are available"); 
+                return -1;
             }
-            // Then update with highest possible level.
-            for(var j:Number = _levels.length - 1; j > 0; j--) {
-				if( _fitsLevel(j) ) {
-                    level = j;
-                    break;
+           //check up to current level + 1
+            for(var j:Number = Math.min(_level+1,_levels.length - 1); j > 0; j--) { 
+               if( _levels[j].bitrate <= _bandwidth * BITRATE_FACTOR && 
+                   _levels[j].width <= _width * WIDTH_FACTOR) {
+                    return j;
                 }
             }
-            //Log.txt("current Level " + _level + " fits Level " + level);
-            // Next restrict upswitches to 1 level at a time.
-            if(level != _level) {
-                if(level > _level) {
-                    _level++;
-                } else {
-                    _level = level;
-                }
-                _switchlevel = true;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.SWITCH,_level));
-            }
-            ///Log.txt("updated Level " + _level);
+            return 0;
         };
-		
-		
-		/** Check if level fits bandwidth and width conditions **/
-		private function _fitsLevel(level:Number):Boolean {
-			if( _levels[level].bitrate <= _bandwidth * BITRATE_FACTOR && _levels[level].width <= _width * WIDTH_FACTOR ) {
-				return true; 
-			}
-			else {
-				return false;
-			}
-		};
-		
-		
+
         /** Provide the loader with screen width information. **/
         public function setWidth(width:Number):void {
             _width = width;

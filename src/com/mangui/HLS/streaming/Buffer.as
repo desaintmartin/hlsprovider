@@ -127,7 +127,7 @@ package com.mangui.HLS.streaming {
                         _errorHandler(new Error(_buffer[_tag].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_hls.getType() == HLSTypes.VOD && _next_seqnum == length && _tag == _buffer.length - 1) {
+                    if (_hls.getType() == HLSTypes.VOD && _next_seqnum > end_seqnum && _tag == _buffer.length - 1) {
                         _stream.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         _stream.appendBytes(new ByteArray());
                     }
@@ -136,7 +136,7 @@ package com.mangui.HLS.streaming {
             }
             // Set playback state and complete.
             if(_stream.bufferLength < Buffer.LENGTH / 10) {
-                if(_next_seqnum == length) {
+                if((_next_seqnum > end_seqnum) && _hls.getType() == HLSTypes.VOD) {
                     if(_stream.bufferLength == 0) {
                         _complete();
                     }

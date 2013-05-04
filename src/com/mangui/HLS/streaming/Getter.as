@@ -24,7 +24,7 @@ package com.mangui.HLS.streaming {
         /** Amount of playlists still need loading. **/
         private var _toLoad:Number;
         /** are all playlists filled ? **/
-        private var _canStart:Boolean = false;
+        private var _canStart:Boolean;
         /** initial reload timer **/
         private var _fragmentDuration:Number = 5000;
         /** Timeout ID for reloading live playlists. **/
@@ -83,6 +83,7 @@ package com.mangui.HLS.streaming {
         public function load(url:String):void {
             _url = url;
             _levels = [];
+            _canStart = false;
             _reload_playlists_timer = getTimer();
             _urlloader.load(new URLRequest(_url));
         };

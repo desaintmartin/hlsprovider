@@ -90,7 +90,7 @@ package {
                 ExternalInterface.call(_callbacks.onmanifest,event.levels);
             }
         };
-        private function _positionHandler(event:HLSEvent):void {
+        private function _mediaTimeHandler(event:HLSEvent):void {
             if(_callbacks.onposition) {
                 ExternalInterface.call(_callbacks.onposition,event.position);
             }
@@ -156,7 +156,7 @@ package {
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT,_fragmentHandler);
             _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
-            _hls.addEventListener(HLSEvent.POSITION,_positionHandler);
+            _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _hls.addEventListener(HLSEvent.SWITCH,_switchHandler);
         };

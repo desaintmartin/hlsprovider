@@ -66,27 +66,22 @@ package com.mangui.jwplayer.media {
         private function _manifestHandler(event:HLSEvent):void {
             _levels = event.levels;
             item.duration = _levels[0].duration;
-	    sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: item.duration});
-            _hls.addEventListener(HLSEvent.POSITION,_positionHandler);
+            sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: item.duration});
+            _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
         };
 
 
         /** Update playback position. **/
-        private function _positionHandler(event:HLSEvent):void {
-            item.duration = _levels[0].duration;
+        private function _mediaTimeHandler(event:HLSEvent):void {
+            item.duration = event.mediatime.duration;
+            var _bufferPercent:Number = 100*event.mediatime.buffer/event.mediatime.duration;
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {
-                position: event.position, 
-                duration: item.duration
+                bufferPercent: _bufferPercent,
+                offset: event.mediatime.position,
+                position: event.mediatime.position,
+                duration: event.mediatime.duration
             });
         };
-
-        /** Update playback position. **/
-        private function _bufferHandler(event:HLSEvent):void {
-            sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_META, { metadata: {
-                buffer: event.metrics.buffer
-            }});
-        };
-
 
         /** Forward state changes from the framework. **/
         private function _stateHandler(event:HLSEvent):void {
@@ -127,7 +122,6 @@ package com.mangui.jwplayer.media {
             _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _hls.addEventListener(HLSEvent.AUDIO, _audioHandler);
-            _hls.addEventListener(HLSEvent.BUFFER,_bufferHandler);
             _level = 0;
 			mute(cfg.mute);
         };
@@ -210,7 +204,7 @@ package com.mangui.jwplayer.media {
         override public function stop():void {
             _hls.stop();
             super.stop();
-            _hls.removeEventListener(HLSEvent.POSITION,_positionHandler);
+            _hls.removeEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
             _level = 0;
         };
 

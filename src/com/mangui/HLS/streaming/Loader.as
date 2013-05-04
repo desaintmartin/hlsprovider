@@ -48,8 +48,6 @@ package com.mangui.HLS.streaming {
         private var _switchlevel:Boolean;
         /** Width of the stage. **/
         private var _width:Number = 480;
-        /** Buffer size in seconds. **/
-        private var _buffer:Number = 0;
 		/** The current TS packet being read **/
 		private var _ts:TS;
 		/** The current tags vector being created as the TS packet is read **/
@@ -107,7 +105,7 @@ package com.mangui.HLS.streaming {
 
         /** Get the current QOS metrics. **/
         public function getMetrics():Object {
-            return { bandwidth:_bandwidth, level:_level, screenwidth:_width , buffer:_buffer};
+            return { bandwidth:_bandwidth, level:_level, screenwidth:_width };
         };
 
 
@@ -248,12 +246,6 @@ package com.mangui.HLS.streaming {
         /** Provide the loader with screen width information. **/
         public function setWidth(width:Number):void {
             _width = width;
-        }
-
-        /** Provide the loader with buffer information. **/
-        public function setBuffer(buffer:Number):void {
-            _buffer = buffer;
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.BUFFER, getMetrics()));
         }
     }
 }

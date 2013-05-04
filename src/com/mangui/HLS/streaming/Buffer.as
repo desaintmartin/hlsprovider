@@ -82,16 +82,14 @@ package com.mangui.HLS.streaming {
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
-               buffer = (_buffer[_buffer.length-1].pts/1000 - _firstTag.pts/1000) - _stream.time; 
-               _loader.setBuffer(buffer);
+               buffer = (_buffer[_buffer.length-1].pts/1000 - _firstTag.pts/1000) - _stream.time;
                var position:Number = (Math.round(_stream.time*100 + _start*100)/100);
-               //Log.txt("position :" + position + ",diff seqnum: " +10*(_levels[0].start_seqnum - _start_seqnum));
                position-=_levels[0].fragments[0].duration*(_levels[0].start_seqnum - _start_seqnum) ;
                if (position <0)
                   position = 0;
                if(position != _position) {
                    _position = position;
-                   _hls.dispatchEvent(new HLSEvent(HLSEvent.POSITION,_position));
+                   _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_position, buffer:buffer, duration:_levels[0].duration}));
                }
             }
             

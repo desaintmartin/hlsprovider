@@ -86,17 +86,18 @@ package com.mangui.HLS.streaming {
                buffer = (_buffer[_buffer.length-1].pts/1000 - _firstTag.pts/1000) - _stream.time;
                var position:Number = (Math.round(_stream.time*100 + _start*100)/100);
                position-=_levels[0].fragments[0].duration*(_levels[0].start_seqnum - _start_seqnum) ;
-               if (position <0)
-                  position = 0;
                if(position != _position) {
-                   _position = position;
-                   _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_position, buffer:buffer, duration:_levels[0].duration}));
+                  if (position <0) {
+                     position = 0;
+                  }
+                  _position = position;
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_position, buffer:buffer, duration:_levels[0].duration}));
                }
             }
             
             // Load new tags from fragment.
             if(buffer < Buffer.LENGTH && !_loading) {
-               var loadstatus:Number = _loader.loadfragment(_next_seqnum,_loaderCallback,(_buffer.length == 0));
+               var loadstatus:Number = _loader.loadfragment(_next_seqnum,buffer,_loaderCallback,(_buffer.length == 0));
                if (loadstatus == 0) {
                   // good, new fragment being loaded
                   _loading = true;

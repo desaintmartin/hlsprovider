@@ -110,11 +110,11 @@ package com.mangui.HLS.streaming {
 
 
         /** Load a fragment **/
-        public function loadfragment(seqnum:Number, callback:Function, restart:Boolean):Number {
+        public function loadfragment(seqnum:Number, buffer:Number,callback:Function, restart:Boolean):Number {
             if(_urlstreamloader.connected) {
                 _urlstreamloader.close();
             }
-            var level:Number = _getbestlevel();
+            var level:Number = _getbestlevel(buffer);
             if(seqnum < _levels[level].start_seqnum) {
                Log.txt("long pause on live stream or bad network quality: " + seqnum + "/" + _levels[level].start_seqnum);
                return -1;
@@ -213,7 +213,7 @@ package com.mangui.HLS.streaming {
 
 
         /** Update the quality level for the next fragment load. **/
-        private function _getbestlevel():Number {
+        private function _getbestlevel(buffer:Number):Number {
             var level:Number = -1;
             // Select the lowest non-audio level.
             for(var i:Number = 0; i < _levels.length; i++) {
@@ -226,9 +226,19 @@ package com.mangui.HLS.streaming {
                 Log.txt("No other quality levels are available"); 
                 return -1;
             }
-           //check up to current level + 1
-            for(var j:Number = Math.min(_level+1,_levels.length - 1); j > 0; j--) { 
-               if( _levels[j].bitrate <= _bandwidth * BITRATE_FACTOR && 
+            
+	    // allow switching to whatever level
+	    // take current buffer size into account :
+            // rationale is as below : let say frag duration is 10s, remaining buffer is 2s.
+            // in such case if we want to avoid buffer underrun, we need to download next fragment
+            // in less than 2s. so the bandwidth needed to do so should be bigger than _levels[j].bitrate / (2/10)
+            // on the other hand, if buffer size is greater than a fragment duration 
+	    // (let say 20s of buffer, 10s for fragment duration, we could download with a level which
+	    // bitrate is bigger than previously measured bandwidth ... but we need to cap it a little bit 
+	    // to avoid too many level switching, lets cap relative progress to 1.2
+            var bufferratio:Number = Math.min(1.2,buffer/_levels[0].fragments[0].duration);
+            for(var j:Number = _levels.length-1; j > 0; j--) {
+               if( _levels[j].bitrate <= bufferratio*_bandwidth * BITRATE_FACTOR && 
                    _levels[j].width <= _width * WIDTH_FACTOR) {
                     return j;
                 }

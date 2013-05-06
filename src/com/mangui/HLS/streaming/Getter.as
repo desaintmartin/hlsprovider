@@ -100,6 +100,7 @@ package com.mangui.HLS.streaming {
                var frags:Array = Manifest.getFragments(string,url);
                // set fragment and update sequence number range
                _levels[index].setFragments(frags);
+               _levels[index].targetduration = Manifest.getTargetDuration(string);
                _levels[index].start_seqnum = frags[0].seqnum;
                _levels[index].end_seqnum = frags[frags.length-1].seqnum;
                _levels[index].duration = frags[frags.length-1].start + frags[frags.length-1].duration;

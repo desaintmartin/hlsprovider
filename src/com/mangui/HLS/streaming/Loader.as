@@ -236,7 +236,7 @@ package com.mangui.HLS.streaming {
 	    // (let say 20s of buffer, 10s for fragment duration, we could download with a level which
 	    // bitrate is bigger than previously measured bandwidth ... but we need to cap it a little bit 
 	    // to avoid too many level switching, lets cap relative progress to 1.2
-            var bufferratio:Number = Math.min(1.2,buffer/_levels[0].fragments[0].duration);
+            var bufferratio:Number = Math.min(1.2,buffer/_levels[_level].targetduration);
             for(var j:Number = _levels.length-1; j > 0; j--) {
                if( _levels[j].bitrate <= bufferratio*_bandwidth * BITRATE_FACTOR && 
                    _levels[j].width <= _width * WIDTH_FACTOR) {

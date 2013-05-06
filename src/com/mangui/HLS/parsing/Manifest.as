@@ -19,7 +19,8 @@ package com.mangui.HLS.parsing {
         public static const ENDLIST:String = '#EXT-X-ENDLIST';	
         /** Tag that provides the sequence number. **/
         private static const SEQNUM:String = '#EXT-X-MEDIA-SEQUENCE:';
-        
+        /** Tag that provides the target duration for each segment. **/
+        private static const TARGETDURATION:String = '#EXT-X-TARGETDURATION:';
 
         /** Index in the array with levels. **/
         private var _index:Number;
@@ -138,6 +139,22 @@ package com.mangui.HLS.parsing {
                 return false;
             }
         };
+        
+        public static function getTargetDuration(data:String):Number {
+            var lines:Array = data.split("\n");
+            var i:Number = 0;
+            var targetduration:Number = 0;
+            
+            // first look for target duration
+            while (i < lines.length) {
+                if(lines[i].indexOf(Manifest.TARGETDURATION) == 0) {
+                    targetduration = Number(lines[i].substr(Manifest.TARGETDURATION.length));
+                    break;
+                 }
+                 i++;
+            }
+            return targetduration;
+       }
 
 
         /** Extract URL (check if absolute or not). **/

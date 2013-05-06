@@ -29,6 +29,8 @@ package com.mangui.HLS.parsing {
         public var start_seqnum:Number;
         /** max sequence number from M3U8. **/
         public var end_seqnum:Number;
+        /** target duration **/
+        public var targetduration:Number;
         /** playlist duration **/
         public var duration:Number;
 

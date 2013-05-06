@@ -9,7 +9,7 @@ reports buffer size (on progress bar)<br>
 supports seeking (also available on live playlist)<br>
 
 
-see sample examples here :
+see examples here :
 
 http://streambox.fr/HLSProvider5<br>
 http://streambox.fr/HLSProvider6

@@ -164,6 +164,9 @@ package com.mangui.HLS.streaming {
 		
 		/** Handles the actual reading of the TS fragment **/
 		private function _readHandler(e:Event):void {
+		   var min_pts:Number = Number.MAX_VALUE;
+		   var max_pts:Number = 0;
+		   
 			// Save codecprivate when not available.
 			if(!_levels[_level].avcc && !_levels[_level].adif) {
 				_levels[_level].avcc = _ts.getAVCC();
@@ -185,13 +188,19 @@ package com.mangui.HLS.streaming {
 					}
 				}
 			}
+
+
 			// Push regular tags into buffer.
 			for(var i:Number=0; i < _ts.videoTags.length; i++) {
+			   min_pts = Math.min(min_pts,_ts.videoTags[i].pts);
+			   max_pts = Math.max(max_pts,_ts.videoTags[i].pts);
 				_ts.videoTags[i].level = _level;
 				_ts.videoTags[i].seqnum = _seqnum;
 				_tags.push(_ts.videoTags[i]);
 			}
 			for(var j:Number=0; j < _ts.audioTags.length; j++) {
+			   min_pts = Math.min(min_pts,_ts.audioTags[j].pts);
+			   max_pts = Math.max(max_pts,_ts.audioTags[j].pts);
 				_ts.audioTags[j].level = _level;
 				_ts.audioTags[j].seqnum = _seqnum;
 				_tags.push(_ts.audioTags[j]);
@@ -204,7 +213,7 @@ package com.mangui.HLS.streaming {
 			
 			try {
 				_switchlevel = false;
-				_callback(_tags);
+				_callback(_tags,min_pts,max_pts);
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
 			} catch (error:Error) {
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));

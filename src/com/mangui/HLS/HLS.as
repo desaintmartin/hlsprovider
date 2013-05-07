@@ -81,7 +81,7 @@ package com.mangui.HLS {
         /** Start playing an new HLS stream. **/
         public function play(url:String,start:Number=0):void {
             _buffer.stop();
-            _buffer.startPosition = start;
+            _buffer.PlaybackStartPosition = start;
             _getter.load(url);
         };
 

@@ -104,6 +104,7 @@ package com.mangui.HLS.streaming {
                _levels[index].start_seqnum = frags[0].seqnum;
                _levels[index].end_seqnum = frags[frags.length-1].seqnum;
                _levels[index].duration = frags[frags.length-1].start + frags[frags.length-1].duration;
+               _fragmentDuration = _levels[index].targetduration;
             }
             if(--_toLoad == 0) {
             // Check whether the stream is live or not finished yet
@@ -117,7 +118,6 @@ package com.mangui.HLS.streaming {
             }
                if (!_canStart && (_canStart =_areFirstLevelsFilled())) {
                   Log.txt("first 2 levels are filled with at least 2 fragments, notify event");
-                  _fragmentDuration = frags[0].duration*1000;
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST,_levels));
               }
             }

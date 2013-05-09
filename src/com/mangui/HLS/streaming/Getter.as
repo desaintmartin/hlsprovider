@@ -104,7 +104,7 @@ package com.mangui.HLS.streaming {
                _levels[index].start_seqnum = frags[0].seqnum;
                _levels[index].end_seqnum = frags[frags.length-1].seqnum;
                _levels[index].duration = frags[frags.length-1].start + frags[frags.length-1].duration;
-               _fragmentDuration = _levels[index].targetduration;
+               _fragmentDuration = 1000*_levels[index].targetduration;
             }
             if(--_toLoad == 0) {
             // Check whether the stream is live or not finished yet

@@ -28,10 +28,6 @@ package com.mangui.HLS.streaming {
         private var _buffer:Vector.<Tag>;
         /** NetConnection legacy stuff. **/
         private var _connection:NetConnection;
-        /** The current quality level. **/
-        private var _level:Number = 0;
-        /** Reference to the manifest levels. **/
-        private var _levels:Array;
         /** The fragment loader. **/
         private var _loader:Loader;
         /** Store that a fragment load is in progress. **/
@@ -39,15 +35,14 @@ package com.mangui.HLS.streaming {
         /** Interval for checking buffer and position. **/
         private var _interval:Number;
         /** Next loading fragment sequence number. **/
-        private var _next_seqnum:Number;
         /** The start position of the stream. **/
         public var PlaybackStartPosition:Number = 0;
          /** start play time **/
         private var _playback_start_time:Number;
         /** playback start PTS. **/
         private var _playback_start_pts:Number;
-        /** Current play time (time since beginning of playback) **/
-        private var _playback_current_time:Number;
+        /** playlist start PTS when playback started. **/
+        private var _playlist_start_pts:Number;
         /** Current play position (relative position from beginning of sliding window) **/
         private var _playback_current_position:Number;
         /** buffer last PTS. **/
@@ -64,9 +59,6 @@ package com.mangui.HLS.streaming {
         private var _transform:SoundTransform;
         /** Reference to the video object. **/
         private var _video:Object;
-      /** Keeps track of the first PTS value for each sequence number **/
-      private var _ptsArray:Array;
-
 
         /** Create the buffer. **/
         public function Buffer(hls:HLS, loader:Loader, video:Object):void {
@@ -79,7 +71,6 @@ package com.mangui.HLS.streaming {
             _transform = new SoundTransform();
             _transform.volume = 0.9;
             _setState(HLSStates.IDLE);
-            _ptsArray = new Array();
         };
 
 
@@ -90,21 +81,27 @@ package com.mangui.HLS.streaming {
             // Calculate the buffer and position.
             if(_buffer.length) {
                buffer = (_buffer_last_pts - _playback_start_pts)/1000 - _stream.time;
-               _playback_current_time = (Math.round(_stream.time*100 + _playback_start_time*100)/100);
-               var play_position:Number = _playback_current_time-(_ptsArray[_levels[_level].start_seqnum]-_playback_start_pts)/1000;
-               
+               /** Current play time (time since beginning of playback) **/
+               var playback_current_time:Number = (Math.round(_stream.time*100 + _playback_start_time*100)/100);
+               var playliststartpts:Number = _loader.getPlayListStartPTS();
+               var play_position:Number;
+               if(playliststartpts < 0) {
+                  play_position = 0;
+               } else {
+                  play_position = playback_current_time -(playliststartpts-_playlist_start_pts)/1000;
+                }
                if(play_position != _playback_current_position) {
                   if (play_position <0) {
                      play_position = 0;
                   }
                   _playback_current_position = play_position;
-                  _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_playback_current_position, buffer:buffer, duration:_levels[0].duration}));
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_playback_current_position, buffer:buffer, duration:_loader.getPlayListDuration()}));
                }
             }
             
             // Load new tags from fragment.
             if(buffer < Buffer.LENGTH && !_loading) {
-               var loadstatus:Number = _loader.loadfragment(_next_seqnum,buffer,_loaderCallback,(_buffer.length == 0));
+               var loadstatus:Number = _loader.loadfragment(_buffer_next_time,_buffer_last_pts,buffer,_loaderCallback,(_buffer.length == 0));
                if (loadstatus == 0) {
                   // good, new fragment being loaded
                   _loading = true;
@@ -130,9 +127,6 @@ package com.mangui.HLS.streaming {
              {
                 //Log.txt("appending data");
                 while(_tag < _buffer.length && _stream.bufferLength < Buffer.LENGTH * 2 / 3) {
-                    if(_buffer[_tag].type == Tag.AVC_HEADER && _buffer[_tag].level != _level) {
-                        _level = _buffer[_tag].level;
-                    }
                     try {
                         _stream.appendBytes(_buffer[_tag].data);
                     } catch (error:Error) {
@@ -192,32 +186,29 @@ package com.mangui.HLS.streaming {
         private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number):void {
             _buffer = _buffer.slice(_tag);
             _tag = 0;
-            if (_ptsArray.length == 0) {
+            if (_playback_start_pts == 0) {
                _playback_start_pts = min_pts;
+               _playlist_start_pts = _loader.getPlayListStartPTS();
             }
             _buffer_last_pts = max_pts;
-            _ptsArray[tags[0].seqnum] = min_pts;
             tags.sort(_sortTagsbyDTS);
             for each (var t:Tag in tags) {
                _buffer.push(t);
             }
-            _buffer_next_time=(_buffer_last_pts-_playback_start_pts)/1000;
+            _buffer_next_time=_playback_start_time+(_buffer_last_pts-_playback_start_pts)/1000;
             Log.txt("_loaderCallback,_buffer_next_time:"+ _buffer_next_time);
-            _next_seqnum++;
             _loading = false;
         };
 
         /** Start streaming on manifest load. **/
         private function _manifestHandler(event:HLSEvent):void {
             if(_state == HLSStates.IDLE) {
-                _levels = event.levels;
                 _stream = new NetStream(_connection);
                 _video.attachNetStream(_stream);
                 _stream.play(null);
                 _stream.soundTransform = _transform;
                 _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
                 _stream.appendBytes(FLV.getHeader());
-                _level = 0;
                 seek(PlaybackStartPosition);
             }
         };
@@ -270,23 +261,20 @@ package com.mangui.HLS.streaming {
 
         /** Start playing data in the buffer. **/
         public function seek(position:Number):void {
-            if(_levels.length) {
                _buffer = new Vector.<Tag>();
-               _ptsArray = new Array();
                _loader.clearLoader();
                _loading = false;
                _tag = 0;
                 PlaybackStartPosition = position;
                _stream.seek(0);
                _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
-               var frag:Fragment = _levels[_level].getFragmentfromPosition(position);
-               _next_seqnum = frag.seqnum;
-               _playback_start_time = frag.start;
+               _playback_start_time = position;
+               _playback_start_pts = 0;
                _buffer_next_time = _playback_start_time;
+               _buffer_last_pts = 0;
                _setState(HLSStates.BUFFERING);
                clearInterval(_interval);
                _interval = setInterval(_checkBuffer,100);
-            }
         };
 
 
@@ -297,7 +285,6 @@ package com.mangui.HLS.streaming {
             }
             _loading = false;
             clearInterval(_interval);
-            _levels = [];
             _setState(HLSStates.IDLE);
         };
 

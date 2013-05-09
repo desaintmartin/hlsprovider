@@ -48,11 +48,10 @@ package com.mangui.HLS.streaming {
         private var _switchlevel:Boolean;
         /** Width of the stage. **/
         private var _width:Number = 480;
-		/** The current TS packet being read **/
-		private var _ts:TS;
-		/** The current tags vector being created as the TS packet is read **/
-		private var _tags:Vector.<Tag>;
-
+        /** The current TS packet being read **/
+        private var _ts:TS;
+        /** The current tags vector being created as the TS packet is read **/
+        private var _tags:Vector.<Tag>;
 
         /** Create the loader. **/
         public function Loader(hls:HLS):void {
@@ -95,7 +94,7 @@ package com.mangui.HLS.streaming {
         private function _errorHandler(event:ErrorEvent):void {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, event.toString()));
         };
-
+   
 
         /** Get the quality level for the next fragment. **/
         public function getLevel():Number {
@@ -108,23 +107,38 @@ package com.mangui.HLS.streaming {
             return { bandwidth:_bandwidth, level:_level, screenwidth:_width };
         };
 
+        /** Get the playlist start PTS. **/
+        public function getPlayListStartPTS():Number {
+            return _levels[_level].getLevelstartPTS();
+        };
+
+        /** Get the playlist duration **/
+        public function getPlayListDuration():Number {
+            return _levels[_level].duration;
+        };
 
         /** Load a fragment **/
-        public function loadfragment(seqnum:Number, buffer:Number,callback:Function, restart:Boolean):Number {
+        public function loadfragment(position:Number, pts:Number, buffer:Number,callback:Function, restart:Boolean):Number {
             if(_urlstreamloader.connected) {
                 _urlstreamloader.close();
             }
             var level:Number = _getbestlevel(buffer);
-            if(seqnum < _levels[level].start_seqnum) {
-               Log.txt("long pause on live stream or bad network quality: " + seqnum + "/" + _levels[level].start_seqnum);
-               return -1;
+            var seqnum:Number;
+            if(pts != 0) {
+               var playliststartpts:Number = getPlayListStartPTS();
+               if((playliststartpts < 0) || (pts < getPlayListStartPTS())) {
+                  Log.txt("long pause on live stream or bad network quality");
+                  return -1;
+               } else {
+                  seqnum= _levels[level].getSeqNumNearestPTS(pts);
+               }
+            } else {
+               seqnum= _levels[level].getSeqNumNearestPosition(position);
             }
-  
-            if(seqnum > _levels[level].end_seqnum) {
-               //Log.txt("seqnum not ready yet");
+            if(seqnum <0) {
+               //fragment not available yet
                return 1;
             }
-
             _callback = callback;
             if(level != _level) {
                 _level = level;
@@ -137,8 +151,8 @@ package com.mangui.HLS.streaming {
             }
             _started = new Date().valueOf();
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
-            _seqnum = frag.seqnum;
-            Log.txt("Loading SN "+ _seqnum +  "/" + (_levels[_level].end_seqnum) + ",level "+ _level);
+            _seqnum = seqnum;
+            Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             //Log.txt("loading "+frag.url);
             try {
                _urlstreamloader.load(new URLRequest(frag.url));
@@ -213,6 +227,11 @@ package com.mangui.HLS.streaming {
 			
 			try {
 				_switchlevel = false;
+				// for now we assume that all playlists are aligned on seqnum / PTS
+				 for(i = 0; i < _levels.length; i++) {
+				 _levels[i].pts_value = min_pts;
+				 _levels[i].pts_seqnum = _seqnum;
+            }
 				_callback(_tags,min_pts,max_pts);
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
 			} catch (error:Error) {
@@ -236,16 +255,23 @@ package com.mangui.HLS.streaming {
                 return -1;
             }
             
-	    // allow switching to whatever level
-	    // take current buffer size into account :
-            // rationale is as below : let say frag duration is 10s, remaining buffer is 2s.
-            // in such case if we want to avoid buffer underrun, we need to download next fragment
-            // in less than 2s. so the bandwidth needed to do so should be bigger than _levels[j].bitrate / (2/10)
-            // on the other hand, if buffer size is greater than a fragment duration 
-	    // (let say 20s of buffer, 10s for fragment duration, we could download with a level which
-	    // bitrate is bigger than previously measured bandwidth ... but we need to cap it a little bit 
-	    // to avoid too many level switching, lets cap relative progress to 1.2
-            var bufferratio:Number = Math.min(1.2,buffer/_levels[_level].targetduration);
+            var bufferratio:Number;
+            if(_hls.getState() == HLSStates.BUFFERING) {
+               // if in buffering state, dont care about current buffer size
+               bufferratio = 1;
+            } else {
+            // if in playing state, take care of buffer size  :
+            // rationale is as below : let say next fragment duration is 10s, and remaining buffer is 2s.
+            // if we want to avoid buffer underrun, we need to download next fragment in less than 2s.
+            // so the bandwidth needed to do so should be bigger than _levels[j].bitrate / (2/10)
+               bufferratio = buffer/_levels[_level].targetduration;
+               if(bufferratio > 2.5) {
+                  bufferratio = 1.2;
+               } else if (bufferratio > 1) {
+                  bufferratio = 1;
+               }
+            }
+            // allow switching to whatever level
             for(var j:Number = _levels.length-1; j > 0; j--) {
                if( _levels[j].bitrate <= bufferratio*_bandwidth * BITRATE_FACTOR && 
                    _levels[j].width <= _width * WIDTH_FACTOR) {

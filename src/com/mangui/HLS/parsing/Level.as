@@ -4,7 +4,6 @@ package com.mangui.HLS.parsing {
     import com.mangui.HLS.parsing.Fragment;
     import flash.utils.ByteArray;
 
-
     /** HLS streaming quality level. **/
     public class Level {
 
@@ -25,6 +24,10 @@ package com.mangui.HLS.parsing {
         public var url:String;
         /** Width of the video in this level. **/
         public var width:Number;
+        /** PTS from one segment **/
+        public var pts_value:Number;
+        /** sequence number corresponding to PTS **/
+        public var pts_seqnum:Number;
         /** min sequence number from M3U8. **/
         public var start_seqnum:Number;
         /** max sequence number from M3U8. **/
@@ -42,15 +45,47 @@ package com.mangui.HLS.parsing {
             this.fragments = new Array();
         };
 
-        /** Return the fragment matching with a time position. **/
-        public function getFragmentfromPosition(position:Number):Fragment {
+        /** Return the sequence number nearest a given time position. **/
+        public function getSeqNumNearestPosition(position:Number):Number {
             for(var i:Number = 0; i < fragments.length; i++) {
-                if(fragments[i].start <= position && fragments[i].start + fragments[i].duration > position) {
-                    return fragments[i];
+                  /* check nearest fragment */
+                if( Math.abs(fragments[i].start-position) < Math.abs(fragments[i].start+fragments[i].duration-position)) {
+                  return (start_seqnum+i);
                 }
             }
-            return null;
+            return -1;
         };
+
+        /** Return the sequence number nearest a PTS **/
+        public function getSeqNumNearestPTS(pts:Number):Number {
+         if((pts_value == 0) || (pts_seqnum < start_seqnum) || (pts_seqnum > end_seqnum)) {
+            return -1;
+         }
+         
+          for(var seqnum:Number= start_seqnum; seqnum <= end_seqnum; seqnum++) {
+                /* check nearest fragment */
+              if( Math.abs(getstartPTS(seqnum)-pts) < Math.abs(getendPTS(seqnum)-pts)) {
+                return seqnum;
+              }
+          }
+          return -1;
+        };
+
+        private function getstartPTS(seqnum:Number):Number {
+            return (fragments[seqnum-start_seqnum].start-fragments[pts_seqnum-start_seqnum].start)*1000+pts_value;
+        }
+
+        private function getendPTS(seqnum:Number):Number {
+            return (fragments[seqnum-start_seqnum].start+fragments[seqnum-start_seqnum].duration-fragments[pts_seqnum-start_seqnum].start)*1000+pts_value;
+        }
+        
+        public function getLevelstartPTS():Number {
+            if((pts_value == 0) || (pts_seqnum < start_seqnum) || (pts_seqnum > end_seqnum)) {
+               return -1;
+            } else {
+               return getstartPTS(start_seqnum);
+            }
+        }
 
         /** Return the fragment index from fragment sequence number **/
         public function getFragmentfromSeqNum(seqnum:Number):Fragment {

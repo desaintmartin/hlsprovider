@@ -18,18 +18,14 @@ package com.mangui.HLS.streaming {
 
     /** Class that fetches fragments. **/
     public class Loader {
-
-
-        /** Multiplier for bitrate/bandwidth comparison. **/
-        public static const BITRATE_FACTOR:Number = 0.9;
-        /** Multiplier for level/display width comparison. **/
-        public static const WIDTH_FACTOR:Number = 1.50;
-
-
         /** Reference to the HLS controller. **/
         private var _hls:HLS;
-        /** Bandwidth of the last fragment load. **/
-        private var _bandwidth:int = 0;
+        /** Bandwidth of the last loaded fragment **/
+        private var _last_bandwidth:int = 0;
+        /** fetch time of the last loaded fragment **/
+        private var _last_fetch_duration:Number = 0;
+        /** duration of the last loaded fragment **/
+        private var _last_segment_duration:Number = 0;
         /** Callback for passing forward the fragment tags. **/
         private var _callback:Function;
         /** sequence number that's currently loading. **/
@@ -52,6 +48,11 @@ package com.mangui.HLS.streaming {
         private var _ts:TS;
         /** The current tags vector being created as the TS packet is read **/
         private var _tags:Vector.<Tag>;
+        /** switch up threshold **/
+        private var _switchup:Array = null;
+        /** switch down threshold **/
+        private var _switchdown:Array = null;
+
 
         /** Create the loader. **/
         public function Loader(hls:HLS):void {
@@ -67,8 +68,8 @@ package com.mangui.HLS.streaming {
         private function _completeHandler(event:Event):void {
 			   //Log.txt("loading completed");
             // Calculate bandwidth
-            var delay:Number = (new Date().valueOf() - _started) / 1000;
-            _bandwidth = Math.round(_urlstreamloader.bytesAvailable * 8 / delay);
+            _last_fetch_duration = (new Date().valueOf() - _started);
+            _last_bandwidth = Math.round(_urlstreamloader.bytesAvailable * 8000 / _last_fetch_duration);
 			// Collect stream loader data
 			if( _urlstreamloader.bytesAvailable > 0 ) {
 				_loaderData = new ByteArray();
@@ -101,10 +102,18 @@ package com.mangui.HLS.streaming {
             return _level;
         };
 
+        /** Get the suggested buffer length from rate adaptation algorithm **/
+        public function getBufferLength():Number {
+            if(_levels != null) {
+               return _levels[_level].targetduration*Math.max((_levels[_levels.length-1].bitrate/_levels[0].bitrate),6);
+            } else {
+               return 10;
+            }
+        };
 
         /** Get the current QOS metrics. **/
         public function getMetrics():Object {
-            return { bandwidth:_bandwidth, level:_level, screenwidth:_width };
+            return { bandwidth:_last_bandwidth, level:_level, screenwidth:_width };
         };
 
         /** Get the playlist start PTS. **/
@@ -232,6 +241,7 @@ package com.mangui.HLS.streaming {
 				 _levels[i].pts_value = min_pts;
 				 _levels[i].pts_seqnum = _seqnum;
             }
+            _last_segment_duration = max_pts-min_pts;
 				_callback(_tags,min_pts,max_pts);
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
 			} catch (error:Error) {
@@ -242,9 +252,36 @@ package com.mangui.HLS.streaming {
 
         /** Update the quality level for the next fragment load. **/
         private function _getbestlevel(buffer:Number):Number {
+         var i:Number;
+            if (_switchup == null) {
+               var maxswitchup:Number=0;
+               var minswitchdwown:Number=Number.MAX_VALUE;
+               _switchup = new Array(_levels.length);
+               _switchdown = new Array(_levels.length);
+               
+               for(i=0 ; i < _levels.length-1; i++) {
+                  _switchup[i] = (_levels[i+1].bitrate - _levels[i].bitrate) / _levels[i].bitrate;
+                  maxswitchup = Math.max(maxswitchup,_switchup[i]);
+               }
+               for(i=0 ; i < _levels.length-1; i++) {
+                  _switchup[i] = Math.min(maxswitchup,2*_switchup[i]);
+                  //Log.txt("_switchup["+i+"]="+_switchup[i]);
+               }
+ 
+ 
+               for(i = 1; i < _levels.length; i++) {
+                  _switchdown[i] = (_levels[i].bitrate - _levels[i-1].bitrate) / _levels[i].bitrate;
+                  minswitchdwown  =Math.min(minswitchdwown,_switchdown[i]);
+               }
+               for(i = 1; i < _levels.length; i++) {
+                  _switchdown[i] = Math.max(2*minswitchdwown,_switchdown[i]);
+                  //Log.txt("_switchdown["+i+"]="+_switchdown[i]);
+               }
+            }
+         
             var level:Number = -1;
             // Select the lowest non-audio level.
-            for(var i:Number = 0; i < _levels.length; i++) {
+            for(i = 0; i < _levels.length; i++) {
                 if(!_levels[i].audio) {
                     level = i;
                     break;
@@ -254,32 +291,28 @@ package com.mangui.HLS.streaming {
                 Log.txt("No other quality levels are available"); 
                 return -1;
             }
+            if(_last_fetch_duration == 0 || _last_segment_duration == 0) {
+               return 0;
+            }
+            var ratio:Number = _last_segment_duration/_last_fetch_duration;
             
-            var bufferratio:Number;
-            if(_hls.getState() == HLSStates.BUFFERING) {
-               // if in buffering state, dont care about current buffer size
-               bufferratio = 1;
-            } else {
-            // if in playing state, take care of buffer size  :
-            // rationale is as below : let say next fragment duration is 10s, and remaining buffer is 2s.
-            // if we want to avoid buffer underrun, we need to download next fragment in less than 2s.
-            // so the bandwidth needed to do so should be bigger than _levels[j].bitrate / (2/10)
-               bufferratio = buffer/_levels[_level].targetduration;
-               if(bufferratio > 2.5) {
-                  bufferratio = 1.2;
-               } else if (bufferratio > 1) {
-                  bufferratio = 1;
-               }
-            }
-            // allow switching to whatever level
-            for(var j:Number = _levels.length-1; j > 0; j--) {
-               if( _levels[j].bitrate <= bufferratio*_bandwidth * BITRATE_FACTOR && 
-                   _levels[j].width <= _width * WIDTH_FACTOR) {
-                    return j;
-                }
-            }
-            return 0;
-        };
+            if((_level < _levels.length-1) && (ratio > (1+_switchup[_level]))) {
+               //Log.txt("ratio:" + ratio +"> 1+_switchup[_level]="+(1+_switchup[_level]));
+               //Log.txt("switch to " + (_level+1));
+                  //level up
+                  return (_level+1);
+            } else if(_level > 0 &&(ratio < (1-_switchdown[_level]))) {
+                  // find suitable level matching current bandwidth, starting from current level
+                  for(var j:Number = _level; j > 0; j--) {
+                     if( _levels[j].bitrate <= _last_bandwidth) {
+                          //Log.txt("ratio:" + ratio +"< 1-_switchdown[_level]="+(1-_switchdown[_level]));
+                          //Log.txt("switch to " + j);
+                          return j;
+                      }
+                  }
+               } 
+            return _level;
+        }
 
         /** Provide the loader with screen width information. **/
         public function setWidth(width:Number):void {

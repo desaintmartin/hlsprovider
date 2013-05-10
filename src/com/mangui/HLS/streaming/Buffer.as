@@ -19,9 +19,6 @@ package com.mangui.HLS.streaming {
         /** Default bufferlength in seconds. **/
         private static const LENGTH:Number = 30;
 
-        /** Default bufferlength in seconds. **/
-        private var restart_length:Number = 8;
-
         /** Reference to the framework controller. **/
         private var _hls:HLS;
         /** The buffer with video tags. **/
@@ -100,7 +97,7 @@ package com.mangui.HLS.streaming {
             }
             
             // Load new tags from fragment.
-            if(buffer < Buffer.LENGTH && !_loading) {
+            if(buffer < _loader.getBufferLength() && !_loading) {
                var loadstatus:Number = _loader.loadfragment(_buffer_next_time,_buffer_last_pts,buffer,_loaderCallback,(_buffer.length == 0));
                if (loadstatus == 0) {
                   // good, new fragment being loaded
@@ -122,11 +119,11 @@ package com.mangui.HLS.streaming {
                }
             }
             // Append tags to buffer.
-            if((_state == HLSStates.PLAYING && _stream.bufferLength < Buffer.LENGTH / 3) || 
-               (_state == HLSStates.BUFFERING && buffer > restart_length))
+            if((_state == HLSStates.PLAYING && _stream.bufferLength < 10) || 
+               (_state == HLSStates.BUFFERING && buffer > 10))
              {
                 //Log.txt("appending data");
-                while(_tag < _buffer.length && _stream.bufferLength < Buffer.LENGTH * 2 / 3) {
+                while(_tag < _buffer.length && _stream.bufferLength < 20) {
                     try {
                         _stream.appendBytes(_buffer[_tag].data);
                     } catch (error:Error) {
@@ -141,7 +138,7 @@ package com.mangui.HLS.streaming {
                 }
             }
             // Set playback state and complete.
-            if(_stream.bufferLength < Buffer.LENGTH / 10) {
+            if(_stream.bufferLength < 3) {
                 if(reachedend ==true) {
                     if(_stream.bufferLength == 0) {
                         _complete();

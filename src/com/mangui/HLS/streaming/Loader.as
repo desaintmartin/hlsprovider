@@ -131,7 +131,7 @@ package com.mangui.HLS.streaming {
             if(_urlstreamloader.connected) {
                 _urlstreamloader.close();
             }
-            var level:Number = _getbestlevel(buffer);
+            var level:Number = _getnextlevel(buffer);
             var seqnum:Number;
             if(pts != 0) {
                var playliststartpts:Number = getPlayListStartPTS();
@@ -251,7 +251,7 @@ package com.mangui.HLS.streaming {
 
 
         /** Update the quality level for the next fragment load. **/
-        private function _getbestlevel(buffer:Number):Number {
+        private function _getnextlevel(buffer:Number):Number {
          var i:Number;
             if (_switchup == null) {
                var maxswitchup:Number=0;
@@ -294,23 +294,26 @@ package com.mangui.HLS.streaming {
             if(_last_fetch_duration == 0 || _last_segment_duration == 0) {
                return 0;
             }
-            var ratio:Number = _last_segment_duration/_last_fetch_duration;
+            var fetchratio:Number = _last_segment_duration/_last_fetch_duration;
+            var bufferratio:Number = 1000*buffer/_last_segment_duration;
+            //Log.txt("fetchratio:" + fetchratio);
+            //Log.txt("bufferratio:" + bufferratio);
             
-            if((_level < _levels.length-1) && (ratio > (1+_switchup[_level]))) {
-               //Log.txt("ratio:" + ratio +"> 1+_switchup[_level]="+(1+_switchup[_level]));
+            if((_level < _levels.length-1) && (fetchratio > (1+_switchup[_level]))) {
+               Log.txt("fetchratio:> 1+_switchup[_level]="+(1+_switchup[_level]));
                //Log.txt("switch to " + (_level+1));
                   //level up
                   return (_level+1);
-            } else if(_level > 0 &&(ratio < (1-_switchdown[_level]))) {
+            } else if(_level > 0 &&((fetchratio < (1-_switchdown[_level])) || (bufferratio < 2)) ) {
+                  Log.txt("bufferratio < 2 || fetchratio: < 1-_switchdown[_level]="+(1-_switchdown[_level]));
                   // find suitable level matching current bandwidth, starting from current level
                   for(var j:Number = _level; j > 0; j--) {
                      if( _levels[j].bitrate <= _last_bandwidth) {
-                          //Log.txt("ratio:" + ratio +"< 1-_switchdown[_level]="+(1-_switchdown[_level]));
-                          //Log.txt("switch to " + j);
                           return j;
                       }
                   }
-               } 
+                  return 0;
+               }
             return _level;
         }
 

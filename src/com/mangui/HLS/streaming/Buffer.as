@@ -46,6 +46,8 @@ package com.mangui.HLS.streaming {
         private var _buffer_last_pts:Number;
          /** next buffer time. **/
         private var _buffer_next_time:Number;
+         /** previous buffer time. **/
+        private var _last_buffer:Number;
         /** Current playback state. **/
         private var _state:String;
         /** Netstream instance used for playing the stream. **/
@@ -87,11 +89,12 @@ package com.mangui.HLS.streaming {
                } else {
                   play_position = playback_current_time -(playliststartpts-_playlist_start_pts)/1000;
                 }
-               if(play_position != _playback_current_position) {
+               if(play_position != _playback_current_position || buffer !=_last_buffer) {
                   if (play_position <0) {
                      play_position = 0;
                   }
                   _playback_current_position = play_position;
+                  _last_buffer = buffer;
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_playback_current_position, buffer:buffer, duration:_loader.getPlayListDuration()}));
                }
             }
@@ -269,6 +272,7 @@ package com.mangui.HLS.streaming {
                _playback_start_pts = 0;
                _buffer_next_time = _playback_start_time;
                _buffer_last_pts = 0;
+               _last_buffer = 0;
                _setState(HLSStates.BUFFERING);
                clearInterval(_interval);
                _interval = setInterval(_checkBuffer,100);

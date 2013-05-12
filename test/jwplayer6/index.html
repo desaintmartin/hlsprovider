@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><title>HLSProvider in JW6</title>
+
+</head>
+
+<body>
+<div style="text-align: center;">
+<div style="text-align: center;">
+<script type="text/javascript" src="jwplayer.js"></script>&nbsp;<big style="font-weight: bold;"><big><code>HLSProvider
+in JWPlayer 6</code></big></big><br>
+</div>
+<script type="text/javascript" src="jwplayer.js"></script>
+<div style="text-align: left;"><code><left></left></code><code>&lt;script
+type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/script&gt;<br>
+<br>
+</code><code><left>jwplayer("player").setup({</left><br>
+<left>playlist: [{</left><br>
+<left>file:'session0/stream.m3u8',</left><br>
+<left>provider:'<a href="../HLSProvider6.swf">HLSProvider6.swf</a>'</left><br>
+<left>}],</left><br>
+<left>autostart: 'true',</left><br>
+<left>width: 640,</left><br>
+<left>height: 480,</left><br>
+<left>primary: "flash"</left><br>
+<left>});</left></code><br>
+<br>
+<left></left></div>
+<div style="width: 640px; height: 360px;" id="player"></div>
+<script type="text/javascript">
+jwplayer("player").setup({
+playlist: [{
+file:'../session0/stream.m3u8',
+provider:'../HLSProvider6.swf'
+}],
+autostart: 'true',
+width: 640,
+height: 480,
+primary: "flash"
+});
+</script>
+</div>
+</body></html>

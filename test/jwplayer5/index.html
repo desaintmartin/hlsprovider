@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><title>HLSProvider in JW5</title>
+
+</head>
+<body style="color: Black; background-color: White;" link="Blue" vlink="Purple">
+<div style="text-align: center;">
+<div style="text-align: center;">
+<script type="text/javascript" src="jwplayer.js"></script>&nbsp;<big style="font-weight: bold;"><big><code>HLSProvider
+in JWPlayer 5</code></big></big><br>
+</div>
+<code></code></div>
+<code><br>
+&lt;script
+type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/script&gt;<br>
+<br>
+<left> jwplayer("player").setup({ <br>
+width: 640,height: 360,<br>
+autostart: 'true',<br>
+skin: "<a href="newtubedark.zip">newtubedark.zip</a>",<br>
+plugins: { '<a href="qualitymonitor.swf">qualitymonitor.swf</a>'
+: {} },<br>
+modes: [<br>
+{ type:'flash', src:'<a href="player.swf">player.swf</a>',
+config: {
+provider:'<a href="../HLSProvider5.swf">HLSProvider5.swf</a>',
+file:'session0/stream.m3u8' } },<br>
+{ type:'html5', config: { file:'session0/stream.m3u8' } }<br>
+]});<br>
+<br><span style="font-weight: bold;"></span></left></code><code><span style="font-weight: bold;">click on the top of the video to display/hide quality monitoring plugin</span></code><br><code><left>
+<br>
+</left></code>
+<div style="width: 640px; height: 360px; text-align: center;" id="player"></div>
+<script type="text/javascript">
+jwplayer("player").setup({
+width: 640,height: 360,
+autostart: 'true',
+skin: "newtubedark.zip",
+plugins: { 'qualitymonitor.swf' : {} },
+modes: [
+{ type:'flash', src:'player.swf', config: { provider:'../HLSProvider5.swf', file:'../session0/stream.m3u8' } },
+{ type:'html5', config: { file:'../session0/stream.m3u8' } }
+]});
+</script>
+</body></html>

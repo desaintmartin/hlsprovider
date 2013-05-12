@@ -11,5 +11,5 @@ supports seeking (also available on live playlist)<br>
 
 see examples here :
 
-http://streambox.fr/HLSProvider5<br>
-http://streambox.fr/HLSProvider6
+http://streambox.fr/HLSProvider/jwplayer5<br>
+http://streambox.fr/HLSProvider/jwplayer6

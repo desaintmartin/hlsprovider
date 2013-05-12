@@ -110,8 +110,11 @@ package com.mangui.HLS.streaming {
                      it could happen on live playlist in 2 scenarios :
                      if bandwidth available is lower than lowest quality needed bandwidth
                      after long pause
-                     => call seek(0) to force a restart of the playback session */
-                  seek(0);
+                     => seek(offset) to force a restart of the playback session 
+                     we target second segment
+                     */
+                  Log.txt("long pause on live stream or bad network quality");                     
+                  seek(_loader.getSegmentMaxDuration());
                   return;
                } else if(loadstatus > 0) {
                   //seqnum not available in playlist

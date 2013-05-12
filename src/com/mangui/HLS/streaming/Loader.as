@@ -126,6 +126,11 @@ package com.mangui.HLS.streaming {
             return _levels[_level].duration;
         };
 
+        /** Get segment max duration **/
+        public function getSegmentMaxDuration():Number {
+            return _levels[_level].targetduration;
+        };
+
         /** Load a fragment **/
         public function loadfragment(position:Number, pts:Number, buffer:Number,callback:Function, restart:Boolean):Number {
             if(_urlstreamloader.connected) {
@@ -136,7 +141,7 @@ package com.mangui.HLS.streaming {
             if(pts != 0) {
                var playliststartpts:Number = getPlayListStartPTS();
                if((playliststartpts < 0) || (pts < getPlayListStartPTS())) {
-                  Log.txt("long pause on live stream or bad network quality");
+                  Log.txt("requested pts:" + pts + ",playliststartpts:"+playliststartpts);
                   return -1;
                } else {
                   seqnum= _levels[level].getSeqNumNearestPTS(pts);

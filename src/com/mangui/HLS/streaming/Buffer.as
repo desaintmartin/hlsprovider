@@ -14,11 +14,6 @@ package com.mangui.HLS.streaming {
 
     /** Class that keeps the buffer filled. **/
     public class Buffer {
-
-
-        /** Default bufferlength in seconds. **/
-        private static const LENGTH:Number = 30;
-
         /** Reference to the framework controller. **/
         private var _hls:HLS;
         /** The buffer with video tags. **/

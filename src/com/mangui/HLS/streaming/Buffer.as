@@ -101,15 +101,13 @@ package com.mangui.HLS.streaming {
                   // good, new fragment being loaded
                   _loading = true;
                } else  if (loadstatus < 0) {
-                  /* it means sequence number requested is smaller than any seqnum available.
-                     it could happen on live playlist in 2 scenarios :
-                     if bandwidth available is lower than lowest quality needed bandwidth
-                     after long pause
-                     => seek(offset) to force a restart of the playback session
-                     we target second segment
-                     */
+                  /* it means PTS requested is smaller than playlist start PTS.
+                     it could happen on live playlist :
+                     - if bandwidth available is lower than lowest quality needed bandwidth
+                     - after long pause
+                     seek to offset 0 to force a restart of the playback session  */
                   Log.txt("long pause on live stream or bad network quality");
-                  seek(_loader.getSegmentMaxDuration());
+                  seek(0);
                   return;
                } else if(loadstatus > 0) {
                   //seqnum not available in playlist
@@ -120,11 +118,11 @@ package com.mangui.HLS.streaming {
                }
             }
             // Append tags to buffer.
-            if((_state == HLSStates.PLAYING && _stream.bufferLength < 10) ||
-               (_state == HLSStates.BUFFERING && buffer > 10))
+            if((_state == HLSStates.PLAYING && _stream.bufferLength < _loader.getSegmentMaxDuration()) ||
+               (_state == HLSStates.BUFFERING && buffer > _loader.getSegmentMaxDuration()))
              {
                 //Log.txt("appending data");
-                while(_tag < _buffer.length && _stream.bufferLength < 20) {
+                while(_tag < _buffer.length && _stream.bufferLength < 2*_loader.getSegmentMaxDuration()) {
                     try {
                         _stream.appendBytes(_buffer[_tag].data);
                     } catch (error:Error) {
@@ -187,6 +185,7 @@ package com.mangui.HLS.streaming {
             if (_playback_start_pts == 0) {
                _playback_start_pts = min_pts;
                _playlist_start_pts = _loader.getPlayListStartPTS();
+               _playback_start_time = (_playback_start_pts-_playlist_start_pts)/1000;
             }
             _buffer_last_pts = max_pts;
             tags.sort(_sortTagsbyDTS);

@@ -147,6 +147,24 @@ package com.mangui.HLS.streaming {
                   seqnum= _levels[level].getSeqNumNearestPTS(pts);
                }
             } else {
+               if (_hls.getType() == HLSTypes.LIVE) {
+                  var seek_position:Number;
+               /* follow HLS spec :
+                  If the EXT-X-ENDLIST tag is not present 
+                  and the client intends to play the media regularly (i.e. in playlist 
+                  order at the nominal playback rate), the client SHOULD NOT
+                  choose a segment which starts less than three target durations from
+                  the end of the Playlist file */
+                  var maxLivePosition:Number = Math.max(0,_levels[level].duration -3*_levels[level].targetduration);                  
+                  if (position == 0) {
+                     // seek 3 fragments from end
+                     seek_position = maxLivePosition;
+                  } else {
+                     seek_position = Math.min(position,maxLivePosition);
+                  }
+                  Log.txt("requested position:" + position + ",seek position:"+seek_position);
+                  position = seek_position;
+               }
                seqnum= _levels[level].getSeqNumNearestPosition(position);
             }
             if(seqnum <0) {

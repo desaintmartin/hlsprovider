@@ -6,7 +6,7 @@ package com.mangui.HLS.streaming {
     import com.mangui.HLS.streaming.*;
     import com.mangui.HLS.parsing.*;
     import com.mangui.HLS.utils.*;
-    
+
     import flash.media.*;
     import flash.net.*;
     import flash.utils.*;
@@ -93,7 +93,7 @@ package com.mangui.HLS.streaming {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_playback_current_position, buffer:buffer, duration:_loader.getPlayListDuration()}));
                }
             }
-            
+
             // Load new tags from fragment.
             if(buffer < _loader.getBufferLength() && !_loading) {
                var loadstatus:Number = _loader.loadfragment(_buffer_next_time,_buffer_last_pts,buffer,_loaderCallback,(_buffer.length == 0));
@@ -101,14 +101,14 @@ package com.mangui.HLS.streaming {
                   // good, new fragment being loaded
                   _loading = true;
                } else  if (loadstatus < 0) {
-                  /* it means sequence number requested is smaller than any seqnum available. 
+                  /* it means sequence number requested is smaller than any seqnum available.
                      it could happen on live playlist in 2 scenarios :
                      if bandwidth available is lower than lowest quality needed bandwidth
                      after long pause
-                     => seek(offset) to force a restart of the playback session 
+                     => seek(offset) to force a restart of the playback session
                      we target second segment
                      */
-                  Log.txt("long pause on live stream or bad network quality");                     
+                  Log.txt("long pause on live stream or bad network quality");
                   seek(_loader.getSegmentMaxDuration());
                   return;
                } else if(loadstatus > 0) {
@@ -120,7 +120,7 @@ package com.mangui.HLS.streaming {
                }
             }
             // Append tags to buffer.
-            if((_state == HLSStates.PLAYING && _stream.bufferLength < 10) || 
+            if((_state == HLSStates.PLAYING && _stream.bufferLength < 10) ||
                (_state == HLSStates.BUFFERING && buffer > 10))
              {
                 //Log.txt("appending data");
@@ -163,7 +163,7 @@ package com.mangui.HLS.streaming {
 
 
         /** Dispatch an error to the controller. **/
-        private function _errorHandler(error:Error):void { 
+        private function _errorHandler(error:Error):void {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR,error.toString()));
         };
 
@@ -215,7 +215,7 @@ package com.mangui.HLS.streaming {
         /** Toggle playback. **/
         public function pause():void {
             clearInterval(_interval);
-            if(_state == HLSStates.PAUSED) { 
+            if(_state == HLSStates.PAUSED) {
                 _setState(HLSStates.BUFFERING);
                 _stream.resume();
                 _interval = setInterval(_checkBuffer,100);

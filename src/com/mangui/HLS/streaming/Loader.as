@@ -145,6 +145,7 @@ package com.mangui.HLS.streaming {
                   return -1;
                } else {
                   seqnum= _levels[level].getSeqNumNearestPTS(pts);
+                  Log.txt("requested pts:" + pts + ",seqnum:"+seqnum);
                }
             } else {
                if (_hls.getType() == HLSTypes.LIVE) {
@@ -264,6 +265,7 @@ package com.mangui.HLS.streaming {
 				 _levels[i].pts_value = min_pts;
 				 _levels[i].pts_seqnum = _seqnum;
             }
+            Log.txt("SN " + _seqnum + " loaded,min/max PTS:" + min_pts +"/" + max_pts);
             _last_segment_duration = max_pts-min_pts;
 				_callback(_tags,min_pts,max_pts);
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));

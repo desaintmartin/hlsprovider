@@ -77,12 +77,12 @@ package com.mangui.HLS.streaming {
                buffer = (_buffer_last_pts - _playback_start_pts)/1000 - _stream.time;
                /** Current play time (time since beginning of playback) **/
                var playback_current_time:Number = (Math.round(_stream.time*100 + _playback_start_time*100)/100);
-               var playliststartpts:Number = _loader.getPlayListStartPTS();
+               var current_playlist_start_pts:Number = _loader.getPlayListStartPTS();
                var play_position:Number;
-               if(playliststartpts < 0) {
+               if(current_playlist_start_pts < 0) {
                   play_position = 0;
                } else {
-                  play_position = playback_current_time -(playliststartpts-_playlist_start_pts)/1000;
+                  play_position = playback_current_time -(current_playlist_start_pts-_playlist_start_pts)/1000;
                 }
                if(play_position != _playback_current_position || buffer !=_last_buffer) {
                   if (play_position <0) {
@@ -265,9 +265,8 @@ package com.mangui.HLS.streaming {
                 PlaybackStartPosition = position;
                _stream.seek(0);
                _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
-               _playback_start_time = position;
                _playback_start_pts = 0;
-               _buffer_next_time = _playback_start_time;
+               _buffer_next_time = position;
                _buffer_last_pts = 0;
                _last_buffer = 0;
                _setState(HLSStates.BUFFERING);

@@ -272,8 +272,10 @@ package com.mangui.HLS.muxing {
 				case _sdtId:
 						break;
 				default:
-					// Ignored other packet IDs
-					Log.txt("Discarding unassignable TS packets with id "+pid);
+					// Ignored other packet IDs, only report error if PMT not yet parsed 
+					// this helps to detect discarded TS packets because of PAT/PMT not being at beginning of TS fragment
+					if(_pmtId == -1)
+					   Log.txt("Discarding unassignable TS packets with id "+pid);
 					break;
 			}
 			// Jump to the next packet.

@@ -140,7 +140,7 @@ package com.mangui.HLS.streaming {
             var seqnum:Number;
             if(pts != 0) {
                var playliststartpts:Number = getPlayListStartPTS();
-               if((playliststartpts < 0) || (pts < getPlayListStartPTS())) {
+               if((playliststartpts == Number.NEGATIVE_INFINITY) || (pts < getPlayListStartPTS())) {
                   Log.txt("requested pts:" + pts + ",playliststartpts:"+playliststartpts);
                   return -1;
                } else {

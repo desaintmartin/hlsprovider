@@ -81,7 +81,7 @@ package com.mangui.HLS.parsing {
         
         public function getLevelstartPTS():Number {
             if((pts_value == 0) || (pts_seqnum < start_seqnum) || (pts_seqnum > end_seqnum)) {
-               return -1;
+               return Number.NEGATIVE_INFINITY;
             } else {
                return getstartPTS(start_seqnum);
             }

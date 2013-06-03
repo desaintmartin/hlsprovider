@@ -79,7 +79,7 @@ package com.mangui.HLS.streaming {
                var playback_current_time:Number = (Math.round(_stream.time*100 + _playback_start_time*100)/100);
                var current_playlist_start_pts:Number = _loader.getPlayListStartPTS();
                var play_position:Number;
-               if(current_playlist_start_pts < 0) {
+               if(current_playlist_start_pts ==Number.NEGATIVE_INFINITY) {
                   play_position = 0;
                } else {
                   play_position = playback_current_time -(current_playlist_start_pts-_playlist_start_pts)/1000;

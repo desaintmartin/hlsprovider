@@ -25,13 +25,13 @@ package com.mangui.HLS.muxing {
 		
 		
 		/** Packet ID of the AAC audio stream. **/
-		private var _aacId:Number = 257;
+		private var _aacId:Number = -1;
 		/** List with audio frames. **/
 		public var audioTags:Vector.<Tag> = new Vector.<Tag>();
 		/** List of packetized elementary streams with AAC. **/
 		private var _audioPES:Vector.<PES> = new Vector.<PES>();
 		/** Packet ID of the video stream. **/
-		private var _avcId:Number = 256;
+		private var _avcId:Number = -1;
 		/** PES packet that contains the first keyframe. **/
 		private var _firstKey:Number = -1;
 		/** Packet ID of the MP3 audio stream. **/

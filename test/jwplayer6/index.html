@@ -16,7 +16,8 @@ type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/scrip
 </code><code><left>jwplayer("player").setup({</left><br>
 <left>playlist: [{</left><br>
 <left>file:'session0/stream.m3u8',</left><br>
-<left>provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider6.swf">HLSProvider6.swf</a>'</left><br>
+<left>provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider6.swf">HLSProvider6.swf</a>',</left><br>
+<left>type:'mp4',</left><br>
 <left>}],</left><br>
 <left>autostart: 'true',</left><br>
 <left>width: 640,</left><br>
@@ -30,7 +31,8 @@ type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/scrip
 jwplayer("player").setup({
 playlist: [{
 file:'../session0/stream.m3u8',
-provider:'../HLSProvider6.swf'
+provider:'../HLSProvider6.swf',
+type:'mp4'
 }],
 autostart: 'true',
 width: 640,

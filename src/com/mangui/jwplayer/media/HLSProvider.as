@@ -21,11 +21,11 @@ package com.mangui.jwplayer.media {
 
 
         /** Reference to the framework. **/
-        private var _hls:HLS;
+        protected var _hls:HLS;
         /** Current quality level. **/
-        private var _level:Number;
+        protected var _level:Number;
         /** Reference to the quality levels. **/
-        private var _levels:Array;
+        protected var _levels:Array;
         /** Reference to the video object. **/
         private var _video:Video;
 
@@ -48,7 +48,7 @@ package com.mangui.jwplayer.media {
 
 
         /** Forward QOS metrics on fragment load. **/
-        private function _fragmentHandler(event:HLSEvent):void {
+        protected function _fragmentHandler(event:HLSEvent):void {
             _level = event.metrics.level;
             resize(_width,_height);
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_META, { metadata: {

@@ -16,4 +16,4 @@ echo ""
 echo "Compiling HLSProvider6.swf"
 echo ""
 
-$FLEXPATH/bin/mxmlc ../src/com/mangui/jwplayer/media/HLSProvider.as -sp ../src -o ../test/HLSProvider6.swf -library-path+=../lib/v6 -load-externs=../lib/v6/jwplayer-6-classes.xml -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true
+$FLEXPATH/bin/mxmlc ../src/com/mangui/jwplayer/media/HLSProvider6.as -sp ../src -o ../test/HLSProvider6.swf -library-path+=../lib/v6 -load-externs=../lib/v6/jwplayer-6-classes.xml -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true

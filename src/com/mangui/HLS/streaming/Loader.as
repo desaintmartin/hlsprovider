@@ -32,6 +32,8 @@ package com.mangui.HLS.streaming {
         private var _seqnum:Number;
         /** Quality level of the last fragment load. **/
         private var _level:int = 0;
+        /* overrided quality_manual_level level */
+        private var _manual_level:int = -1;
         /** Reference to the manifest levels. **/
         private var _levels:Array;
         /** Util for loading the fragment. **/
@@ -136,7 +138,14 @@ package com.mangui.HLS.streaming {
             if(_urlstreamloader.connected) {
                 _urlstreamloader.close();
             }
-            var level:Number = _getnextlevel(buffer);
+            var level:Number;
+            
+            if (_manual_level == -1) {
+               level = _getnextlevel(buffer);
+            } else {
+               level = _manual_level;
+            }
+            
             var seqnum:Number;
             if(pts != 0) {
                var playliststartpts:Number = getPlayListStartPTS();
@@ -346,5 +355,10 @@ package com.mangui.HLS.streaming {
         public function setWidth(width:Number):void {
             _width = width;
         }
+        
+        /* update playback quality level */
+        public function setPlaybackQuality(level:Number):void {
+           _manual_level = level;
+        };
     }
 }

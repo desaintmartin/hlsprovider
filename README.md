@@ -5,8 +5,9 @@ HTTP Live Streaming provider (MediaProvider compatible with JWPlayer 5 and 6)
 
 * supports live / VOD playlist
 * supports adaptive streaming, using state of the art switching algorithm
+* supports manual quality switching (JWPlayer 6 only)
+* supports seeking (with live playlist, user can also seek inside live window)
 * reports buffer size (on progress bar)
-* supports seeking (also available on live playlist)
 
 the following M3U8 tags are supported: 
 

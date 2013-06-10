@@ -115,8 +115,10 @@ package com.mangui.HLS {
             _loader.setWidth(width);
         };
 
-
+        /* update playback quality level */
+        public function setPlaybackQuality(level:Number):void {
+            _loader.setPlaybackQuality(level);
+            _buffer.seek(_buffer.getPosition());
+        };
     };
-
-
 }

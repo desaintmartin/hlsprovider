@@ -24,6 +24,8 @@ package com.mangui.HLS.streaming {
         private var _loader:Loader;
         /** Store that a fragment load is in progress. **/
         private var _loading:Boolean;
+        /** means that last fragment of a VOD playlist has been loaded */
+        private var _reached_vod_end:Boolean;
         /** Interval for checking buffer and position. **/
         private var _interval:Number;
         /** Next loading fragment sequence number. **/
@@ -70,7 +72,6 @@ package com.mangui.HLS.streaming {
 
         /** Check the bufferlength. **/
         private function _checkBuffer():void {
-            var reachedend:Boolean = false;
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
@@ -95,7 +96,7 @@ package com.mangui.HLS.streaming {
             }
 
             // Load new tags from fragment.
-            if(buffer < _loader.getBufferLength() && !_loading) {
+            if(_reached_vod_end == false && buffer < _loader.getBufferLength() && !_loading) {
                var loadstatus:Number = _loader.loadfragment(_buffer_next_time,_buffer_last_pts,buffer,_loaderCallback,(_buffer.length == 0));
                if (loadstatus == 0) {
                   // good, new fragment being loaded
@@ -113,7 +114,7 @@ package com.mangui.HLS.streaming {
                   //seqnum not available in playlist
                   if (_hls.getType() == HLSTypes.VOD) {
                      // if VOD playlist, it means we reached the end, on live playlist do nothing and wait ...
-                     reachedend = true;
+                     _reached_vod_end = true;
                   }
                }
             }
@@ -129,7 +130,7 @@ package com.mangui.HLS.streaming {
                         _errorHandler(new Error(_buffer[_tag].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (reachedend ==true && _tag == _buffer.length - 1) {
+                    if (_reached_vod_end ==true && _tag == _buffer.length - 1) {
                         _stream.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         _stream.appendBytes(new ByteArray());
                     }
@@ -138,7 +139,7 @@ package com.mangui.HLS.streaming {
             }
             // Set playback state and complete.
             if(_stream.bufferLength < 3) {
-                if(reachedend ==true) {
+                if(_reached_vod_end ==true) {
                     if(_stream.bufferLength == 0) {
                         _complete();
                     }
@@ -265,6 +266,7 @@ package com.mangui.HLS.streaming {
                 PlaybackStartPosition = position;
                _stream.seek(0);
                _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
+               _reached_vod_end = false;
                _playback_start_pts = 0;
                _buffer_next_time = position;
                _buffer_last_pts = 0;

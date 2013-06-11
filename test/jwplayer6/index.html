@@ -7,6 +7,7 @@
 <body>
 <div style="text-align: center;">
 <div style="text-align: center;">
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script type="text/javascript" src="jwplayer.js"></script>&nbsp;<big style="font-weight: bold;"><big><code>HLSProvider
 in JWPlayer 6</code></big></big><br>
 </div>
@@ -28,6 +29,17 @@ type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/scrip
 <br>
 <left></left></div>
 <div style="width: 640px; height: 360px;" id="player"></div>
+<div style="text-align:left" id="log2"></div>
+<br><br>
+<table id="history" class="data" border="0" cellspacing="0" cellpadding="0">
+   <tr class="header2">
+      <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">Date/Time</td>
+      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">Position</td>
+      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Bandwidth</td>
+      <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">Quality</td>
+      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Width</td>
+   </tr>
+</table>
 <script type="text/javascript">
 jwplayer("player").setup({
 playlist: [{
@@ -40,6 +52,64 @@ width: 640,
 height: 480,
 primary: "flash"
 });
+
+jwplayer("player").onError(function(event){
+  console.log(event);
+});
+
+jwplayer("player").onTime(function(evt){
+  currentTime = evt.position;
+  currentState = jwplayer("player").getState();
+  currentLength = jwplayer('player').getPlaylistItem().duration;  
+});
+
+ jwplayer("player").onMeta(function(event){
+   if(event.metadata.bandwidth) {
+      width = event.metadata.width;
+      currentLevel = event.metadata.currentLevel;
+      currentBandwidth = event.metadata.bandwidth;
+
+      
+      var html = 'Bandwidth: '+currentBandwidth;
+      html += ', Width: '+ width;
+      html += ', Quality: '+ currentLevel;
+      document.getElementById('log2').innerHTML = html;
+      dateTime();
+      $('#history tr:first').after('<tr><td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">'+currentDateTime+'</td><td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">'+currentTime+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+currentBandwidth+'</td><td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">'+currentLevel+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+width+'</td></tr>');
+      
+   }
+});
+          
+function dateTime(){
+  //format date/time;
+  var d = new Date();
+  var curr_date = d.getDate();
+  var curr_month = d.getMonth();
+  var curr_year = d.getFullYear();
+  
+  var curr_hour = d.getHours();
+  var curr_min = d.getMinutes();
+  var curr_sec = d.getSeconds();
+  
+  curr_hour = curr_hour + "";
+  if (curr_hour.length == 1) {
+     curr_hour = "0" + curr_hour;
+  }
+  
+  curr_min = curr_min + "";
+  if (curr_min.length == 1) {
+     curr_min = "0" + curr_min;
+  }
+  
+  curr_sec = curr_sec + "";
+  if (curr_sec.length == 1) {
+     curr_sec = "0" + curr_sec;
+  }
+
+  currentDateTime = curr_year+'-'+curr_month+'-'+curr_date+' '+curr_hour+':'+curr_min+':'+curr_sec;
+}
+
+
 </script>
 </div>
 </body></html>

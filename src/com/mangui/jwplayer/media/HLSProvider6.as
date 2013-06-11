@@ -27,6 +27,8 @@ package com.mangui.jwplayer.media {
                 if (_qualityLevels.length > 1) {
                    _qualityLevels.unshift({label: "auto"});
                 }
+                if(_currentQuality == -1)
+                  _currentQuality = 0;
                 sendQualityEvent(MediaEvent.JWPLAYER_MEDIA_LEVELS, _qualityLevels, _currentQuality);
              }
           }

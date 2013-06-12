@@ -59,8 +59,14 @@ jwplayer("player").onError(function(event){
 
 jwplayer("player").onTime(function(evt){
   currentTime = evt.position;
-  currentState = jwplayer("player").getState();
-  currentLength = jwplayer('player').getPlaylistItem().duration;  
+  currentBuffer = evt.bufferPercent;
+  currentLength = evt.duration;
+  
+      var html = 'evt.position: '+currentTime;
+      html += '<br>evt.bufferPercent: '+ currentBuffer;
+      html += '<br>evt.duration: '+ currentLength;
+      document.getElementById('log2').innerHTML = html;  
+  
 });
 
  jwplayer("player").onMeta(function(event){
@@ -68,12 +74,6 @@ jwplayer("player").onTime(function(evt){
       width = event.metadata.width;
       currentLevel = event.metadata.currentLevel;
       currentBandwidth = event.metadata.bandwidth;
-
-      
-      var html = 'Bandwidth: '+currentBandwidth;
-      html += ', Width: '+ width;
-      html += ', Quality: '+ currentLevel;
-      document.getElementById('log2').innerHTML = html;
       dateTime();
       $('#history tr:first').after('<tr><td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">'+currentDateTime+'</td><td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">'+currentTime+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+currentBandwidth+'</td><td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">'+currentLevel+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+width+'</td></tr>');
       

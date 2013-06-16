@@ -74,10 +74,10 @@ package com.mangui.jwplayer.media {
         /** Update playback position. **/
         private function _mediaTimeHandler(event:HLSEvent):void {
             item.duration = event.mediatime.duration;
-            var _bufferPercent:Number = 100*event.mediatime.buffer/event.mediatime.duration;
+            var _bufferPercent:Number = 100*(event.mediatime.position+event.mediatime.buffer)/event.mediatime.duration;
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {
                 bufferPercent: _bufferPercent,
-                offset: event.mediatime.position,
+                offset: 0,
                 position: event.mediatime.position,
                 duration: event.mediatime.duration
             });

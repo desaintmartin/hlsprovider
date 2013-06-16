@@ -50,7 +50,7 @@ package com.mangui.HLS.streaming {
         /** Netstream instance used for playing the stream. **/
         private var _stream:NetStream;
         /** The last tag that was appended to the buffer. **/
-        private var _tag:Number;
+        private var _buffer_current_index:Number;
         /** soundtransform object. **/
         private var _transform:SoundTransform;
         /** Reference to the video object. **/
@@ -118,31 +118,30 @@ package com.mangui.HLS.streaming {
                   }
                }
             }
-            // Append tags to buffer.
-            if((_state == HLSStates.PLAYING && _stream.bufferLength < _loader.getSegmentMaxDuration()) ||
+            if((_state == HLSStates.PLAYING) ||
                (_state == HLSStates.BUFFERING && buffer > _loader.getSegmentMaxDuration()))
              {
-                //Log.txt("appending data");
-                while(_tag < _buffer.length && _stream.bufferLength < 2*_loader.getSegmentMaxDuration()) {
+                //Log.txt("appending data into NetStream");
+                while(_buffer_current_index < _buffer.length && _stream.bufferLength < 2*_loader.getSegmentMaxDuration()) {
                     try {
-                        _stream.appendBytes(_buffer[_tag].data);
+                        _stream.appendBytes(_buffer[_buffer_current_index].data);
                     } catch (error:Error) {
-                        _errorHandler(new Error(_buffer[_tag].type+": "+ error.message));
+                        _errorHandler(new Error(_buffer[_buffer_current_index].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_reached_vod_end ==true && _tag == _buffer.length - 1) {
+                    if (_reached_vod_end ==true && _buffer_current_index == _buffer.length - 1) {
                         _stream.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         _stream.appendBytes(new ByteArray());
                     }
-                    _tag++;
+                    _buffer_current_index++;
                 }
             }
             // Set playback state and complete.
             if(_stream.bufferLength < 3) {
-                if(_reached_vod_end ==true) {
-                    if(_stream.bufferLength == 0) {
-                        _complete();
-                    }
+                if(_stream.bufferLength == 0 && _reached_vod_end ==true) {
+                    _setState(HLSStates.IDLE);
+                    clearInterval(_interval);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.COMPLETE));
                 } else if(_state == HLSStates.PLAYING) {
                     _setState(HLSStates.BUFFERING);
                 }
@@ -150,16 +149,6 @@ package com.mangui.HLS.streaming {
                 _setState(HLSStates.PLAYING);
             }
         };
-
-
-        /** The video completed playback. **/
-        private function _complete():void {
-            _setState(HLSStates.IDLE);
-            clearInterval(_interval);
-            // _stream.pause();
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.COMPLETE));
-        };
-
 
         /** Dispatch an error to the controller. **/
         private function _errorHandler(error:Error):void {
@@ -181,8 +170,8 @@ package com.mangui.HLS.streaming {
 
         /** Add a fragment to the buffer. **/
         private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number):void {
-            _buffer = _buffer.slice(_tag);
-            _tag = 0;
+            _buffer = _buffer.slice(_buffer_current_index);
+            _buffer_current_index = 0;
             if (_playback_start_pts == 0) {
                _playback_start_pts = min_pts;
                _playlist_start_pts = _loader.getPlayListStartPTS();
@@ -262,7 +251,7 @@ package com.mangui.HLS.streaming {
                _buffer = new Vector.<Tag>();
                _loader.clearLoader();
                _loading = false;
-               _tag = 0;
+               _buffer_current_index = 0;
                 PlaybackStartPosition = position;
                _stream.seek(0);
                _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);

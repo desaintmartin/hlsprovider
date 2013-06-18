@@ -318,9 +318,9 @@ package com.mangui.HLS.muxing {
 				} else if (typ == 0x03) {
 					_mp3Id = sid;
 				}
-				// Possible section length.
+				//  descriptor loop length
 				_data.position++;
-				var sel:uint = _data.readByte() & 0x0F;
+				var sel:uint = _data.readByte() & 0x3F;
 				_data.position += sel;
 				read += sel + 5;
 			}

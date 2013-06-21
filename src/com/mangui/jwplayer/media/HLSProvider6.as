@@ -32,7 +32,7 @@ package com.mangui.jwplayer.media {
             for (var i:Number = 0; i < _levels.length; i++) {
                _qualityLevels.push({label: level2label(_levels[i])});
             }
-            var autoLabel:String = "auto";
+            var autoLabel:String = "Auto";
             if(_currentQuality == 0) {
                autoLabel += ' (' + level2label(_levels[_level]) + ')';
             }

@@ -13,6 +13,8 @@ package com.mangui.HLS.muxing {
         public static const SYNCWORD:uint =  0xFFF1;
         /** ADTS Syncword with MPEG2 stream ID (used by e.g. Squeeze 7). **/
         public static const SYNCWORD_2:uint =  0xFFF9;
+        /** ADTS Syncword with MPEG2 stream ID (used by e.g. Envivio 4Caster). **/
+        public static const SYNCWORD_3:uint =  0xFFF8;
         /** ADTS/ADIF sample rates index. **/
         public static const RATES:Array = 
             [96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350];
@@ -24,7 +26,7 @@ package com.mangui.HLS.muxing {
         public static function getADIF(adts:ByteArray,position:Number=0):ByteArray {
             adts.position = position;
             var short:uint = adts.readUnsignedShort();
-            if(short == SYNCWORD || short == SYNCWORD_2) {
+            if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
                 var profile:uint = (adts.readByte() & 0xF0) >> 6;
                 // Correcting zero-index of ADIF and Flash playing only LC/HE.
                 if (profile > 3) { profile = 5; } else { profile = 2; }
@@ -59,7 +61,7 @@ package com.mangui.HLS.muxing {
             while(adts.bytesAvailable > 1) {
                 // Check for ADTS header
                 var short:uint = adts.readUnsignedShort();
-                if(short == SYNCWORD || short == SYNCWORD_2) {
+                if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
                     // Store samplerate for ofsetting timestamps.
                     if(!samplerate) {
                         samplerate = RATES[(adts.readByte() & 0x3C) >> 2];
@@ -73,10 +75,17 @@ package com.mangui.HLS.muxing {
                             rate: samplerate
                         });
                     }
-                    // ADTS header is 7 bytes.
-                    frame_length = ((adts.readUnsignedInt() & 0x0003FFE0) >> 5) - 7;
-                    frame_start = adts.position + 1;
-                    adts.position += frame_length + 1;
+                    if(short == SYNCWORD_3) {
+                       // ADTS header is 9 bytes.
+                       frame_length = ((adts.readUnsignedInt() & 0x0003FFE0) >> 5) - 9;
+                       frame_start = adts.position + 3;
+                       adts.position += frame_length + 3;
+                  } else {
+                       // ADTS header is 7 bytes.
+                       frame_length = ((adts.readUnsignedInt() & 0x0003FFE0) >> 5) - 7;
+                       frame_start = adts.position + 1;
+                       adts.position += frame_length + 1;
+                  }
                 } else {
                     throw new Error("ADTS frame length incorrect.");
                 }

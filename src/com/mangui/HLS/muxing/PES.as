@@ -45,7 +45,7 @@ package com.mangui.HLS.muxing {
             // Start code prefix and packet ID.
             var prefix:Number = data.readUnsignedInt();
             if((audio && (prefix > 448 || prefix < 445)) ||
-                (!audio && prefix != 480)) {
+                (!audio && prefix != 480 && prefix != 490)) {
                 throw new Error("PES start code not found or not AAC/AVC: " + prefix);
             }
             // Ignore packet length and marker bits.

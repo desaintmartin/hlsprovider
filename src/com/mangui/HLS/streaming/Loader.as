@@ -248,8 +248,8 @@ package com.mangui.HLS.streaming {
 
 			// Push regular tags into buffer.
 			for(var i:Number=0; i < _ts.videoTags.length; i++) {
-			   min_pts = Math.min(min_pts,_ts.videoTags[i].pts);
-			   max_pts = Math.max(max_pts,_ts.videoTags[i].pts);
+			   //min_pts = Math.min(min_pts,_ts.videoTags[i].pts);
+			   //max_pts = Math.max(max_pts,_ts.videoTags[i].pts);
 				_ts.videoTags[i].level = _level;
 				_ts.videoTags[i].seqnum = _seqnum;
 				_tags.push(_ts.videoTags[i]);

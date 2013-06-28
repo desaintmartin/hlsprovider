@@ -60,15 +60,15 @@ package com.mangui.HLS.muxing {
             // Grab the timestamp from PTS data (spread out over 5 bytes):
             // XXXX---X -------- -------X -------- -------X
             var _pts:uint = ((data.readUnsignedByte() & 14) << 29) +
-                ((data.readUnsignedShort() & 65535) << 14) +
-                ((data.readUnsignedShort() & 65535) >> 1);
+                ((data.readUnsignedShort() & 65534) << 14) +
+                ((data.readUnsignedShort() & 65534) >> 1);
             length -= 5;
             var _dts:uint = _pts;
             if(flags == 3) {
                 // Grab the DTS (like PTS)
                 _dts = ((data.readUnsignedByte() & 14) << 29) +
-                    ((data.readUnsignedShort() & 65535) << 14) +
-                    ((data.readUnsignedShort() & 65535) >> 1);
+                    ((data.readUnsignedShort() & 65534) << 14) +
+                    ((data.readUnsignedShort() & 65534) >> 1);
                 length -= 5;
             }
             pts = Math.round(_pts / PES.TIMESCALE);

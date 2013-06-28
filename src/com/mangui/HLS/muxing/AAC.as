@@ -58,7 +58,8 @@ package com.mangui.HLS.muxing {
             // Get raw AAC frames from audio stream.
             adts.position = position;
             var samplerate:uint;
-            while(adts.bytesAvailable > 1) {
+            // we need at least 6 bytes, 2 for sync word, 4 for frame length
+            while(adts.bytesAvailable > 5) {
                 // Check for ADTS header
                 var short:uint = adts.readUnsignedShort();
                 if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {

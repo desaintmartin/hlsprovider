@@ -25,7 +25,7 @@ package com.mangui.HLS.parsing {
         /** Width of the video in this level. **/
         public var width:Number;
         /** PTS from one segment **/
-        public var pts_value:Number;
+        public var pts_value:Number = -1;
         /** sequence number corresponding to PTS **/
         public var pts_seqnum:Number;
         /** min sequence number from M3U8. **/
@@ -58,7 +58,7 @@ package com.mangui.HLS.parsing {
 
         /** Return the sequence number nearest a PTS **/
         public function getSeqNumNearestPTS(pts:Number):Number {
-         if((pts_value == 0) || (pts_seqnum < start_seqnum) || (pts_seqnum > end_seqnum)) {
+         if((pts_value == -1) || (pts_seqnum < start_seqnum) || (pts_seqnum > end_seqnum)) {
             return -1;
          }
          
@@ -80,7 +80,7 @@ package com.mangui.HLS.parsing {
         }
         
         public function getLevelstartPTS():Number {
-            if((pts_value == 0) || (pts_seqnum < start_seqnum) || (pts_seqnum > end_seqnum)) {
+            if((pts_value == -1) || (pts_seqnum < start_seqnum) || (pts_seqnum > end_seqnum)) {
                return Number.NEGATIVE_INFINITY;
             } else {
                return getstartPTS(start_seqnum);

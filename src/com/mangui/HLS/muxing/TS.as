@@ -136,7 +136,9 @@ package com.mangui.HLS.muxing {
 					stamp = Math.round(_audioPES[i].pts + j * 1024 * 1000 / frames[j].rate);
 					tag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
 					if(i == _audioPES.length-1 && j == frames.length - 1) {
-						tag.push(_audioPES[i].data, frames[j].start, _audioPES[i].data.length - frames[j].start);
+					  if((_audioPES[i].data.length - frames[j].start)>0) {
+						  tag.push(_audioPES[i].data, frames[j].start, _audioPES[i].data.length - frames[j].start);
+					  }
 					} else { 
 						tag.push(_audioPES[i].data, frames[j].start, frames[j].length);
 					}

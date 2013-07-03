@@ -3,35 +3,53 @@
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
 </head>
-
-<body>
+<body style="color: Black; background-color: White;" link="Blue" vlink="Purple">
 <div style="text-align: center;">
 <div style="text-align: center;">
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script type="text/javascript" src="jwplayer.js"></script>&nbsp;<big style="font-weight: bold;"><big><code>HLSProvider
 in JWPlayer 6</code></big></big><br>
 </div>
-<script type="text/javascript" src="jwplayer.js"></script>
-<div style="text-align: left;"><code><left></left></code><code>&lt;script
+<code></code></div>
+<code><br>
+&lt;script
 type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/script&gt;<br>
 <br>
-</code><code><left>jwplayer("player").setup({</left><br>
-<left>playlist: [{</left><br>
-<left>file:'session0/stream.m3u8',</left><br>
-<left>provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider6.swf">HLSProvider6.swf</a>',</left><br>
-<left>type:'mp4',</left><br>
-<left>}],</left><br>
-<left>autostart: 'true',</left><br>
-<left>width: 640,</left><br>
-<left>height: 480,</left><br>
-<left>primary: "flash"</left><br>
-<left>});</left></code><br>
+<left> jwplayer("player").setup({ <br>
+playlist: [{<br>
+file:'http://www.mywebsite.com/stream.m3u8',<br>
+provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider6.swf">HLSProvider6.swf</a>',<br>
+type:'mp4',<br>
+}],<br>
+width: 640,<br>
+height: 480,<br>
+primary: "flash"<br>
+});</left></code>
 <br>
-<left></left></div>
-<div style="width: 640px; height: 360px;" id="player"></div>
-<div style="text-align:left" id="log2"></div>
-<br><br>
-<table id="history" class="data" border="0" cellspacing="0" cellpadding="0">
+<left></left>
+<h3> Test Videos </h3>
+<div> The following videos should stream correctly. Each time an
+issue is reported with a sample playlist, it will be added in the list
+and verified after bugfixing </div>
+<ul id="streamlist">
+</ul>
+<div style="text-align: left;">
+<script type="text/javascript" src="../playlists/streams.js"></script>
+<script type="text/javascript">
+function listStreams(list, container) {
+for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
+entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
+document.getElementById(container).appendChild(entry);
+}
+}
+listStreams(teststreams, "streamlist");
+</script>
+</div><div style="width: 640px; height: 360px;" id="player"></div>
+<div style="text-align: left;" id="log2"></div>
+<br>
+<br>
+<table id="history" class="data" border="0" cellpadding="0" cellspacing="0">
+<tbody>
    <tr class="header2">
       <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">Date/Time</td>
       <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">Position</td>
@@ -39,15 +57,15 @@ type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/scrip
       <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">Quality</td>
       <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Width</td>
    </tr>
+</tbody>
 </table>
 <script type="text/javascript">
 jwplayer("player").setup({
 playlist: [{
-file:'../session0/stream.m3u8',
+file:'../playlists/test_001/stream.m3u8',
 provider:'HLSProvider6.swf',
 type:'mp4'
 }],
-autostart: 'true',
 width: 640,
 height: 480,
 primary: "flash"
@@ -56,7 +74,11 @@ primary: "flash"
 jwplayer("player").onError(function(event){
   console.log(event);
 });
-
+function loadStream(url) {
+jwplayer("player").load({file: url,provider: 'HLSProvider6.swf',type:'mp4'});
+jwplayer("player").play();
+return false;
+}
 jwplayer("player").onTime(function(evt){
   currentTime = evt.position;
   currentBuffer = evt.bufferPercent;

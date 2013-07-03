@@ -17,7 +17,6 @@ type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/scrip
 <br>
 <left> jwplayer("player").setup({ <br>
 width: 640,height: 360,<br>
-autostart: 'true',<br>
 skin: "<a href="newtubedark.zip">newtubedark.zip</a>",<br>
 plugins: { '<a href="https://github.com/mangui/qualitymonitor/raw/master/qualitymonitor.swf">qualitymonitor.swf</a>'
 : {} },<br>
@@ -25,16 +24,37 @@ modes: [<br>
 { type:'flash', src:'<a href="player.swf">player.swf</a>',
 config: {
 provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider5.swf">HLSProvider5.swf</a>',
-file:'session0/stream.m3u8' } },<br>
-{ type:'html5', config: { file:'session0/stream.m3u8' } }<br>
+file:'http://www.mywebsite.com/stream.m3u8' } },<br>
+{ type:'html5', config: { file:'http://www.mywebsite.com/stream.m3u8' } }<br>
 ]});<br>
-<br><span style="font-weight: bold;"></span></left></code><code><span style="font-weight: bold;">click on the top of the video to display/hide quality monitoring plugin</span></code><br><code><left>
 <br>
+<span style="font-weight: bold;"></span></left></code><code><span style="font-weight: bold;">click on the top of the video to
+display/hide quality monitoring plugin</span></code><br>
+<code><left><br>
 </left></code>
-<div style="width: 640px; height: 360px; text-align: center;" id="player"></div>
-<div style="text-align:left" id="log2"></div>
-<br><br>
-<table id="history" class="data" border="0" cellspacing="0" cellpadding="0">
+<h3> Test Videos </h3>
+<div> The following videos should stream correctly. Each time an
+issue is reported with a sample playlist, it will be added in the list
+and verified after bugfixing </div>
+<ul id="streamlist">
+</ul>
+<div style="text-align: left;">
+<script type="text/javascript" src="../playlists/streams.js"></script>
+<script type="text/javascript">
+function listStreams(list, container) {
+for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
+entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
+document.getElementById(container).appendChild(entry);
+}
+}
+listStreams(teststreams, "streamlist");
+</script>
+</div><div style="width: 640px; height: 360px;" id="player"></div>
+<div style="text-align: left;" id="log2"></div>
+<br>
+<br>
+<table id="history" class="data" border="0" cellpadding="0" cellspacing="0">
+<tbody>
    <tr class="header2">
       <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">Date/Time</td>
       <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">Position</td>
@@ -42,21 +62,25 @@ file:'session0/stream.m3u8' } },<br>
       <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">Quality</td>
       <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Width</td>
    </tr>
+</tbody>
 </table>
 <script type="text/javascript">
 jwplayer("player").setup({
 width: 640,height: 360,
-autostart: 'true',
 skin: "newtubedark.zip",
 plugins: { 'qualitymonitor.swf' : {} },
 modes: [
-{ type:'flash', src:'player.swf', config: { provider:'HLSProvider5.swf', file:'../session0/stream.m3u8' } },
-{ type:'html5', config: { file:'../session0/stream.m3u8' } }
+{ type:'flash', src:'player.swf', config: { provider:'HLSProvider5.swf', file:'../playlists/test_001/stream.m3u8' } },
+{ type:'html5', config: { file:'../playlists/test_001/stream.m3u8' } }
 ]});
 jwplayer("player").onError(function(event){
   console.log(event);
 });
-
+function loadStream(url) {
+jwplayer("player").load({file: url,provider: 'HLSProvider5.swf'});
+jwplayer("player").play();
+return false;
+}
 jwplayer("player").onTime(function(evt){
   currentTime = evt.position;
   currentBuffer = evt.bufferPercent;
@@ -109,4 +133,5 @@ function dateTime(){
   currentDateTime = curr_year+'-'+curr_month+'-'+curr_date+' '+curr_hour+':'+curr_min+':'+curr_sec;
 }
 </script>
+</div>
 </body></html>

@@ -172,7 +172,7 @@ package com.mangui.HLS.streaming {
         private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number):void {
             _buffer = _buffer.slice(_buffer_current_index);
             _buffer_current_index = 0;
-            if (_playback_start_pts == 0) {
+            if (_playback_start_pts == Number.NEGATIVE_INFINITY) {
                _playback_start_pts = min_pts;
                _playlist_start_pts = _loader.getPlayListStartPTS();
                _playback_start_time = (_playback_start_pts-_playlist_start_pts)/1000;
@@ -256,7 +256,7 @@ package com.mangui.HLS.streaming {
                _stream.seek(0);
                _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                _reached_vod_end = false;
-               _playback_start_pts = 0;
+               _playback_start_pts = Number.NEGATIVE_INFINITY;
                _buffer_next_time = position;
                _buffer_last_pts = 0;
                _last_buffer = 0;

@@ -207,6 +207,7 @@ package com.mangui.HLS.streaming {
         /** Store the manifest data. **/
         private function _levelsHandler(event:HLSEvent):void {
             _levels = event.levels;
+            _level = 0;
         };
 
 
@@ -220,8 +221,8 @@ package com.mangui.HLS.streaming {
 		
 		/** Handles the actual reading of the TS fragment **/
 		private function _readHandler(e:Event):void {
-		   var min_pts:Number = Number.MAX_VALUE;
-		   var max_pts:Number = 0;
+		   var min_pts:Number = Number.POSITIVE_INFINITY;
+		   var max_pts:Number = Number.NEGATIVE_INFINITY;
 		   
 			// Save codecprivate when not available.
 			if(!_levels[_level].avcc && !_levels[_level].adif) {

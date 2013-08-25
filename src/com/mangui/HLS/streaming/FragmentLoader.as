@@ -17,7 +17,7 @@ package com.mangui.HLS.streaming {
 
 
     /** Class that fetches fragments. **/
-    public class Loader {
+    public class FragmentLoader {
         /** Reference to the HLS controller. **/
         private var _hls:HLS;
         /** Bandwidth of the last loaded fragment **/
@@ -57,7 +57,7 @@ package com.mangui.HLS.streaming {
 
 
         /** Create the loader. **/
-        public function Loader(hls:HLS):void {
+        public function FragmentLoader(hls:HLS):void {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST, _levelsHandler);
             _urlstreamloader = new URLStream();

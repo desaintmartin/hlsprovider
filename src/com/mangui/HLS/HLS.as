@@ -16,9 +16,9 @@ package com.mangui.HLS {
         /** The playback buffer. **/
         private var _buffer:Buffer;
         /** The quality monitor. **/
-        private var _loader:Loader;
+        private var _loader:FragmentLoader;
         /** The manifest parser. **/
-        private var _getter:Getter;
+        private var _manifestLoader:ManifestLoader;
         /** The video object that displays the stream. **/
         private var _video:Object;
 
@@ -26,8 +26,8 @@ package com.mangui.HLS {
         /** Create and connect all components. **/
         public function HLS(video:Object):void {
             _video = video;
-            _getter = new Getter(this);
-            _loader = new Loader(this);
+            _manifestLoader = new ManifestLoader(this);
+            _loader = new FragmentLoader(this);
             _buffer = new Buffer(this,_loader,_video);
         };
 
@@ -50,7 +50,7 @@ package com.mangui.HLS {
 
         /** Return the list with bitrate levels. **/
         public function getLevels():Array {
-            return _getter.getLevels();
+            return _manifestLoader.getLevels();
         };
 
 
@@ -74,7 +74,7 @@ package com.mangui.HLS {
 
         /** Return the type of stream. **/
         public function getType():String {
-            return _getter.getType();
+            return _manifestLoader.getType();
         };
 
 
@@ -82,7 +82,7 @@ package com.mangui.HLS {
         public function play(url:String,start:Number=0):void {
             _buffer.stop();
             _buffer.PlaybackStartPosition = start;
-            _getter.load(url);
+            _manifestLoader.load(url);
         };
 
 

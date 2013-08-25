@@ -9,8 +9,8 @@ package com.mangui.HLS.streaming {
     import flash.utils.*;
 
 
-    /** Loader for hls streaming manifests. **/
-    public class Getter {
+    /** Loader for hls manifests. **/
+    public class ManifestLoader {
 
 
         /** Reference to the hls framework controller. **/
@@ -35,7 +35,7 @@ package com.mangui.HLS.streaming {
         private var _reload_playlists_timer:uint;
 
         /** Setup the loader. **/
-        public function Getter(hls:HLS) {
+        public function ManifestLoader(hls:HLS) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _levels = [];

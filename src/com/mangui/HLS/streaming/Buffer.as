@@ -21,7 +21,7 @@ package com.mangui.HLS.streaming {
         /** NetConnection legacy stuff. **/
         private var _connection:NetConnection;
         /** The fragment loader. **/
-        private var _loader:Loader;
+        private var _loader:FragmentLoader;
         /** Store that a fragment load is in progress. **/
         private var _loading:Boolean;
         /** means that last fragment of a VOD playlist has been loaded */
@@ -57,7 +57,7 @@ package com.mangui.HLS.streaming {
         private var _video:Object;
 
         /** Create the buffer. **/
-        public function Buffer(hls:HLS, loader:Loader, video:Object):void {
+        public function Buffer(hls:HLS, loader:FragmentLoader, video:Object):void {
             _hls = hls;
             _loader = loader;
             _video = video;

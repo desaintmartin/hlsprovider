@@ -6,8 +6,9 @@ package {
     import flash.events.*;
     import flash.external.ExternalInterface;
     import flash.geom.Rectangle;
+    import flash.media.Video;
     import flash.media.StageVideo;
-    import flash.net.FileReference;
+    import flash.media.StageVideoAvailability;
     import flash.utils.setTimeout;
 
 
@@ -92,7 +93,7 @@ package {
         };
         private function _mediaTimeHandler(event:HLSEvent):void {
             if(_callbacks.onposition) {
-                ExternalInterface.call(_callbacks.onposition,event.position);
+                ExternalInterface.call(_callbacks.onposition,event.mediatime);
             }
         };
         private function _stateHandler(event:HLSEvent):void {
@@ -136,7 +137,6 @@ package {
 
         /** Mouse click handler. **/
         private function _clickHandler(event:MouseEvent):void {
-            // new FileReference().save(_hls.getFile(),'video.flv');
             if(stage.displayState == StageDisplayState.FULL_SCREEN) {
                 stage.displayState = StageDisplayState.NORMAL;
             } else {
@@ -148,9 +148,16 @@ package {
 
         /** StageVideo detector. **/
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
-            _video = stage.stageVideos[0];
-            _video.viewPort = new Rectangle(0,0,stage.stageWidth,stage.stageHeight);
-            _hls = new HLS(_video);
+            var available:Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
+            if (available && stage.stageVideos.length > 0) {
+              _video = stage.stageVideos[0];
+              _video.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
+              _hls = new HLS(_video);
+            } else {
+              var video:Video = new Video(stage.stageWidth, stage.stageHeight);
+              addChild(video);
+              _hls = new HLS(video);
+            }
             _hls.setWidth(stage.stageWidth);
             _hls.addEventListener(HLSEvent.COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);

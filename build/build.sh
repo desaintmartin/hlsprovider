@@ -1,10 +1,10 @@
 FLEXPATH=../../flex_sdk_4.6
 
-# echo ""
-# echo "Compiling chromelessPlayer.swf"
-# echo ""
+echo ""
+echo "Compiling chromelessPlayer.swf"
+echo ""
 
-# $FLEXPATH/bin/mxmlc ../src/ChromelessPlayer.as -sp ../src -o ../chromelessPlayer.swf -use-network=false -optimize=true -incremental=false -target-player="10.2" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
+$FLEXPATH/bin/mxmlc ../src/ChromelessPlayer.as -sp ../src -o ../test/chromeless/chromelessPlayer.swf -use-network=false -optimize=true -incremental=false -target-player="11.1" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
 
 echo ""
 echo "Compiling HLSProvider5.swf"

@@ -139,9 +139,9 @@ package com.mangui.HLS.streaming {
             // Set playback state and complete.
             if(_stream.bufferLength < 3) {
                 if(_stream.bufferLength == 0 && _reached_vod_end ==true) {
-                    _setState(HLSStates.IDLE);
                     clearInterval(_interval);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.COMPLETE));
+                    _setState(HLSStates.IDLE);
                 } else if(_state == HLSStates.PLAYING) {
                     _setState(HLSStates.BUFFERING);
                 }

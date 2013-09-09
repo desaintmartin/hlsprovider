@@ -54,6 +54,9 @@ package com.mangui.HLS.streaming {
         private var _switchup:Array = null;
         /** switch down threshold **/
         private var _switchdown:Array = null;
+        /* variable to deal with IO Error retry */
+        private var _bIOError:Boolean=false; 
+        private var _nIOErrorCount:Number=0;
 
 
         /** Create the loader. **/
@@ -68,7 +71,9 @@ package com.mangui.HLS.streaming {
 
         /** Fragment load completed. **/
         private function _completeHandler(event:Event):void {
-			   //Log.txt("loading completed");
+            //Log.txt("loading completed");
+            _nIOErrorCount = 0;
+            _bIOError = false;
             // Calculate bandwidth
             _last_fetch_duration = (new Date().valueOf() - _started);
             _last_bandwidth = Math.round(_urlstreamloader.bytesAvailable * 8000 / _last_fetch_duration);
@@ -90,14 +95,23 @@ package com.mangui.HLS.streaming {
 			}
 			_ts = null;
 			_tags = null;
+      _nIOErrorCount = 0;
+      _bIOError = false;
 		}
 
 
         /** Catch IO and security errors. **/
         private function _errorHandler(event:ErrorEvent):void {
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, event.toString()));
+            _bIOError=true;
+            _nIOErrorCount++;
+            if (_nIOErrorCount >= 5) {
+              _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, event.toString()));
+            }
         };
-   
+        
+        public function getIOError():Boolean { 
+          return _bIOError;
+        };
 
         /** Get the quality level for the next fragment. **/
         public function getLevel():Number {
@@ -139,6 +153,8 @@ package com.mangui.HLS.streaming {
                 _urlstreamloader.close();
             }
             var level:Number;
+	    // reset IO Error when loading new fragment
+            _bIOError = false;
             
             if (_manual_level == -1) {
                level = _getnextlevel(buffer);

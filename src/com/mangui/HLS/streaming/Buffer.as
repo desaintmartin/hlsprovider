@@ -96,7 +96,7 @@ package com.mangui.HLS.streaming {
             }
 
             // Load new tags from fragment.
-            if(_reached_vod_end == false && buffer < _loader.getBufferLength() && !_loading) {
+            if(_reached_vod_end == false && buffer < _loader.getBufferLength() && ((!_loading) || _loader.getIOError() == true)) {
                var loadstatus:Number = _loader.loadfragment(_buffer_next_time,_buffer_last_pts,buffer,_loaderCallback,(_buffer.length == 0));
                if (loadstatus == 0) {
                   // good, new fragment being loaded

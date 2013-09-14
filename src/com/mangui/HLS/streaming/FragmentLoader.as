@@ -293,6 +293,11 @@ package com.mangui.HLS.streaming {
             }
             Log.txt("SN " + _seqnum + " loaded,min/max PTS:" + min_pts +"/" + max_pts);
             _last_segment_duration = max_pts-min_pts;
+            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
+            if (frag.duration !=  (_last_segment_duration/1000) ) {
+              frag.duration = _last_segment_duration/1000;
+              _levels[_level].updateStart();
+	          }
 				_callback(_tags,min_pts,max_pts);
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
 			} catch (error:Error) {

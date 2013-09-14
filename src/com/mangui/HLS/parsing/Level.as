@@ -102,5 +102,15 @@ package com.mangui.HLS.parsing {
         public function setFragments(_fragments:Array):void {
             fragments = _fragments;
         };
+        
+      public function updateStart() : void {
+         var offset:Number = fragments[0].start;
+         for(var i:Number = 0; i < fragments.length; i++) {
+            fragments[i].start = offset;
+            offset+=fragments[i].duration;         
+         }
+         duration = offset;
+         return;
+      }
     }
 }

@@ -57,7 +57,9 @@ package com.mangui.HLS.streaming {
         /* variable to deal with IO Error retry */
         private var _bIOError:Boolean=false; 
         private var _nIOErrorCount:Number=0;
-
+        /** */
+        private var _first_playlist_fragment_loading:Boolean=false;
+        private var _first_playlist_fragment_loaded:Boolean=false;
 
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
@@ -149,23 +151,33 @@ package com.mangui.HLS.streaming {
 
         /** Load a fragment **/
         public function loadfragment(position:Number, pts:Number, buffer:Number,callback:Function, restart:Boolean):Number {
+          //Log.txt("loadfragment(position/pts):(" + position + "/" + pts + ")");
+          
             if(_urlstreamloader.connected) {
                 _urlstreamloader.close();
             }
             var level:Number;
-	    // reset IO Error when loading new fragment
-            _bIOError = false;
-            
-            if (_manual_level == -1) {
-               level = _getnextlevel(buffer);
-            } else {
-               level = _manual_level;
+            if(_first_playlist_fragment_loaded == true) {
+              _first_playlist_fragment_loaded = false;
+              level = _level;
+              } else {
+              if (_manual_level == -1) {
+                 level = _getnextlevel(buffer);
+              } else {
+                 level = _manual_level;
+              }
             }
-            
+            // reset IO Error when loading new fragment
+            _bIOError = false;
+                        
             var seqnum:Number;
             if(pts != 0) {
-               var playliststartpts:Number = getPlayListStartPTS();
-               if((playliststartpts == Number.NEGATIVE_INFINITY) || (pts < getPlayListStartPTS())) {
+               var playliststartpts:Number = _levels[level].getLevelstartPTS();
+               if(playliststartpts == Number.NEGATIVE_INFINITY) {
+                  seqnum = _levels[level].fragments[0].seqnum;
+                  Log.txt("requested pts:" + pts + ",playliststartpts not defined, get 1st segment:"+seqnum);
+                  _first_playlist_fragment_loading = true;
+                } else if(pts < getPlayListStartPTS()) {
                   Log.txt("requested pts:" + pts + ",playliststartpts:"+playliststartpts);
                   return -1;
                } else {
@@ -235,75 +247,89 @@ package com.mangui.HLS.streaming {
         };
 		
 		
-		/** Handles the actual reading of the TS fragment **/
-		private function _readHandler(e:Event):void {
-		   var min_pts:Number = Number.POSITIVE_INFINITY;
-		   var max_pts:Number = Number.NEGATIVE_INFINITY;
-		   
-			// Save codecprivate when not available.
-			if(!_levels[_level].avcc && !_levels[_level].adif) {
-				_levels[_level].avcc = _ts.getAVCC();
-				_levels[_level].adif = _ts.getADIF();
-			}
-			// Push codecprivate tags only when switching.
-			if(_switchlevel) {
-				if (_ts.videoTags.length > 0) {
-					// Audio only file don't have videoTags[0]
-					var avccTag:Tag = new Tag(Tag.AVC_HEADER,_ts.videoTags[0].pts,_ts.videoTags[0].dts,true,_level,_seqnum);
-					avccTag.push(_levels[_level].avcc,0,_levels[_level].avcc.length);
-					_tags.push(avccTag);
-				}
-				if (_ts.audioTags.length > 0) {
-					if(_ts.audioTags[0].type == Tag.AAC_RAW) {
-						var adifTag:Tag = new Tag(Tag.AAC_HEADER,_ts.audioTags[0].pts,_ts.audioTags[0].dts,true,_level,_seqnum);
-						adifTag.push(_levels[_level].adif,0,2)
-						_tags.push(adifTag);
-					}
-				}
-			}
+    /** Handles the actual reading of the TS fragment **/
+    private function _readHandler(e:Event):void {
+       var min_pts:Number = Number.POSITIVE_INFINITY;
+       var max_pts:Number = Number.NEGATIVE_INFINITY;
+       
+       /* in case we are loading first fragment of a playlist, just retrieve 
+       minimum PTS value to synchronize playlist PTS / sequence number. 
+       then return an error. this will force the Buffer Manager to reload the
+       fragment at right offset */
+       if(_first_playlist_fragment_loading == true) {
+          for(var k:Number=0; k < _ts.audioTags.length; k++) {
+             min_pts = Math.min(min_pts,_ts.audioTags[k].pts);
+         }
+         _levels[_level].pts_value = min_pts;
+         _levels[_level].pts_seqnum = _seqnum;
+         _first_playlist_fragment_loading = false;
+         _first_playlist_fragment_loaded = true;
+         _bIOError = true;
+         return;
+       }
+
+      // Save codecprivate when not available.
+      if(!_levels[_level].avcc && !_levels[_level].adif) {
+        _levels[_level].avcc = _ts.getAVCC();
+        _levels[_level].adif = _ts.getADIF();
+      }
+      // Push codecprivate tags only when switching.
+      if(_switchlevel) {
+        if (_ts.videoTags.length > 0) {
+          // Audio only file don't have videoTags[0]
+          var avccTag:Tag = new Tag(Tag.AVC_HEADER,_ts.videoTags[0].pts,_ts.videoTags[0].dts,true,_level,_seqnum);
+          avccTag.push(_levels[_level].avcc,0,_levels[_level].avcc.length);
+          _tags.push(avccTag);
+        }
+        if (_ts.audioTags.length > 0) {
+          if(_ts.audioTags[0].type == Tag.AAC_RAW) {
+            var adifTag:Tag = new Tag(Tag.AAC_HEADER,_ts.audioTags[0].pts,_ts.audioTags[0].dts,true,_level,_seqnum);
+            adifTag.push(_levels[_level].adif,0,2)
+            _tags.push(adifTag);
+          }
+        }
+      }
 
 
-			// Push regular tags into buffer.
-			for(var i:Number=0; i < _ts.videoTags.length; i++) {
-			   //min_pts = Math.min(min_pts,_ts.videoTags[i].pts);
-			   //max_pts = Math.max(max_pts,_ts.videoTags[i].pts);
-				_ts.videoTags[i].level = _level;
-				_ts.videoTags[i].seqnum = _seqnum;
-				_tags.push(_ts.videoTags[i]);
-			}
-			for(var j:Number=0; j < _ts.audioTags.length; j++) {
-			   min_pts = Math.min(min_pts,_ts.audioTags[j].pts);
-			   max_pts = Math.max(max_pts,_ts.audioTags[j].pts);
-				_ts.audioTags[j].level = _level;
-				_ts.audioTags[j].seqnum = _seqnum;
-				_tags.push(_ts.audioTags[j]);
-			}
-			
-			// change the media to null if the file is only audio.
-			if(_ts.videoTags.length == 0) {
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO));
-			}
-			
-			try {
-				_switchlevel = false;
-				// for now we assume that all playlists are aligned on seqnum / PTS
-				 for(i = 0; i < _levels.length; i++) {
-				 _levels[i].pts_value = min_pts;
-				 _levels[i].pts_seqnum = _seqnum;
-            }
-            Log.txt("SN " + _seqnum + " loaded,min/max PTS:" + min_pts +"/" + max_pts);
-            _last_segment_duration = max_pts-min_pts;
-            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
-            if (frag.duration !=  (_last_segment_duration/1000) ) {
-              frag.duration = _last_segment_duration/1000;
-              _levels[_level].updateStart();
-	          }
-				_callback(_tags,min_pts,max_pts);
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
-			} catch (error:Error) {
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
-			}
-		}
+      // Push regular tags into buffer.
+      for(var i:Number=0; i < _ts.videoTags.length; i++) {
+         //min_pts = Math.min(min_pts,_ts.videoTags[i].pts);
+         //max_pts = Math.max(max_pts,_ts.videoTags[i].pts);
+        _ts.videoTags[i].level = _level;
+        _ts.videoTags[i].seqnum = _seqnum;
+        _tags.push(_ts.videoTags[i]);
+      }
+      for(var j:Number=0; j < _ts.audioTags.length; j++) {
+         min_pts = Math.min(min_pts,_ts.audioTags[j].pts);
+         max_pts = Math.max(max_pts,_ts.audioTags[j].pts);
+        _ts.audioTags[j].level = _level;
+        _ts.audioTags[j].seqnum = _seqnum;
+        _tags.push(_ts.audioTags[j]);
+      }
+      
+      // change the media to null if the file is only audio.
+      if(_ts.videoTags.length == 0) {
+        _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO));
+      }
+      
+      try {
+         _switchlevel = false;
+         _levels[_level].pts_value = min_pts;
+         _levels[_level].pts_seqnum = _seqnum;
+
+         Log.txt("SN " + _seqnum + " loaded,min/max PTS:" + min_pts +"/" + max_pts);
+         _last_segment_duration = max_pts-min_pts;
+         var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
+         if (frag.duration !=  (_last_segment_duration/1000) ) {
+           frag.duration = _last_segment_duration/1000;
+           _levels[_level].updateStart();
+         }
+         _callback(_tags,min_pts,max_pts);
+         _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
+      } catch (error:Error) {
+        _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
+      }
+    }
 
 
         /** Update the quality level for the next fragment load. **/
@@ -356,18 +382,20 @@ package com.mangui.HLS.streaming {
             //Log.txt("bufferratio:" + bufferratio);
             
             if((_level < _levels.length-1) && (fetchratio > (1+_switchup[_level]))) {
-               Log.txt("fetchratio:> 1+_switchup[_level]="+(1+_switchup[_level]));
-               //Log.txt("switch to " + (_level+1));
+               //Log.txt("fetchratio:> 1+_switchup[_level]="+(1+_switchup[_level]));
+               Log.txt("switch to level " + (_level+1));
                   //level up
                   return (_level+1);
             } else if(_level > 0 &&((fetchratio < (1-_switchdown[_level])) || (bufferratio < 2)) ) {
-                  Log.txt("bufferratio < 2 || fetchratio: < 1-_switchdown[_level]="+(1-_switchdown[_level]));
+                  //Log.txt("bufferratio < 2 || fetchratio: < 1-_switchdown[_level]="+(1-_switchdown[_level]));
                   // find suitable level matching current bandwidth, starting from current level
                   for(var j:Number = _level; j > 0; j--) {
                      if( _levels[j].bitrate <= _last_bandwidth) {
+                          Log.txt("switch to level " + j);
                           return j;
                       }
                   }
+                  Log.txt("switch to level 0");
                   return 0;
                }
             return _level;

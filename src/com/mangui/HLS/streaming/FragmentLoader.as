@@ -157,7 +157,13 @@ package com.mangui.HLS.streaming {
                 _urlstreamloader.close();
             }
             var level:Number;
-            if(_first_playlist_fragment_loaded == true) {
+            
+            /* in case IO Error has been raised, stick to same level */
+            if(_bIOError == true) {
+              level = _level;
+            /* else if last loaded fragment was the first fragment of a playlist,
+            stick to same level */
+            } else if(_first_playlist_fragment_loaded == true) {
               _first_playlist_fragment_loaded = false;
               level = _level;
               } else {

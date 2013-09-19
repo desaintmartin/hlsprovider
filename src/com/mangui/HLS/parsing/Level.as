@@ -34,6 +34,8 @@ package com.mangui.HLS.parsing {
         public var end_seqnum:Number;
         /** target duration **/
         public var targetduration:Number;
+        /** average duration **/
+        public var averageduration:Number;
         /** playlist duration **/
         public var duration:Number;
 

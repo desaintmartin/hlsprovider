@@ -123,7 +123,7 @@ package com.mangui.HLS.streaming {
         /** Get the suggested buffer length from rate adaptation algorithm **/
         public function getBufferLength():Number {
             if(_levels != null) {
-               return _levels[_level].targetduration*Math.max((_levels[_levels.length-1].bitrate/_levels[0].bitrate),6);
+               return _levels[_level].averageduration*Math.max((_levels[_levels.length-1].bitrate/_levels[0].bitrate),6);
             } else {
                return 10;
             }
@@ -144,9 +144,9 @@ package com.mangui.HLS.streaming {
             return _levels[_level].duration;
         };
 
-        /** Get segment max duration **/
-        public function getSegmentMaxDuration():Number {
-            return _levels[_level].targetduration;
+        /** Get segment average duration **/
+        public function getSegmentAverageDuration():Number {
+            return _levels[_level].averageduration;
         };
 
         /** Load a fragment **/
@@ -199,7 +199,7 @@ package com.mangui.HLS.streaming {
                   order at the nominal playback rate), the client SHOULD NOT
                   choose a segment which starts less than three target durations from
                   the end of the Playlist file */
-                  var maxLivePosition:Number = Math.max(0,_levels[level].duration -3*_levels[level].targetduration);                  
+                  var maxLivePosition:Number = Math.max(0,_levels[level].duration -3*_levels[level].averageduration);                  
                   if (position == 0) {
                      // seek 3 fragments from end
                      seek_position = maxLivePosition;

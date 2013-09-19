@@ -119,10 +119,10 @@ package com.mangui.HLS.streaming {
                }
             }
             if((_state == HLSStates.PLAYING) ||
-               (_state == HLSStates.BUFFERING && buffer > _loader.getSegmentMaxDuration()))
+               (_state == HLSStates.BUFFERING && buffer > _loader.getSegmentAverageDuration()))
              {
                 //Log.txt("appending data into NetStream");
-                while(_buffer_current_index < _buffer.length && _stream.bufferLength < 2*_loader.getSegmentMaxDuration()) {
+                while(_buffer_current_index < _buffer.length && _stream.bufferLength < 2*_loader.getSegmentAverageDuration()) {
                     try {
                         _stream.appendBytes(_buffer[_buffer_current_index].data);
                     } catch (error:Error) {

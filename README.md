@@ -5,13 +5,13 @@ It is compatible with both JWPlayer 5 and 6, and it is free of charge.
 
 **HLSProvider** supports the following HLS features :
 
-* supports VOD playlist
-* supports live playlist
-* supports multiple bitrate playlist / adaptive streaming
-* supports automatic quality switching, using state of the art switching algorithm
-* supports manual quality switching (JWPlayer 6 only)
-* supports seeking in VoD and live playlist
-* reports buffer progress
+* VOD playlist
+* live playlist
+* multiple bitrate playlist / adaptive streaming
+* automatic quality switching, using state of the art switching algorithm
+* manual quality switching (JWPlayer 6 only)
+* seeking in VoD and live playlist
+* buffer progress report
 
 the following M3U8 tags are supported: 
 
@@ -50,6 +50,10 @@ from zip, extract test/jwplayer5 folder, and get inspired by example.html
 ###jwplayer6 based setup:
 from zip, extract test/jwplayer6 folder, and get inspired by example.html
 
+    <div style="width: 640px; height: 360px;" id="player"></div>
+    <script type="text/javascript" src="jwplayer.js"></script>
+    <script type="text/javascript">
+
     jwplayer("player").setup({
     playlist: [{
     file:'http://mysite.com/stream.m3u8',
@@ -61,3 +65,8 @@ from zip, extract test/jwplayer6 folder, and get inspired by example.html
     primary: "flash"
     });
 
+###License
+The use of the HLSProvider is governed by a Creative Commons license.
+You can use, modify, copy, and distribute this edition as long as it's for non-commercial use, you provide attribution, and share under a similar license.
+
+The license summary and full text can be found here: [CC BY-NC-SA 3.0](http://creativecommons.org/licenses/by-nc-sa/3.0/ "CC BY-NC-SA 3.0")

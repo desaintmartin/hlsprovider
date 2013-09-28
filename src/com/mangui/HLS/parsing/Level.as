@@ -70,7 +70,7 @@ package com.mangui.HLS.parsing {
                 return seqnum;
               }
           }
-          return -1;
+          return Number.POSITIVE_INFINITY;
         };
 
         private function getstartPTS(seqnum:Number):Number {

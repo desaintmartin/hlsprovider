@@ -57,9 +57,9 @@ package com.mangui.HLS.streaming {
         /* variable to deal with IO Error retry */
         private var _bIOError:Boolean=false; 
         private var _nIOErrorCount:Number=0;
-        /** */
-        private var _first_playlist_fragment_loading:Boolean=false;
-        private var _first_playlist_fragment_loaded:Boolean=false;
+        /** boolean to track playlist PTS loading/loaded state */
+        private var _playlist_pts_loading:Boolean=false;
+        private var _playlist_pts_loaded:Boolean=false;
 
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
@@ -67,9 +67,13 @@ package com.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.MANIFEST, _levelsHandler);
             _urlstreamloader = new URLStream();
             _urlstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
+            //_urlstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _httpStatusHandler);
             _urlstreamloader.addEventListener(Event.COMPLETE, _completeHandler);
         };
 
+         private function _httpStatusHandler(event:HTTPStatusEvent):void {
+            //Log.txt("httpStatusHandler: " + event);
+          }
 
         /** Fragment load completed. **/
         private function _completeHandler(event:Event):void {
@@ -161,10 +165,10 @@ package com.mangui.HLS.streaming {
             /* in case IO Error has been raised, stick to same level */
             if(_bIOError == true) {
               level = _level;
-            /* else if last loaded fragment was the first fragment of a playlist,
+            /* else if last fragment was loaded for PTS analysis,
             stick to same level */
-            } else if(_first_playlist_fragment_loaded == true) {
-              _first_playlist_fragment_loaded = false;
+            } else if(_playlist_pts_loaded == true) {
+              _playlist_pts_loaded = false;
               level = _level;
               } else {
               if (_manual_level == -1) {
@@ -180,15 +184,27 @@ package com.mangui.HLS.streaming {
             if(pts != 0) {
                var playliststartpts:Number = _levels[level].getLevelstartPTS();
                if(playliststartpts == Number.NEGATIVE_INFINITY) {
-                  seqnum = _levels[level].fragments[0].seqnum;
-                  Log.txt("requested pts:" + pts + ",playliststartpts not defined, get 1st segment:"+seqnum);
-                  _first_playlist_fragment_loading = true;
+                  seqnum = _levels[level].fragments[1].seqnum;
+                  Log.txt("requested pts:" + pts + ",playlist pts undefined, get PTS from 2nd segment:"+seqnum);
+                  _playlist_pts_loading = true;
                 } else if(pts < getPlayListStartPTS()) {
                   Log.txt("requested pts:" + pts + ",playliststartpts:"+playliststartpts);
                   return -1;
                } else {
                   seqnum= _levels[level].getSeqNumNearestPTS(pts);
                   Log.txt("requested pts:" + pts + ",seqnum:"+seqnum);
+                  // check if PTS is greater than max PTS of this playlist
+                  if(Number.POSITIVE_INFINITY == seqnum) {
+                     // if greater, load last fragment if not already loaded
+                     if (_levels[level].end_seqnum != _levels[level].pts_seqnum) {
+                      seqnum = _levels[level].end_seqnum;
+                      Log.txt("requested pts:" + pts + ",out of bound, load PTS from last fragment:"+seqnum);
+                      _playlist_pts_loading = true;
+                    } else {
+                      // last fragment already loaded, return 1 to tell caller that seqnum is not yet available in playlist
+                      return 1;
+                    }
+                  }
                }
             } else {
                if (_hls.getType() == HLSTypes.LIVE) {
@@ -228,8 +244,7 @@ package com.mangui.HLS.streaming {
             _started = new Date().valueOf();
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
             _seqnum = seqnum;
-            Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
-            //Log.txt("loading "+frag.url);
+            Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             try {
                _urlstreamloader.load(new URLRequest(frag.url));
             } catch (error:Error) {
@@ -262,14 +277,15 @@ package com.mangui.HLS.streaming {
        minimum PTS value to synchronize playlist PTS / sequence number. 
        then return an error. this will force the Buffer Manager to reload the
        fragment at right offset */
-       if(_first_playlist_fragment_loading == true) {
+       if(_playlist_pts_loading == true) {
           for(var k:Number=0; k < _ts.audioTags.length; k++) {
              min_pts = Math.min(min_pts,_ts.audioTags[k].pts);
          }
          _levels[_level].pts_value = min_pts;
          _levels[_level].pts_seqnum = _seqnum;
-         _first_playlist_fragment_loading = false;
-         _first_playlist_fragment_loaded = true;
+         //Log.txt("SN " + _seqnum + ",min PTS:" + min_pts);
+         _playlist_pts_loading = false;
+         _playlist_pts_loaded = true;
          _bIOError = true;
          return;
        }

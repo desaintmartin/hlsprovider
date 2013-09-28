@@ -113,7 +113,7 @@ package com.mangui.HLS.streaming {
                 _type = HLSTypes.VOD;
             } else {
                 _type = HLSTypes.LIVE;
-                var timeout:Number = Math.max(100,_reload_playlists_timer + _fragmentDuration - getTimer());
+                var timeout:Number = Math.max(100,_reload_playlists_timer + 1000*_fragmentDuration - getTimer());
                 Log.txt("Live Playlist parsing finished: reload in " + timeout + " ms");
                 _timeoutID = setTimeout(_loadPlaylists,timeout);
             }

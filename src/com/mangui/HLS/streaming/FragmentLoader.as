@@ -185,20 +185,20 @@ package com.mangui.HLS.streaming {
                var playliststartpts:Number = _levels[level].getLevelstartPTS();
                if(playliststartpts == Number.NEGATIVE_INFINITY) {
                   seqnum = _levels[level].fragments[1].seqnum;
-                  Log.txt("requested pts:" + pts + ",playlist pts undefined, get PTS from 2nd segment:"+seqnum);
+                  Log.txt("loadfragment : requested pts:" + pts + ",playlist pts undefined, get PTS from 2nd segment:"+seqnum);
                   _playlist_pts_loading = true;
                 } else if(pts < getPlayListStartPTS()) {
-                  Log.txt("requested pts:" + pts + ",playliststartpts:"+playliststartpts);
+                  Log.txt("loadfragment : requested pts:" + pts + ",playliststartpts:"+playliststartpts);
                   return -1;
                } else {
                   seqnum= _levels[level].getSeqNumNearestPTS(pts);
-                  Log.txt("requested pts:" + pts + ",seqnum:"+seqnum);
+                  Log.txt("loadfragment : requested pts:" + pts + ",seqnum:"+seqnum);
                   // check if PTS is greater than max PTS of this playlist
                   if(Number.POSITIVE_INFINITY == seqnum) {
                      // if greater, load last fragment if not already loaded
                      if (_levels[level].end_seqnum != _levels[level].pts_seqnum) {
                       seqnum = _levels[level].end_seqnum;
-                      Log.txt("requested pts:" + pts + ",out of bound, load PTS from last fragment:"+seqnum);
+                      Log.txt("loadfragment : requested pts:" + pts + ",out of bound, load PTS from last fragment:"+seqnum);
                       _playlist_pts_loading = true;
                     } else {
                       // last fragment already loaded, return 1 to tell caller that seqnum is not yet available in playlist
@@ -222,7 +222,7 @@ package com.mangui.HLS.streaming {
                   } else {
                      seek_position = Math.min(position,maxLivePosition);
                   }
-                  Log.txt("requested position:" + position + ",seek position:"+seek_position);
+                  Log.txt("loadfragment : requested position:" + position + ",seek position:"+seek_position);
                   position = seek_position;
                }
                seqnum= _levels[level].getSeqNumNearestPosition(position);
@@ -244,7 +244,8 @@ package com.mangui.HLS.streaming {
             _started = new Date().valueOf();
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
             _seqnum = seqnum;
-            Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
+            //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
+            Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             try {
                _urlstreamloader.load(new URLRequest(frag.url));
             } catch (error:Error) {
@@ -280,10 +281,12 @@ package com.mangui.HLS.streaming {
        if(_playlist_pts_loading == true) {
           for(var k:Number=0; k < _ts.audioTags.length; k++) {
              min_pts = Math.min(min_pts,_ts.audioTags[k].pts);
+             max_pts = Math.max(max_pts,_ts.audioTags[k].pts);
          }
          _levels[_level].pts_value = min_pts;
          _levels[_level].pts_seqnum = _seqnum;
-         //Log.txt("SN " + _seqnum + ",min PTS:" + min_pts);
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max PTS:" + min_pts +"/" + max_pts);
+         
          _playlist_pts_loading = false;
          _playlist_pts_loaded = true;
          _bIOError = true;
@@ -299,13 +302,13 @@ package com.mangui.HLS.streaming {
       if(_switchlevel) {
         if (_ts.videoTags.length > 0) {
           // Audio only file don't have videoTags[0]
-          var avccTag:Tag = new Tag(Tag.AVC_HEADER,_ts.videoTags[0].pts,_ts.videoTags[0].dts,true,_level,_seqnum);
+          var avccTag:Tag = new Tag(Tag.AVC_HEADER,_ts.videoTags[0].pts,_ts.videoTags[0].dts,true);
           avccTag.push(_levels[_level].avcc,0,_levels[_level].avcc.length);
           _tags.push(avccTag);
         }
         if (_ts.audioTags.length > 0) {
           if(_ts.audioTags[0].type == Tag.AAC_RAW) {
-            var adifTag:Tag = new Tag(Tag.AAC_HEADER,_ts.audioTags[0].pts,_ts.audioTags[0].dts,true,_level,_seqnum);
+            var adifTag:Tag = new Tag(Tag.AAC_HEADER,_ts.audioTags[0].pts,_ts.audioTags[0].dts,true);
             adifTag.push(_levels[_level].adif,0,2)
             _tags.push(adifTag);
           }
@@ -317,15 +320,11 @@ package com.mangui.HLS.streaming {
       for(var i:Number=0; i < _ts.videoTags.length; i++) {
          //min_pts = Math.min(min_pts,_ts.videoTags[i].pts);
          //max_pts = Math.max(max_pts,_ts.videoTags[i].pts);
-        _ts.videoTags[i].level = _level;
-        _ts.videoTags[i].seqnum = _seqnum;
         _tags.push(_ts.videoTags[i]);
       }
       for(var j:Number=0; j < _ts.audioTags.length; j++) {
          min_pts = Math.min(min_pts,_ts.audioTags[j].pts);
          max_pts = Math.max(max_pts,_ts.audioTags[j].pts);
-        _ts.audioTags[j].level = _level;
-        _ts.audioTags[j].seqnum = _seqnum;
         _tags.push(_ts.audioTags[j]);
       }
       
@@ -339,10 +338,10 @@ package com.mangui.HLS.streaming {
          _levels[_level].pts_value = min_pts;
          _levels[_level].pts_seqnum = _seqnum;
 
-         Log.txt("SN " + _seqnum + " loaded,min/max PTS:" + min_pts +"/" + max_pts);
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max PTS:" + min_pts +"/" + max_pts);
          _last_segment_duration = max_pts-min_pts;
          var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
-         if (frag.duration !=  (_last_segment_duration/1000) ) {
+         if ((frag != null) && (frag.duration !=  (_last_segment_duration/1000))) {
            frag.duration = _last_segment_duration/1000;
            _levels[_level].updateStart();
          }

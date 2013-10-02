@@ -22,12 +22,8 @@ package com.mangui.HLS.muxing {
         public static const MP3_RAW:String = 'MP3 RAW';
 
 
-        /** sequence number the tag belongs to. **/
-        public var seqnum:Number;
         /** Is this an AVC keyframe. **/
         public var keyframe:Boolean;
-        /** Quality level the tag belongs to. **/
-        public var level:Number;
         /** Array with data pointers. **/
         private var pointers:Array = [];
         /** PTS of this frame. **/
@@ -39,13 +35,11 @@ package com.mangui.HLS.muxing {
         
 
         /** Save the frame data and parameters. **/
-        public function Tag(typ:String, stp_p:Number, stp_d:Number, key:Boolean, lvl:Number=0, sn:Number=0) {
+        public function Tag(typ:String, stp_p:Number, stp_d:Number, key:Boolean) {
             type = typ;
             pts = stp_p;
             dts = stp_d;
             keyframe = key;
-            level = lvl;
-            seqnum = sn;
         };
 
 

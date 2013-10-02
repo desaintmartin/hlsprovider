@@ -159,21 +159,28 @@ package com.mangui.HLS.parsing {
 
         /** Extract URL (check if absolute or not). **/
         private static function _extractURL(path:String,base:String):String {
-			if(path.substr(0,7) == 'http://' || path.substr(0,8) == 'https://') {
-                return path;
-            } else {
-                // Remove querystring
-                if(base.indexOf('?') > -1) {
-                    base = base.substr(0,base.indexOf('?'));
-                }
-				// domain-absolute
-				if(path.substr(0,1) == '/') {
-					return path;
-				}
-				else {
-					return base.substr(0,base.lastIndexOf('/') + 1) + path;
-				}
+         var _prefix:String = null;
+         var _suffix:String = null;          
+          if(path.substr(0,7) == 'http://' || path.substr(0,8) == 'https://') {
+            return path;
+          } else {
+            // Remove querystring
+            if(base.indexOf('?') > -1) {
+              base = base.substr(0,base.indexOf('?'));
             }
+            // domain-absolute
+            if(path.substr(0,1) == '/') {
+              // base = http[s]://domain/subdomain:1234/otherstuff
+              // prefix = http[s]://
+              // suffix = domain/subdomain:1234/otherstuff
+              _prefix=base.substr(0,base.indexOf("//")+2);
+              _suffix=base.substr(base.indexOf("//")+2);
+              // return http[s]://domain/subdomain:1234/path
+              return _prefix+_suffix.substr(0,_suffix.indexOf("/"))+path;
+            } else {
+              return base.substr(0,base.lastIndexOf('/') + 1) + path;
+            }
+          }
         };
 
 

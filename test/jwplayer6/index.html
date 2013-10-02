@@ -19,7 +19,6 @@ type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/scrip
 playlist: [{<br>
 file:'http://www.mywebsite.com/stream.m3u8',<br>
 provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider6.swf">HLSProvider6.swf</a>',<br>
-type:'mp4',<br>
 }],<br>
 width: 640,<br>
 height: 480,<br>
@@ -64,7 +63,7 @@ jwplayer("player").setup({
 playlist: [{
 file:'../playlists/test_001/stream.m3u8',
 provider:'HLSProvider6.swf',
-type:'mp4'
+
 }],
 width: 640,
 height: 480,
@@ -75,7 +74,7 @@ jwplayer("player").onError(function(event){
   console.log(event);
 });
 function loadStream(url) {
-jwplayer("player").load({file: url,provider: 'HLSProvider6.swf',type:'mp4'});
+jwplayer("player").load({file: url,provider: 'HLSProvider6.swf'});
 jwplayer("player").play();
 return false;
 }

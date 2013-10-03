@@ -74,7 +74,7 @@ jwplayer("player").onError(function(event){
   console.log(event);
 });
 function loadStream(url) {
-jwplayer("player").load({file: url,provider: 'HLSProvider6.swf'});
+jwplayer("player").load([{file: url,provider:'HLSProvider6.swf'}]);
 jwplayer("player").play();
 return false;
 }

@@ -317,7 +317,7 @@ package com.mangui.HLS.muxing {
 					_aacId = sid;
 				} else if (typ == 0x1B) {
 					_avcId = sid;
-				} else if (typ == 0x03) {
+				} else if (typ == 0x03 || typ == 0x04) {
 					_mp3Id = sid;
 				}
 				//  descriptor loop length

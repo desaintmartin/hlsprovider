@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html><head><title>HLSProvider in JW5</title>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+</head>
+<body style="color: Black; background-color: White;" link="Blue" vlink="Purple">
+<div style="text-align: center;">
+<div style="text-align: center;">
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+<script type="text/javascript" src="jwplayer.js"></script>&nbsp;<big style="font-weight: bold;"><big><code>HLSProvider
+in JWPlayer 5</code></big></big><br>
+</div>
+<code></code></div>
+<code><br>
+&lt;script
+type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/script&gt;<br>
+<br>
+<left> jwplayer("player").setup({ <br>
+width: 640,height: 360,<br>
+skin: "<a href="newtubedark.zip">newtubedark.zip</a>",<br>
+plugins: { '<a href="https://github.com/mangui/qualitymonitor/raw/master/qualitymonitor.swf">qualitymonitor.swf</a>'
+: {} },<br>
+modes: [<br>
+{ type:'flash', src:'<a href="player.swf">player.swf</a>',
+config: {
+provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider5.swf">HLSProvider5.swf</a>',
+file:'http://www.mywebsite.com/stream.m3u8' } },<br>
+{ type:'html5', config: { file:'http://www.mywebsite.com/stream.m3u8' } }<br>
+]});<br>
+<br>
+<span style="font-weight: bold;"></span></left></code><code><span style="font-weight: bold;">click on the top of the video to
+display/hide quality monitoring plugin</span></code><br>
+<code><left><br>
+</left></code>
+<h3> Test Videos </h3>
+<div> The following videos should stream correctly. Each time an
+issue is reported with a sample playlist, it will be added in the list
+and verified after bugfixing </div>
+<ul id="streamlist">
+</ul>
+<div style="text-align: left;">
+<script type="text/javascript" src="../playlists/streams.js"></script>
+<script type="text/javascript">
+function listStreams(list, container) {
+for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
+entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
+document.getElementById(container).appendChild(entry);
+}
+}
+listStreams(teststreams, "streamlist");
+</script>
+</div><div style="width: 640px; height: 360px;" id="player"></div>
+<div style="text-align: left;" id="log2"></div>
+<br>
+<br>
+<table id="history" class="data" border="0" cellpadding="0" cellspacing="0">
+<tbody>
+   <tr class="header2">
+      <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">Date/Time</td>
+      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">Position</td>
+      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Bandwidth</td>
+      <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">Quality</td>
+      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Width</td>
+   </tr>
+</tbody>
+</table>
+<script type="text/javascript">
+jwplayer("player").setup({
+width: 640,height: 360,
+skin: "newtubedark.zip",
+plugins: { 'qualitymonitor.swf' : {} },
+modes: [
+{ type:'flash', src:'player.swf', config: { provider:'HLSProvider5_debug.swf', file:'../playlists/test_001/stream.m3u8' } },
+{ type:'html5', config: { file:'../playlists/test_001/stream.m3u8' } }
+]});
+jwplayer("player").onError(function(event){
+  console.log(event);
+});
+function loadStream(url) {
+jwplayer("player").load({file: url,provider: 'HLSProvider5_debug.swf'});
+jwplayer("player").play();
+return false;
+}
+jwplayer("player").onTime(function(evt){
+  currentTime = evt.position;
+  currentBuffer = evt.bufferPercent;
+  currentLength = evt.duration;
+  
+      var html = 'evt.position: '+currentTime;
+      html += '<br>evt.bufferPercent: '+ currentBuffer;
+      html += '<br>evt.duration: '+ currentLength;
+      document.getElementById('log2').innerHTML = html;  
+  
+});
+
+ jwplayer("player").onMeta(function(event){
+   if(event.metadata.bandwidth) {
+      width = event.metadata.width;
+      currentLevel = event.metadata.currentLevel;
+      currentBandwidth = event.metadata.bandwidth;
+      dateTime();
+      $('#history tr:first').after('<tr><td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">'+currentDateTime+'</td><td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">'+currentTime+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+currentBandwidth+'</td><td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">'+currentLevel+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+width+'</td></tr>');
+      
+   }
+});
+          
+function dateTime(){
+  //format date/time;
+  var d = new Date();
+  var curr_date = d.getDate();
+  var curr_month = d.getMonth();
+  var curr_year = d.getFullYear();
+  
+  var curr_hour = d.getHours();
+  var curr_min = d.getMinutes();
+  var curr_sec = d.getSeconds();
+  
+  curr_hour = curr_hour + "";
+  if (curr_hour.length == 1) {
+     curr_hour = "0" + curr_hour;
+  }
+  
+  curr_min = curr_min + "";
+  if (curr_min.length == 1) {
+     curr_min = "0" + curr_min;
+  }
+  
+  curr_sec = curr_sec + "";
+  if (curr_sec.length == 1) {
+     curr_sec = "0" + curr_sec;
+  }
+
+  currentDateTime = curr_year+'-'+curr_month+'-'+curr_date+' '+curr_hour+':'+curr_min+':'+curr_sec;
+}
+</script>
+</div>
+</body></html>

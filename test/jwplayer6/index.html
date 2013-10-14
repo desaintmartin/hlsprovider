@@ -63,7 +63,7 @@ jwplayer("player").setup({
 playlist: [{
 file:'../playlists/test_001/stream.m3u8',
 provider:'HLSProvider6.swf',
-
+type: 'hls',
 }],
 width: 640,
 height: 480,
@@ -74,7 +74,7 @@ jwplayer("player").onError(function(event){
   console.log(event);
 });
 function loadStream(url) {
-jwplayer("player").load([{file: url,provider:'HLSProvider6.swf'}]);
+jwplayer("player").load([{file: url,provider:'HLSProvider6.swf',type: 'hls'}]);
 jwplayer("player").play();
 return false;
 }

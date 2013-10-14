@@ -31,7 +31,7 @@ package com.mangui.jwplayer.media {
 
 
         public function HLSProvider() {
-            super('hlsfree');
+            super('hls');
         };
 
 

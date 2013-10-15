@@ -32,6 +32,8 @@ package com.mangui.HLS.streaming {
         private var _seqnum:Number;
         /** Quality level of the last fragment load. **/
         private var _level:int = 0;
+        /** continuity counter of the last fragment load. **/
+        private var _continuity:Number = 0;
         /* overrided quality_manual_level level */
         private var _manual_level:int = -1;
         /** Reference to the manifest levels. **/
@@ -44,6 +46,8 @@ package com.mangui.HLS.streaming {
         private var _started:Number;
         /** Did the stream switch quality levels. **/
         private var _switchlevel:Boolean;
+        /** Did a discontinuity occurs in the stream **/
+        private var _hasDiscontinuity:Boolean;
         /** Width of the stage. **/
         private var _width:Number = 480;
         /** The current TS packet being read **/
@@ -232,18 +236,27 @@ package com.mangui.HLS.streaming {
                return 1;
             }
             _callback = callback;
+            _started = new Date().valueOf();
+            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
+            _seqnum = seqnum;
+                        
+            _hasDiscontinuity = false;
             if(level != _level) {
                 _level = level;
-                _switchlevel = true;
+                _switchlevel = true;   
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.SWITCH,_level));
+            } else {
+              // same level. check if discontinuity occurs
+              if(frag.continuity != _continuity) {
+                // set flags, discontinuity tag will be inserted at a later stage
+                _hasDiscontinuity = true;
+                _continuity = frag.continuity;
+              }
             }
 
             if(restart == true) {
                 _switchlevel = true;
             }
-            _started = new Date().valueOf();
-            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
-            _seqnum = seqnum;
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             try {
@@ -316,8 +329,6 @@ package com.mangui.HLS.streaming {
           }
         }
       }
-
-
       // Push regular tags into buffer.
       for(var i:Number=0; i < _ts.videoTags.length; i++) {
          min_video_pts = Math.min(min_video_pts,_ts.videoTags[i].pts);
@@ -340,14 +351,15 @@ package com.mangui.HLS.streaming {
          _levels[_level].pts_value = min_audio_pts;
          _levels[_level].pts_seqnum = _seqnum;
 
-         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max audio PTS:" + min_audio_pts +"/" + max_audio_pts);
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M/delta audio PTS:" + min_audio_pts +"/" + max_audio_pts + "/" + (max_audio_pts-min_audio_pts) + " m/M/delta video PTS:" + min_video_pts +"/" + max_video_pts + "/" + (max_video_pts-min_video_pts)+ " m/M A-V PTS gap :" + (min_audio_pts-min_video_pts) +"/" + (max_audio_pts-max_video_pts));
+         
          _last_segment_duration = max_audio_pts-min_audio_pts;
          var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
          if ((frag != null) && (frag.duration !=  (_last_segment_duration/1000))) {
            frag.duration = _last_segment_duration/1000;
            _levels[_level].updateStart();
          }
-         _callback(_tags,min_audio_pts,max_audio_pts);
+         _callback(_tags,min_audio_pts,max_audio_pts,_hasDiscontinuity);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
       } catch (error:Error) {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));

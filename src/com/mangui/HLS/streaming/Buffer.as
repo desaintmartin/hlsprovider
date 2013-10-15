@@ -72,6 +72,7 @@ package com.mangui.HLS.streaming {
 
         /** Check the bufferlength. **/
         private function _checkBuffer():void {
+          Log.txt("checkBuffer");
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
@@ -169,7 +170,7 @@ package com.mangui.HLS.streaming {
 
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number):void {
+        private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number, hasDiscontinuity:Boolean):void {
             // flush already injected Tags and restart index from 0
             _buffer = _buffer.slice(_buffer_current_index);
             _buffer_current_index = 0;

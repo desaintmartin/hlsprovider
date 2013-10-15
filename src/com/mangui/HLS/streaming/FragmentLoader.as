@@ -271,8 +271,10 @@ package com.mangui.HLS.streaming {
 		
     /** Handles the actual reading of the TS fragment **/
     private function _readHandler(e:Event):void {
-       var min_pts:Number = Number.POSITIVE_INFINITY;
-       var max_pts:Number = Number.NEGATIVE_INFINITY;
+       var min_audio_pts:Number = Number.POSITIVE_INFINITY;
+       var min_video_pts:Number = Number.POSITIVE_INFINITY;
+       var max_audio_pts:Number = Number.NEGATIVE_INFINITY;
+       var max_video_pts:Number = Number.NEGATIVE_INFINITY;
        
        /* in case we are loading first fragment of a playlist, just retrieve 
        minimum PTS value to synchronize playlist PTS / sequence number. 
@@ -280,12 +282,12 @@ package com.mangui.HLS.streaming {
        fragment at right offset */
        if(_playlist_pts_loading == true) {
           for(var k:Number=0; k < _ts.audioTags.length; k++) {
-             min_pts = Math.min(min_pts,_ts.audioTags[k].pts);
-             max_pts = Math.max(max_pts,_ts.audioTags[k].pts);
+             min_audio_pts = Math.min(min_audio_pts,_ts.audioTags[k].pts);
+             max_audio_pts = Math.max(max_audio_pts,_ts.audioTags[k].pts);
          }
-         _levels[_level].pts_value = min_pts;
+         _levels[_level].pts_value = min_audio_pts;
          _levels[_level].pts_seqnum = _seqnum;
-         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max PTS:" + min_pts +"/" + max_pts);
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max audio PTS:" + min_audio_pts +"/" + max_audio_pts);
          
          _playlist_pts_loading = false;
          _playlist_pts_loaded = true;
@@ -318,13 +320,13 @@ package com.mangui.HLS.streaming {
 
       // Push regular tags into buffer.
       for(var i:Number=0; i < _ts.videoTags.length; i++) {
-         //min_pts = Math.min(min_pts,_ts.videoTags[i].pts);
-         //max_pts = Math.max(max_pts,_ts.videoTags[i].pts);
+         min_video_pts = Math.min(min_video_pts,_ts.videoTags[i].pts);
+         max_video_pts = Math.max(max_video_pts,_ts.videoTags[i].pts);
         _tags.push(_ts.videoTags[i]);
       }
       for(var j:Number=0; j < _ts.audioTags.length; j++) {
-         min_pts = Math.min(min_pts,_ts.audioTags[j].pts);
-         max_pts = Math.max(max_pts,_ts.audioTags[j].pts);
+         min_audio_pts = Math.min(min_audio_pts,_ts.audioTags[j].pts);
+         max_audio_pts = Math.max(max_audio_pts,_ts.audioTags[j].pts);
         _tags.push(_ts.audioTags[j]);
       }
       
@@ -335,17 +337,17 @@ package com.mangui.HLS.streaming {
       
       try {
          _switchlevel = false;
-         _levels[_level].pts_value = min_pts;
+         _levels[_level].pts_value = min_audio_pts;
          _levels[_level].pts_seqnum = _seqnum;
 
-         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max PTS:" + min_pts +"/" + max_pts);
-         _last_segment_duration = max_pts-min_pts;
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max audio PTS:" + min_audio_pts +"/" + max_audio_pts);
+         _last_segment_duration = max_audio_pts-min_audio_pts;
          var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
          if ((frag != null) && (frag.duration !=  (_last_segment_duration/1000))) {
            frag.duration = _last_segment_duration/1000;
            _levels[_level].updateStart();
          }
-         _callback(_tags,min_pts,max_pts);
+         _callback(_tags,min_audio_pts,max_audio_pts);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
       } catch (error:Error) {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));

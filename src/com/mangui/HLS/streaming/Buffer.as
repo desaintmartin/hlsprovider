@@ -31,8 +31,8 @@ package com.mangui.HLS.streaming {
         /** Next loading fragment sequence number. **/
         /** The start position of the stream. **/
         public var PlaybackStartPosition:Number = 0;
-         /** start play time **/
-        private var _playback_start_time:Number;
+         /** start playback position in second, retrieved from first fragment **/
+        private var _playback_start_position:Number;
         /** playback start PTS. **/
         private var _playback_start_pts:Number;
         /** playlist start PTS when playback started. **/
@@ -77,7 +77,7 @@ package com.mangui.HLS.streaming {
             if(_buffer.length) {
                buffer = (_buffer_last_pts - _playback_start_pts)/1000 - _stream.time;
                /** Current play time (time since beginning of playback) **/
-               var playback_current_time:Number = (Math.round(_stream.time*100 + _playback_start_time*100)/100);
+               var playback_current_time:Number = (Math.round(_stream.time*100 + _playback_start_position*100)/100);
                var current_playlist_start_pts:Number = _loader.getPlayListStartPTS();
                var play_position:Number;
                if(current_playlist_start_pts ==Number.NEGATIVE_INFINITY) {
@@ -170,19 +170,20 @@ package com.mangui.HLS.streaming {
 
         /** Add a fragment to the buffer. **/
         private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number):void {
+            // flush already injected Tags and restart index from 0
             _buffer = _buffer.slice(_buffer_current_index);
             _buffer_current_index = 0;
             if (_playback_start_pts == Number.NEGATIVE_INFINITY) {
                _playback_start_pts = min_pts;
                _playlist_start_pts = _loader.getPlayListStartPTS();
-               _playback_start_time = (_playback_start_pts-_playlist_start_pts)/1000;
+               _playback_start_position = (_playback_start_pts-_playlist_start_pts)/1000;
             }
             _buffer_last_pts = max_pts;
             tags.sort(_sortTagsbyDTS);
             for each (var t:Tag in tags) {
                _buffer.push(t);
             }
-            _buffer_next_time=_playback_start_time+(_buffer_last_pts-_playback_start_pts)/1000;
+            _buffer_next_time=_playback_start_position+(_buffer_last_pts-_playback_start_pts)/1000;
             Log.txt("_loaderCallback,_buffer_next_time:"+ _buffer_next_time);
             _loading = false;
         };

@@ -21,6 +21,8 @@ package com.mangui.HLS.parsing {
         private static const SEQNUM:String = '#EXT-X-MEDIA-SEQUENCE:';
         /** Tag that provides the target duration for each segment. **/
         private static const TARGETDURATION:String = '#EXT-X-TARGETDURATION:';
+        /** Tag that indicates discontinuity in the stream */
+        private static const DISCONTINUITY:String = '#EXT-X-DISCONTINUITY';
 
         /** Index in the array with levels. **/
         private var _index:Number;
@@ -54,8 +56,12 @@ package com.mangui.HLS.parsing {
         public static function getFragments(data:String,base:String=''):Array {
             var fragments:Array = [];
             var lines:Array = data.split("\n");
+            //fragment seqnum
             var seqnum:Number = 0;
+            // fragment start time (in sec)
             var start:Number = 0;
+            // fragment continuity index incremented at each discontinuity
+            var continuity_index:Number = 0;
             var i:Number = 0;
             
             // first look for sequence number
@@ -68,18 +74,21 @@ package com.mangui.HLS.parsing {
                }
             i = 0;
             while (i < lines.length) {
-                if(lines[i].indexOf(Manifest.FRAGMENT) == 0) {
-                    var duration:Number = lines[i].substr(8,lines[i].indexOf(',') - 8);
-					// Look for next non-blank line, for url
-					i++;
-					while(lines[i].match(/^\s*$/)) {
-						i++;
-					}
-                    var url:String = Manifest._extractURL(lines[i],base);
-                    fragments.push(new Fragment(url,duration,seqnum++,start));
-                    start+=duration;
-                }
+              if(lines[i].indexOf(Manifest.FRAGMENT) == 0) {
+                var duration:Number = lines[i].substr(8,lines[i].indexOf(',') - 8);
+                // Look for next non-blank line, for url
                 i++;
+                while(lines[i].match(/^\s*$/)) {
+                  i++;
+                }
+                var url:String = Manifest._extractURL(lines[i],base);
+                fragments.push(new Fragment(url,duration,seqnum++,start,continuity_index));
+                start+=duration;
+              } else if(lines[i].indexOf(Manifest.DISCONTINUITY) == 0) {
+                continuity_index++;
+                Log.txt("discontinuity found at seqnum " + seqnum);
+              }
+              i++;
             }
             if(fragments.length == 0) {
                 //throw new Error("No TS fragments found in " + base);

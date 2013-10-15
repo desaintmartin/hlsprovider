@@ -13,14 +13,18 @@ package com.mangui.HLS.parsing {
         public var seqnum:Number;
         /** URL to this chunk. **/
         public var url:String;
+        /** continuity index of this chunk. **/
+        public var continuity:Number;
+
 
 
         /** Create the fragment. **/
-        public function Fragment(url:String, duration:Number, seqnum:Number,start:Number=0):void {
+        public function Fragment(url:String, duration:Number, seqnum:Number,start:Number,continuity:Number):void {
             this.duration = duration;
             this.url = url;
             this.seqnum = seqnum;
             this.start = start;
+            this.continuity = continuity;
         };
     }
 

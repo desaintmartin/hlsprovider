@@ -60,7 +60,7 @@ package com.mangui.HLS.streaming {
         private var _switchdown:Array = null;
         /* variable to deal with IO Error retry */
         private var _bIOError:Boolean=false; 
-        private var _nIOErrorCount:Number=0;
+        private var _nIOErrorDate:Number=0;
         /** boolean to track playlist PTS loading/loaded state */
         private var _playlist_pts_loading:Boolean=false;
         private var _playlist_pts_loaded:Boolean=false;
@@ -82,7 +82,6 @@ package com.mangui.HLS.streaming {
         /** Fragment load completed. **/
         private function _completeHandler(event:Event):void {
             //Log.txt("loading completed");
-            _nIOErrorCount = 0;
             _bIOError = false;
             // Calculate bandwidth
             _last_fetch_duration = (new Date().valueOf() - _started);
@@ -105,22 +104,35 @@ package com.mangui.HLS.streaming {
 			}
 			_ts = null;
 			_tags = null;
-      _nIOErrorCount = 0;
       _bIOError = false;
 		}
 
 
         /** Catch IO and security errors. **/
         private function _errorHandler(event:ErrorEvent):void {
-            _bIOError=true;
-            _nIOErrorCount++;
-            if (_nIOErrorCount >= 5) {
-              _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, event.toString()));
+            /* usually, errors happen in two situations :
+            - bad networks  : in that case, the second or third reload of URL should fix the issue
+            - live playlist : when we are trying to load an out of bound fragments : for example,
+                              the playlist on webserver is from SN [51-61]
+                              the one in memory is from SN [50-60], and we are trying to load SN50.
+                              we will keep getting 404 error if the HLS server does not follow HLS spec,
+                              which states that the server should keep SN50 during EXT-X-TARGETDURATION period
+                              after it is removed from playlist
+                              in the meantime, ManifestLoader will keep refreshing the playlist in the background ...
+                              so if the error still happens after EXT-X-TARGETDURATION, it means that there is something wrong
+                              we need to report it.
+            */
+            
+            if(_bIOError == false) {
+              _bIOError=true;
+              _nIOErrorDate = new Date().valueOf();
+            } else if((new Date().valueOf() - _nIOErrorDate) > 1000*getSegmentAverageDuration() ) {
+              _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "I/O Error"));
             }
         };
         
-        public function getIOError():Boolean { 
-          return _bIOError;
+        public function needReload():Boolean { 
+          return (_bIOError || _playlist_pts_loaded);
         };
 
         /** Get the quality level for the next fragment. **/
@@ -191,10 +203,17 @@ package com.mangui.HLS.streaming {
                   seqnum = _levels[level].fragments[1].seqnum;
                   Log.txt("loadfragment : requested pts:" + pts + ",playlist pts undefined, get PTS from 2nd segment:"+seqnum);
                   _playlist_pts_loading = true;
-                } else if(pts < getPlayListStartPTS()) {
-                  Log.txt("loadfragment : requested pts:" + pts + ",playliststartpts:"+playliststartpts);
+                  /* allow 10% tolerance before reporting an out of bound PTS issue (avg duration is in second, so 1000*avg duration/10 will give 10% in ms)
+                     this helps when switching to 1st fragment from one playlist to another, there might be some small jitter. */
+                } else if(pts + 100*getSegmentAverageDuration() < getPlayListStartPTS()) {
+                  Log.txt("loadfragment : requested pts out of bound:" + pts + ",playliststartpts:"+playliststartpts);
                   return -1;
                } else {
+                  if(pts < getPlayListStartPTS()) {
+                    /* if we are in this statement, it means that requested PTS is in the 10% tolerance range, little bit smaller than playlist start PTS
+                      => align it with playlist start PTS */
+                    pts=getPlayListStartPTS();
+                  }
                   seqnum= _levels[level].getSeqNumNearestPTS(pts);
                   Log.txt("loadfragment : requested pts:" + pts + ",seqnum:"+seqnum);
                   // check if PTS is greater than max PTS of this playlist
@@ -237,7 +256,7 @@ package com.mangui.HLS.streaming {
             }
             _callback = callback;
             _started = new Date().valueOf();
-            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
+            var frag:Fragment = _levels[level].getFragmentfromSeqNum(seqnum);
             _seqnum = seqnum;
                         
             _hasDiscontinuity = false;
@@ -304,7 +323,6 @@ package com.mangui.HLS.streaming {
          
          _playlist_pts_loading = false;
          _playlist_pts_loaded = true;
-         _bIOError = true;
          return;
        }
 
@@ -416,16 +434,34 @@ package com.mangui.HLS.streaming {
             //Log.txt("fetchratio:" + fetchratio);
             //Log.txt("bufferratio:" + bufferratio);
             
-            if((_level < _levels.length-1) && (fetchratio > (1+_switchup[_level]))) {
+            /* to switch level up : 
+              fetchratio should be greater than switch up condition,
+               but also, when switching levels, we might have to load two fragments :
+                - first one for PTS analysis,
+                - second one for NetStream injection
+               the condition (bufferratio > 2*_levels[_level+1].bitrate/_last_bandwidth)
+               ensures that buffer time is bigger than than the time to download 2 fragments from _level+1, if we keep same bandwidth
+            */
+            if((_level < _levels.length-1) && (fetchratio > (1+_switchup[_level])) && (bufferratio > 2*_levels[_level+1].bitrate/_last_bandwidth)) {
                //Log.txt("fetchratio:> 1+_switchup[_level]="+(1+_switchup[_level]));
                Log.txt("switch to level " + (_level+1));
                   //level up
                   return (_level+1);
-            } else if(_level > 0 &&((fetchratio < (1-_switchdown[_level])) || (bufferratio < 2)) ) {
+            } 
+            /* to switch level down : 
+              fetchratio should be smaller than switch down condition,
+               or buffer time is too small to retrieve one fragment with current level
+            */
+            
+            else if(_level > 0 &&((fetchratio < (1-_switchdown[_level])) || (bufferratio < 1)) ) {
                   //Log.txt("bufferratio < 2 || fetchratio: < 1-_switchdown[_level]="+(1-_switchdown[_level]));
-                  // find suitable level matching current bandwidth, starting from current level
+                  /* find suitable level matching current bandwidth, starting from current level
+                     when switching level down, we also need to consider that we might need to load two fragments.
+                     the condition (bufferratio > 2*_levels[j].bitrate/_last_bandwidth)
+                    ensures that buffer time is bigger than than the time to download 2 fragments from level j, if we keep same bandwidth
+                  */
                   for(var j:Number = _level; j > 0; j--) {
-                     if( _levels[j].bitrate <= _last_bandwidth) {
+                     if( _levels[j].bitrate <= _last_bandwidth && (bufferratio > 2*_levels[j].bitrate/_last_bandwidth)) {
                           Log.txt("switch to level " + j);
                           return j;
                       }

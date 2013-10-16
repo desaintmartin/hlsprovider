@@ -52,19 +52,24 @@ package com.mangui.HLS.muxing {
             } else if (pps == -1) {
                 throw new Error("No PPS NAL unit found in this stream.");
             }
-            // Write startbyte, profile, compatibility and level.
+            // Write startbyte
             var avcc:ByteArray = new ByteArray();
             avcc.writeByte(0x01);
+            // Write profile, compatibility and level.
             avcc.writeBytes(nalu,units[sps].start+1, 3);
-            // 111111 + NALU bytesize length (4?)
-            avcc.writeByte(0xFF);
-            // Number of SPS, Bytesize and data.
-            avcc.writeByte(0xE1);
+            // reserved (6 bits), NALU length size - 1 (2 bits)
+            avcc.writeByte(0xFC | 3);
+            // reserved (3 bits), num of SPS (5 bits)
+            avcc.writeByte(0xE0 | 1);
+            // 2 bytes for length of SPS
             avcc.writeShort(units[sps].length);
+            // data of SPS
             avcc.writeBytes(nalu,units[sps].start,units[sps].length);
-            // Number of PPS, Bytesize and data.
+            // Number of PPS
             avcc.writeByte(0x01);
+            // 2 bytes for length of PPS
             avcc.writeShort(units[pps].length);
+            // data of PPS
             avcc.writeBytes(nalu,units[pps].start,units[pps].length);
             // Grab profile/level
             avcc.position = 1;
@@ -100,6 +105,7 @@ package com.mangui.HLS.muxing {
                     unit_header = 4;
                     unit_start = nalu.position;
                     unit_type = nalu.readByte() & 0x1F;
+                    // NDR or IDR NAL unit
                     if(unit_type == 1 || unit_type == 5) { break; }
                 // Match three-byte startcodes
                 } else if((window & 0xFFFFFF00) == 0x100) {
@@ -115,6 +121,7 @@ package com.mangui.HLS.muxing {
                     unit_header = 3;
                     unit_start = nalu.position;
                     unit_type = nalu.readByte() & 0x1F;
+                    // NDR or IDR NAL unit
                     if(unit_type == 1 || unit_type == 5) { break; }
                 } else {
                     nalu.position -= 3;

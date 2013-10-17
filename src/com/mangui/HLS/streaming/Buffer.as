@@ -112,6 +112,7 @@ package com.mangui.HLS.streaming {
                   seek(0);
                   return;
                } else if(loadstatus > 0) {
+                  _loading = false;
                   //seqnum not available in playlist
                   if (_hls.getType() == HLSTypes.VOD) {
                      // if VOD playlist, it means we reached the end, on live playlist do nothing and wait ...

@@ -58,6 +58,7 @@ from zip, extract test/jwplayer6 folder, and get inspired by example.html
     playlist: [{
     file:'http://mysite.com/stream.m3u8',
     provider:'HLSProvider6.swf',
+    type:'hls'
     }],
     width: 640,
     height: 480,

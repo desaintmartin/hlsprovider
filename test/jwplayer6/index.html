@@ -33,7 +33,7 @@ and verified after bugfixing </div>
 <ul id="streamlist">
 </ul>
 <div style="text-align: left;">
-<script type="text/javascript" src="../playlists/streams.js"></script>
+<script type="text/javascript" src="../streams.js"></script>
 <script type="text/javascript">
 function listStreams(list, container) {
 for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
@@ -52,6 +52,7 @@ listStreams(teststreams, "streamlist");
    <tr class="header2">
       <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">Date/Time</td>
       <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">Position</td>
+      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">BufferPercent</td>      
       <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Bandwidth</td>
       <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">Quality</td>
       <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Width</td>
@@ -96,7 +97,12 @@ jwplayer("player").onTime(function(evt){
       currentLevel = event.metadata.currentLevel;
       currentBandwidth = event.metadata.bandwidth;
       dateTime();
-      $('#history tr:first').after('<tr><td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">'+currentDateTime+'</td><td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">'+currentTime+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+currentBandwidth+'</td><td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">'+currentLevel+'</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+width+'</td></tr>');
+      $('#history tr:first').after('<tr><td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">'+currentDateTime+
+                                   '</td><td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">'+currentTime+
+                                   '</td><td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">'+currentBuffer+
+                                   '</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+currentBandwidth+
+                                   '</td><td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">'+currentLevel+
+                                   '</td><td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">'+width+'</td></tr>');
       
    }
 });
@@ -129,8 +135,6 @@ function dateTime(){
 
   currentDateTime = curr_year+'-'+curr_month+'-'+curr_date+' '+curr_hour+':'+curr_min+':'+curr_sec;
 }
-
-
 </script>
 </div>
 </body></html>

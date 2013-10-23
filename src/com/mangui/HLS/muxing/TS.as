@@ -97,7 +97,7 @@ package com.mangui.HLS.muxing {
 		
 		/** Get audio configuration data. **/
 		public function getADIF():ByteArray {
-			if(_aacId > 0) {
+			if(_aacId > 0 && audioTags.length > 0) {
 				return AAC.getADIF(_audioPES[0].data,_audioPES[0].payload);
 			} else { 
 				return new ByteArray();

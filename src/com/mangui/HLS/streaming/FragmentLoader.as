@@ -303,23 +303,31 @@ package com.mangui.HLS.streaming {
 		
     /** Handles the actual reading of the TS fragment **/
     private function _readHandler(e:Event):void {
-       var min_audio_pts:Number = Number.POSITIVE_INFINITY;
-       var min_video_pts:Number = Number.POSITIVE_INFINITY;
-       var max_audio_pts:Number = Number.NEGATIVE_INFINITY;
-       var max_video_pts:Number = Number.NEGATIVE_INFINITY;
+       var min_pts:Number = Number.POSITIVE_INFINITY;
+       var max_pts:Number = Number.NEGATIVE_INFINITY;
+       // Tags used for PTS analysis
+       var ptsTags:Vector.<Tag>;
+       
+       if (_ts.audioTags.length > 0) {
+        ptsTags = _ts.audioTags;
+      } else {
+      // no audio, video only stream
+        ptsTags = _ts.videoTags;
+      }
+
+      for(var k:Number=0; k < ptsTags.length; k++) {
+         min_pts = Math.min(min_pts,ptsTags[k].pts);
+         max_pts = Math.max(max_pts,ptsTags[k].pts);
+      }
        
        /* in case we are loading first fragment of a playlist, just retrieve 
        minimum PTS value to synchronize playlist PTS / sequence number. 
-       then return an error. this will force the Buffer Manager to reload the
+       then return. this will force the Buffer Manager to reload the
        fragment at right offset */
        if(_playlist_pts_loading == true) {
-          for(var k:Number=0; k < _ts.audioTags.length; k++) {
-             min_audio_pts = Math.min(min_audio_pts,_ts.audioTags[k].pts);
-             max_audio_pts = Math.max(max_audio_pts,_ts.audioTags[k].pts);
-         }
-         _levels[_level].pts_value = min_audio_pts;
+         _levels[_level].pts_value = min_pts;
          _levels[_level].pts_seqnum = _seqnum;
-         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max audio PTS:" + min_audio_pts +"/" + max_audio_pts);
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max PTS:" + min_pts +"/" + max_pts);
          
          _playlist_pts_loading = false;
          _playlist_pts_loaded = true;
@@ -349,13 +357,9 @@ package com.mangui.HLS.streaming {
       }
       // Push regular tags into buffer.
       for(var i:Number=0; i < _ts.videoTags.length; i++) {
-         min_video_pts = Math.min(min_video_pts,_ts.videoTags[i].pts);
-         max_video_pts = Math.max(max_video_pts,_ts.videoTags[i].pts);
         _tags.push(_ts.videoTags[i]);
       }
       for(var j:Number=0; j < _ts.audioTags.length; j++) {
-         min_audio_pts = Math.min(min_audio_pts,_ts.audioTags[j].pts);
-         max_audio_pts = Math.max(max_audio_pts,_ts.audioTags[j].pts);
         _tags.push(_ts.audioTags[j]);
       }
       
@@ -366,18 +370,18 @@ package com.mangui.HLS.streaming {
       
       try {
          _switchlevel = false;
-         _levels[_level].pts_value = min_audio_pts;
+         _levels[_level].pts_value = min_pts;
          _levels[_level].pts_seqnum = _seqnum;
 
-         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M/delta audio PTS:" + min_audio_pts +"/" + max_audio_pts + "/" + (max_audio_pts-min_audio_pts) + " m/M/delta video PTS:" + min_video_pts +"/" + max_video_pts + "/" + (max_video_pts-min_video_pts)+ " m/M A-V PTS gap :" + (min_audio_pts-min_video_pts) +"/" + (max_audio_pts-max_video_pts));
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M/delta PTS:" + min_pts +"/" + max_pts + "/" + (max_pts-min_pts));
          
-         _last_segment_duration = max_audio_pts-min_audio_pts;
+         _last_segment_duration = max_pts-min_pts;
          var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
          if ((frag != null) && (frag.duration !=  (_last_segment_duration/1000))) {
            frag.duration = _last_segment_duration/1000;
            _levels[_level].updateStart();
          }
-         _callback(_tags,min_audio_pts,max_audio_pts,_hasDiscontinuity);
+         _callback(_tags,min_pts,max_pts,_hasDiscontinuity);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
       } catch (error:Error) {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));

@@ -39,7 +39,7 @@ and verified after bugfixing </div>
 <ul id="streamlist">
 </ul>
 <div style="text-align: left;">
-<script type="text/javascript" src="../streams.js"></script>
+<script type="text/javascript" src="../../../playlists/streams.js"></script>
 <script type="text/javascript">
 function listStreams(list, container) {
 for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
@@ -71,8 +71,8 @@ width: 640,height: 360,
 skin: "newtubedark.zip",
 plugins: { 'qualitymonitor.swf' : {} },
 modes: [
-{ type:'flash', src:'player.swf', config: { provider:'HLSProvider5.swf', file:'../playlists/test_001/stream.m3u8' } },
-{ type:'html5', config: { file:'../playlists/test_001/stream.m3u8' } }
+{ type:'flash', src:'player.swf', config: { provider:'HLSProvider5.swf', file:'../../../playlists/test_001/stream.m3u8' } },
+{ type:'html5', config: { file:'../../../playlists/test_001/stream.m3u8' } }
 ]});
 jwplayer("player").onError(function(event){
   console.log(event);

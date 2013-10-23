@@ -33,7 +33,7 @@ and verified after bugfixing </div>
 <ul id="streamlist">
 </ul>
 <div style="text-align: left;">
-<script type="text/javascript" src="../streams.js"></script>
+<script type="text/javascript" src="../../../playlists/streams.js"></script>
 <script type="text/javascript">
 function listStreams(list, container) {
 for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
@@ -62,7 +62,7 @@ listStreams(teststreams, "streamlist");
 <script type="text/javascript">
 jwplayer("player").setup({
 playlist: [{
-file:'../playlists/test_001/stream.m3u8',
+file:'../../../playlists/test_001/stream.m3u8',
 provider:'HLSProvider6.swf',
 type: 'hls',
 }],

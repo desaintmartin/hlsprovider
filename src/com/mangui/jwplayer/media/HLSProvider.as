@@ -7,13 +7,14 @@ package com.mangui.jwplayer.media {
     import com.longtailvideo.jwplayer.model.PlayerConfig;
     import com.longtailvideo.jwplayer.model.PlaylistItem;
     import com.longtailvideo.jwplayer.media.*;
-	import com.longtailvideo.jwplayer.player.PlayerState;
-	import com.longtailvideo.jwplayer.utils.Stretcher;
+    import com.longtailvideo.jwplayer.player.PlayerState;
+    import com.longtailvideo.jwplayer.utils.Stretcher;
 
     import flash.display.DisplayObject;
     import flash.media.Video;
-	import flash.system.Capabilities;
-	import flash.events.Event;
+    import flash.system.Capabilities;
+    import flash.events.Event;
+    import flash.net.*;
 
 
     /** JW Player provider for hls streaming. **/
@@ -28,7 +29,10 @@ package com.mangui.jwplayer.media {
         protected var _levels:Array;
         /** Reference to the video object. **/
         private var _video:Video;
-
+        /** Netstream instance used for playing the stream. **/
+        private var _stream:NetStream;
+        /** NetConnection legacy stuff. **/
+        private var _connection:NetConnection;
 
         public function HLSProvider() {
             super('hls');
@@ -114,7 +118,11 @@ package com.mangui.jwplayer.media {
             super.initializeMediaProvider(cfg);
             _video = new Video(320,180);
             _video.smoothing = true;
-            _hls = new HLS(_video);
+            _connection = new NetConnection();
+            _connection.connect(null);
+            _stream = new NetStream(_connection);
+            _video.attachNetStream(_stream);            
+              _hls = new HLS(_stream);
             _hls.volume(cfg.volume);
             _hls.addEventListener(HLSEvent.COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);

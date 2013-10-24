@@ -18,8 +18,6 @@ package com.mangui.HLS.streaming {
         private var _hls:HLS;
         /** The buffer with video tags. **/
         private var _buffer:Vector.<Tag>;
-        /** NetConnection legacy stuff. **/
-        private var _connection:NetConnection;
         /** The fragment loader. **/
         private var _loader:FragmentLoader;
         /** Store that a fragment load is in progress. **/
@@ -53,17 +51,13 @@ package com.mangui.HLS.streaming {
         private var _buffer_current_index:Number;
         /** soundtransform object. **/
         private var _transform:SoundTransform;
-        /** Reference to the video object. **/
-        private var _video:Object;
-
         /** Create the buffer. **/
-        public function Buffer(hls:HLS, loader:FragmentLoader, video:Object):void {
+        public function Buffer(hls:HLS, loader:FragmentLoader, stream:NetStream):void {
             _hls = hls;
             _loader = loader;
-            _video = video;
+            _stream = stream;
+            //_stream.inBufferSeek = true;
             _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
-            _connection = new NetConnection();
-            _connection.connect(null);
             _transform = new SoundTransform();
             _transform.volume = 0.9;
             _setState(HLSStates.IDLE);
@@ -193,8 +187,7 @@ package com.mangui.HLS.streaming {
         /** Start streaming on manifest load. **/
         private function _manifestHandler(event:HLSEvent):void {
             if(_state == HLSStates.IDLE) {
-                _stream = new NetStream(_connection);
-                _video.attachNetStream(_stream);
+                _stream.close();
                 _stream.play(null);
                 _stream.soundTransform = _transform;
                 _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);

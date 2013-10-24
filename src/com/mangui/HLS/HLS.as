@@ -1,13 +1,11 @@
 package com.mangui.HLS {
 
 
-    import com.mangui.HLS.*;
-    import com.mangui.HLS.streaming.*;
-    import com.mangui.HLS.utils.*;
-    import flash.display.Sprite;
-    import flash.events.*;
-    import flash.media.*;
+import com.mangui.HLS.streaming.*;
+import com.mangui.HLS.utils.*;
 
+import flash.events.*;
+import flash.net.NetStream;
 
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
@@ -19,16 +17,17 @@ package com.mangui.HLS {
         private var _loader:FragmentLoader;
         /** The manifest parser. **/
         private var _manifestLoader:ManifestLoader;
-        /** The video object that displays the stream. **/
-        private var _video:Object;
+	/** HLS NetStream **/
+	private var _stream:NetStream;
 
+	private var _client:Object = {};
 
         /** Create and connect all components. **/
-        public function HLS(video:Object):void {
-            _video = video;
+    public function HLS(stream:NetStream):void {
+            _stream = stream;
             _manifestLoader = new ManifestLoader(this);
             _loader = new FragmentLoader(this);
-            _buffer = new Buffer(this,_loader,_video);
+            _buffer = new Buffer(this, _loader, stream);
         };
 
 
@@ -120,5 +119,15 @@ package com.mangui.HLS {
             _loader.setPlaybackQuality(level);
             _buffer.seek(_buffer.getPosition());
         };
-    };
+    public function get stream():NetStream {
+        return _stream;
+    }
+    public function get client():Object {
+        return _client;
+    }
+    public function set client(value:Object):void {
+        _client = value;
+    }
+}
+;
 }

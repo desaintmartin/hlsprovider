@@ -168,7 +168,7 @@ package com.mangui.jwplayer.media {
         /** Resume playback of a paused item. **/
         override public function play():void {
             if(state == PlayerState.PAUSED) {
-                _hls.pause();
+                _hls.resume();
             } else {
                 setState(PlayerState.BUFFERING);
                 _hls.play(item.file,item.start);

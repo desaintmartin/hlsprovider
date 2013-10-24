@@ -51,6 +51,7 @@ package com.mangui.HLS.streaming {
         private var _buffer_current_index:Number;
         /** soundtransform object. **/
         private var _transform:SoundTransform;
+        private var _was_playing:Boolean = false;
         /** Create the buffer. **/
         public function Buffer(hls:HLS, loader:FragmentLoader, stream:NetStream):void {
             _hls = hls;
@@ -139,10 +140,14 @@ package com.mangui.HLS.streaming {
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.COMPLETE));
                     _setState(HLSStates.IDLE);
                 } else if(_state == HLSStates.PLAYING) {
-                    _setState(HLSStates.BUFFERING);
+                    !_reached_vod_end && _setState(HLSStates.BUFFERING);
                 }
             } else if (_state == HLSStates.BUFFERING) {
+
+                if(_was_playing)
                 _setState(HLSStates.PLAYING);
+                else
+                    pause();
             }
         };
 
@@ -197,16 +202,22 @@ package com.mangui.HLS.streaming {
         };
 
 
-        /** Toggle playback. **/
+        /** Pause playback. **/
         public function pause():void {
-            clearInterval(_interval);
-            if(_state == HLSStates.PAUSED) {
-                _setState(HLSStates.BUFFERING);
-                _stream.resume();
-                _interval = setInterval(_checkBuffer,100);
-            } else if(_state == HLSStates.PLAYING) {
+            if(_state == HLSStates.PLAYING || _state == HLSStates.BUFFERING) {
+                clearInterval(_interval);
                 _setState(HLSStates.PAUSED);
                 _stream.pause();
+            }
+        };
+
+        /** Resume playback. **/
+        public function resume():void {
+            if(_state == HLSStates.PAUSED) {
+                clearInterval(_interval);
+                _setState(HLSStates.PLAYING);
+                _stream.resume();
+                _interval = setInterval(_checkBuffer,100);
             }
         };
 
@@ -256,6 +267,7 @@ package com.mangui.HLS.streaming {
                _buffer_next_time = position;
                _buffer_last_pts = 0;
                _last_buffer = 0;
+               _was_playing = (_state == HLSStates.PLAYING) || (_state == HLSStates.IDLE);
                _setState(HLSStates.BUFFERING);
                clearInterval(_interval);
                _interval = setInterval(_checkBuffer,100);

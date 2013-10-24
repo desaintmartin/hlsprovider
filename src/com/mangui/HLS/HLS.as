@@ -85,9 +85,13 @@ import flash.net.NetStream;
         };
 
 
-        /** Toggle the pause state. **/
+    /** Pause playback **/
         public function pause():void {
             _buffer.pause();
+    };
+    /** Resume playback **/
+    public function resume():void {
+        _buffer.resume();
         };
 
 

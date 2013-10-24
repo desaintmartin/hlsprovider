@@ -218,15 +218,8 @@ package com.mangui.HLS.streaming {
                   Log.txt("loadfragment : requested pts:" + pts + ",seqnum:"+seqnum);
                   // check if PTS is greater than max PTS of this playlist
                   if(Number.POSITIVE_INFINITY == seqnum) {
-                     // if greater, load last fragment if not already loaded
-                     if (_levels[level].end_seqnum != _levels[level].pts_seqnum) {
-                      seqnum = _levels[level].end_seqnum;
-                      Log.txt("loadfragment : requested pts:" + pts + ",out of bound, load PTS from last fragment:"+seqnum);
-                      _playlist_pts_loading = true;
-                    } else {
-                      // last fragment already loaded, return 1 to tell caller that seqnum is not yet available in playlist
-                      return 1;
-                    }
+                    // return 1 to tell caller that seqnum is not yet available in playlist
+                    return 1;
                   }
                }
             } else {
@@ -324,11 +317,9 @@ package com.mangui.HLS.streaming {
        minimum PTS value to synchronize playlist PTS / sequence number. 
        then return. this will force the Buffer Manager to reload the
        fragment at right offset */
-       if(_playlist_pts_loading == true) {
-         _levels[_level].pts_value = min_pts;
-         _levels[_level].pts_seqnum = _seqnum;
-         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max PTS:" + min_pts +"/" + max_pts);
-         
+       if(_playlist_pts_loading == true) {       
+         _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " min/max PTS:" + min_pts +"/" + max_pts);         
          _playlist_pts_loading = false;
          _playlist_pts_loaded = true;
          return;
@@ -370,17 +361,9 @@ package com.mangui.HLS.streaming {
       
       try {
          _switchlevel = false;
-         _levels[_level].pts_value = min_pts;
-         _levels[_level].pts_seqnum = _seqnum;
-
-         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M/delta PTS:" + min_pts +"/" + max_pts + "/" + (max_pts-min_pts));
-         
-         _last_segment_duration = max_pts-min_pts;
-         var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
-         if ((frag != null) && (frag.duration !=  (_last_segment_duration/1000))) {
-           frag.duration = _last_segment_duration/1000;
-           _levels[_level].updateStart();
-         }
+	 _last_segment_duration = max_pts-min_pts;
+         Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M/delta PTS:" + min_pts +"/" + max_pts + "/" + _last_segment_duration);
+         _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
          _callback(_tags,min_pts,max_pts,_hasDiscontinuity);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
       } catch (error:Error) {

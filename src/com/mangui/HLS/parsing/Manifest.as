@@ -59,7 +59,7 @@ package com.mangui.HLS.parsing {
             //fragment seqnum
             var seqnum:Number = 0;
             // fragment start time (in sec)
-            var start:Number = 0;
+            var start_time:Number = 0;
             // fragment continuity index incremented at each discontinuity
             var continuity_index:Number = 0;
             var i:Number = 0;
@@ -82,8 +82,8 @@ package com.mangui.HLS.parsing {
                   i++;
                 }
                 var url:String = Manifest._extractURL(lines[i],base);
-                fragments.push(new Fragment(url,duration,seqnum++,start,continuity_index));
-                start+=duration;
+                fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index));
+                start_time+=duration;
               } else if(lines[i].indexOf(Manifest.DISCONTINUITY) == 0) {
                 continuity_index++;
                 Log.txt("discontinuity found at seqnum " + seqnum);

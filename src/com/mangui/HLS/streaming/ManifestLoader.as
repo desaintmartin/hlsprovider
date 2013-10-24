@@ -25,8 +25,6 @@ package com.mangui.HLS.streaming {
         private var _toLoad:Number;
         /** are all playlists filled ? **/
         private var _canStart:Boolean;
-        /** initial reload timer **/
-        private var _fragmentDuration:Number = 5000;
         /** Timeout ID for reloading live playlists. **/
         private var _timeoutID:Number;
         /** Streaming type (live, ondemand). **/
@@ -99,13 +97,8 @@ package com.mangui.HLS.streaming {
             if(string != null && string.length != 0) {
                var frags:Array = Manifest.getFragments(string,url);
                // set fragment and update sequence number range
-               _levels[index].setFragments(frags);
+               _levels[index].updateFragments(frags);
                _levels[index].targetduration = Manifest.getTargetDuration(string);
-               _levels[index].start_seqnum = frags[0].seqnum;
-               _levels[index].end_seqnum = frags[frags.length-1].seqnum;
-               _levels[index].duration = frags[frags.length-1].start + frags[frags.length-1].duration;
-               _fragmentDuration = _levels[index].duration/frags.length;
-               _levels[index].averageduration = _fragmentDuration;
             }
             if(--_toLoad == 0) {
             // Check whether the stream is live or not finished yet
@@ -113,7 +106,7 @@ package com.mangui.HLS.streaming {
                 _type = HLSTypes.VOD;
             } else {
                 _type = HLSTypes.LIVE;
-                var timeout:Number = Math.max(100,_reload_playlists_timer + 1000*_fragmentDuration - getTimer());
+                var timeout:Number = Math.max(100,_reload_playlists_timer + 1000*_levels[index].averageduration - getTimer());
                 Log.txt("Live Playlist parsing finished: reload in " + timeout + " ms");
                 _timeoutID = setTimeout(_loadPlaylists,timeout);
             }

@@ -51,13 +51,14 @@ package com.mangui.HLS.streaming {
         private var _buffer_current_index:Number;
         /** soundtransform object. **/
         private var _transform:SoundTransform;
+
         private var _was_playing:Boolean = false;
         /** Create the buffer. **/
         public function Buffer(hls:HLS, loader:FragmentLoader, stream:NetStream):void {
             _hls = hls;
             _loader = loader;
             _stream = stream;
-            //_stream.inBufferSeek = true;
+            _stream.inBufferSeek = true;
             _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
             _transform = new SoundTransform();
             _transform.volume = 0.9;
@@ -170,19 +171,20 @@ package com.mangui.HLS.streaming {
 
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number, hasDiscontinuity:Boolean):void {
+        private function _loaderCallback(tags:Vector.<Tag>,min_pts:Number,max_pts:Number, hasDiscontinuity:Boolean, start_offset:Number):void {
             // flush already injected Tags and restart index from 0
             _buffer = _buffer.slice(_buffer_current_index);
             _buffer_current_index = 0;
+            var seek_pts:Number = min_pts + (PlaybackStartPosition-start_offset)*1000;
             if (_playback_start_pts == Number.NEGATIVE_INFINITY) {
-               _playback_start_pts = min_pts;
+               _playback_start_pts = seek_pts;
                _playlist_start_pts = _loader.getPlayListStartPTS();
                _playback_start_position = (_playback_start_pts-_playlist_start_pts)/1000;
-            }
+            }            
             _buffer_last_pts = max_pts;
             tags.sort(_sortTagsbyDTS);
             for each (var t:Tag in tags) {
-               _buffer.push(t);
+                _filterTag(t,seek_pts) && _buffer.push(t);
             }
             _buffer_next_time=_playback_start_position+(_buffer_last_pts-_playback_start_pts)/1000;
             Log.txt("_loaderCallback,_buffer_next_time:"+ _buffer_next_time);
@@ -252,6 +254,23 @@ package com.mangui.HLS.streaming {
                 }
             }
         };
+
+        /**
+         *
+         * Filter tag by type and pts for accurate seeking.
+         *
+         * @param tag
+         * @param pts Destination pts
+         * @return
+         */
+        private function _filterTag(tag:Tag,pts:Number = 0):Boolean{
+            if(tag.type == Tag.AAC_HEADER || tag.type == Tag.AVC_HEADER || tag.type == Tag.AVC_NALU){
+              if(tag.pts < pts)
+               tag.pts = tag.dts = pts;
+              return true;
+            }
+            return tag.pts >= pts;
+        }
 
         /** Start playing data in the buffer. **/
         public function seek(position:Number):void {

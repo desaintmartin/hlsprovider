@@ -144,7 +144,7 @@ package com.mangui.HLS.parsing {
           }
       }
       
-      public function updatePTS(seqnum:Number, min_pts:Number,max_pts:Number) : void {
+      public function updatePTS(seqnum:Number, min_pts:Number,max_pts:Number) : Number {
         //Log.txt("updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
         // get fragment from seqnum
         var fragIdx:Number = getIndexfromSeqNum(seqnum);
@@ -176,7 +176,9 @@ package com.mangui.HLS.parsing {
               //Log.txt("SN["+fragments[i].seqnum+"]:pts/duration:" + fragments[i].start_pts_computed + "/" + fragments[i].duration);
            }
            duration = start_time_offset;
-           return;
+           return frag.start_time;
+        } else {
+          return 0;
         }
       }
     }

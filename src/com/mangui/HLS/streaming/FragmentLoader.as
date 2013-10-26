@@ -288,9 +288,13 @@ package com.mangui.HLS.streaming {
 
         /** Parse a TS fragment. **/
         private function _parseTS():void {
+          //if(_switchlevel) {
             _ts = new TS(_loaderData);
-			_ts.addEventListener(TS.READCOMPLETE, _readHandler);
-			_ts.startReading();
+            _ts.addEventListener(TS.READCOMPLETE, _readHandler);
+            _ts.startReading();
+          //} else {
+           // _ts.addData(_loaderData);
+          //}
         };
 		
 		
@@ -363,8 +367,8 @@ package com.mangui.HLS.streaming {
          _switchlevel = false;
 	 _last_segment_duration = max_pts-min_pts;
          Log.txt("Loaded  SN " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M/delta PTS:" + min_pts +"/" + max_pts + "/" + _last_segment_duration);
-         _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
-         _callback(_tags,min_pts,max_pts,_hasDiscontinuity);
+         var start_offset:Number = _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
+         _callback(_tags,min_pts,max_pts,_hasDiscontinuity,start_offset);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT, getMetrics()));
       } catch (error:Error) {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));

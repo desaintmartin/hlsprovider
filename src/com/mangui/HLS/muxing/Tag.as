@@ -46,7 +46,8 @@ package com.mangui.HLS.muxing {
         /** Returns the tag data. **/
         public function get data():ByteArray {
             var array:ByteArray;
-
+            /* following specification http://download.macromedia.com/f4v/video_file_format_spec_v10_1.pdf */
+            
             // Render header data
             if(type == Tag.MP3_RAW) {
                 array = FLV.getTagHeader(true, length + 1, pts);
@@ -54,9 +55,15 @@ package com.mangui.HLS.muxing {
                 array.writeByte(0x2F);
             } else if(type == Tag.AVC_HEADER || type == Tag.AVC_NALU) {
                 array = FLV.getTagHeader(false, length + 5, dts);
-                // Keyframe switch, Header/Nalu switch and CompositionTime (in ms)
+                // keyframe/interframe switch (0x10 / 0x20) + AVC (0x07)
                 keyframe ? array.writeByte(0x17): array.writeByte(0x27);
+                /* AVC Packet Type :
+                  0 = AVC sequence header
+                  1 = AVC NALU
+                  2 = AVC end of sequence (lower level NALU sequence ender is
+                  not required or supported) */
                 type == Tag.AVC_HEADER ?  array.writeByte(0x00): array.writeByte(0x01);
+                //CompositionTime (in ms)
                 //Log.txt("pts:"+pts+",dts:"+dts+",delta:"+compositionTime);
                 var compositionTime:Number = (pts-dts);
                 array.writeByte(compositionTime >> 16);

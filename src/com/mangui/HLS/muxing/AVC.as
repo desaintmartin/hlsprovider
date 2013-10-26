@@ -11,19 +11,19 @@ package com.mangui.HLS.muxing {
 
         /** H264 NAL unit names. **/
         public static const NAMES:Array = [
-            'Unspecified',
-            'NDR',
-            'Partition A',
-            'Partition B',
-            'Partition C',
-            'IDR',
-            'SEI',
-            'SPS',
-            'PPS',
-            'AUD',
-            'End of Sequence',
-            'End of Stream',
-            'Filler Data'
+            'Unspecified',                  // 0
+            'NDR',                          // 1
+            'Partition A',                  // 2
+            'Partition B',                  // 3
+            'Partition C',                  // 4
+            'IDR',                          // 5
+            'SEI',                          // 6
+            'SPS',                          // 7
+            'PPS',                          // 8
+            'AUD',                          // 9
+            'End of Sequence',              // 10
+            'End of Stream',                // 11
+            'Filler Data'                   // 12
         ];
         /** H264 profiles. **/
         public static const PROFILES:Object = {
@@ -33,7 +33,9 @@ package com.mangui.HLS.muxing {
         };
 
 
-        /** Get Avcc header from AVC stream. **/
+        /** Get Avcc header from AVC stream 
+        See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
+        **/
         public static function getAVCC(nalu:ByteArray,position:Number=0):ByteArray {
             // Find SPS and PPS units in AVC stream.
             var units:Array = AVC.getNALU(nalu,position,false);
@@ -95,7 +97,8 @@ package com.mangui.HLS.muxing {
                 window = nalu.readUnsignedInt();
                 // Match four-byte startcodes
                 if((window & 0xFFFFFFFF) == 0x01) {
-                    if(unit_start) {
+                  // push previous NAL unit if new start delimiter found, dont push unit with type = 0
+                    if(unit_start && unit_type) {
                         units.push({
                             length: nalu.position - 4 - unit_start,
                             start: unit_start,
@@ -109,7 +112,8 @@ package com.mangui.HLS.muxing {
                     if(unit_type == 1 || unit_type == 5) { break; }
                 // Match three-byte startcodes
                 } else if((window & 0xFFFFFF00) == 0x100) {
-                    if(unit_start) {
+                    // push previous NAL unit if new start delimiter found, dont push unit with type = 0
+                    if(unit_start && unit_type) {
                         units.push({
                             header: unit_header,
                             length: nalu.position - 4 - unit_start,

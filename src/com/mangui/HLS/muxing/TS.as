@@ -30,6 +30,10 @@ package com.mangui.HLS.muxing {
 		public var audioTags:Vector.<Tag> = new Vector.<Tag>();
 		/** List of packetized elementary streams with AAC. **/
 		private var _audioPES:Vector.<PES> = new Vector.<PES>();
+		/** has PMT been parsed ? **/
+		private var _pmtParsed:Boolean= false;
+		/** nb of AV packets before PMT **/
+		private var _AVpacketsBeforePMT:Number = 0;
 		/** Packet ID of the video stream. **/
 		private var _avcId:Number = -1;
 		/** PES packet that contains the first keyframe. **/
@@ -50,6 +54,8 @@ package com.mangui.HLS.muxing {
 		public var _timer:Timer;
 		/** Byte data to be read **/
 		private var _data:ByteArray;
+		/* last key Frame PES packet */
+		private var _lastKeyFrame:PES = null;
 		
 		
 		/** Transmux the M2TS file into an FLV file. **/
@@ -59,6 +65,12 @@ package com.mangui.HLS.muxing {
 			_timer = new Timer(0,0);
 			_timer.addEventListener(TimerEvent.TIMER, _readData);
 		};
+		
+		/** add new data into Buffer */
+		public function addData(newData:ByteArray):void {
+		  newData.readBytes(_data,_data.position);
+		  _timer.start();
+		}
 		
 		/** Read a small chunk of packets each time to avoid blocking **/
 		private function _readData(e:Event):void {
@@ -110,7 +122,7 @@ package com.mangui.HLS.muxing {
 			if(_firstKey == -1) {
 				return new ByteArray();
 			}
-			return AVC.getAVCC(_videoPES[_firstKey].data,_videoPES[_firstKey].payload);
+			return AVC.getAVCC(_lastKeyFrame.data,_lastKeyFrame.payload);
 		};
 		
 		
@@ -198,6 +210,7 @@ package com.mangui.HLS.muxing {
 							videoTags[videoTags.length-1].keyframe = true;
 							if(_firstKey == -1) {
 								_firstKey = i;
+								_lastKeyFrame=_videoPES[i];
 							}
 						}
 					}
@@ -268,16 +281,13 @@ package com.mangui.HLS.muxing {
 					} else if (_videoPES.length) {
 						_videoPES[_videoPES.length-1].data.writeBytes(_data,_data.position,todo);
 					} else {
-						Log.txt("Discarding TS video packet with id "+pid);
+						Log.txt("Discarding TS video packet with id "+pid + " bad TS segmentation ?");
 					}
 					break;
 				case _sdtId:
 						break;
 				default:
-					// Ignored other packet IDs, only report error if PMT not yet parsed 
-					// this helps to detect discarded TS packets because of PAT/PMT not being at beginning of TS fragment
-					if(_pmtId == -1)
-					   Log.txt("Discarding unassignable TS packets with id "+pid);
+				_AVpacketsBeforePMT++;
 					break;
 			}
 			// Jump to the next packet.
@@ -290,7 +300,7 @@ package com.mangui.HLS.muxing {
 			// Check the section length for a single PMT.
 			_data.position += 3;
 			if(_data.readUnsignedByte() > 13) {
-				throw new Error("Multiple PMT/NIT entries are not supported.");
+				throw new Error("Multiple PMT entries are not supported.");
 			}
 			// Grab the PMT ID.
 			_data.position += 7;
@@ -326,11 +336,16 @@ package com.mangui.HLS.muxing {
 				_data.position += sel;
 				read += sel + 5;
 			}
+			if(_pmtParsed == false) {
+			  _pmtParsed = true;
+			// if PMT was not parsed before, and some unknown packets have been skipped in between, rewind to beginning of the stream
+			// it helps with fragment not segmented properly (in theory there should be no A/V packets before PAT/PMT)
+			  if (_AVpacketsBeforePMT > 1) {
+			    Log.txt("late PMT found, rewinding at beginning of TS");
+			    return (-_data.position);
+			  }
+		  }
 			return len;
 		};
-		
-		
 	}
-	
-	
 }

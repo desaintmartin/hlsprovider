@@ -13,8 +13,10 @@ package com.mangui.HLS.utils {
 
         /** Log a message to the console. **/
         public static function txt(message:*):void {
-            if(LOGGING && ExternalInterface.available) {
-                ExternalInterface.call('console.log',String(message));
+            if(LOGGING){
+                if(ExternalInterface.available)
+                    ExternalInterface.call('console.log',String(message));
+                else trace(message);
             }
         };
 

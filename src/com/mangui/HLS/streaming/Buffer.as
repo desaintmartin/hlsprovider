@@ -117,7 +117,7 @@ package com.mangui.HLS.streaming {
                }
             }
             if((_state == HLSStates.PLAYING) ||
-               (_state == HLSStates.BUFFERING && buffer > _loader.getSegmentAverageDuration()))
+               (_state == HLSStates.BUFFERING && (buffer > _loader.getSegmentAverageDuration() || _reached_vod_end)))
              {
                 //Log.txt("appending data into NetStream");
                 while(_buffer_current_index < _buffer.length && _stream.bufferLength < 2*_loader.getSegmentAverageDuration()) {
@@ -208,8 +208,8 @@ package com.mangui.HLS.streaming {
         public function pause():void {
             if(_state == HLSStates.PLAYING || _state == HLSStates.BUFFERING) {
                 clearInterval(_interval);
-                _setState(HLSStates.PAUSED);
                 _stream.pause();
+                _setState(HLSStates.PAUSED);
             }
         };
 
@@ -217,9 +217,9 @@ package com.mangui.HLS.streaming {
         public function resume():void {
             if(_state == HLSStates.PAUSED) {
                 clearInterval(_interval);
-                _setState(HLSStates.PLAYING);
                 _stream.resume();
                 _interval = setInterval(_checkBuffer,100);
+                _setState(HLSStates.PLAYING);
             }
         };
 

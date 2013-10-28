@@ -89,7 +89,6 @@ package com.mangui.HLS.parsing {
         private function getIndexfromSeqNum(seqnum:Number):Number {
             if(seqnum >= start_seqnum && seqnum <= end_seqnum) {
                return (fragments.length-1 - (end_seqnum - seqnum));
-               return index;
             } else {
                return -1;
             }

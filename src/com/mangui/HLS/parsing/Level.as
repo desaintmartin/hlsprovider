@@ -56,8 +56,8 @@ package com.mangui.HLS.parsing {
         };
 
         /** Return the sequence number nearest a PTS **/
-        public function getSeqNumNearestPTS(pts:Number):Number {
-         if(fragments[0].start_pts_computed == Number.NEGATIVE_INFINITY) {
+        public function getSeqNumNearestPTS(pts:Number):Number {         
+         if(fragments.length == 0 || fragments[0].start_pts_computed == Number.NEGATIVE_INFINITY) {
             return -1;
          }
          
@@ -72,7 +72,10 @@ package com.mangui.HLS.parsing {
         };
        
         public function getLevelstartPTS():Number {
-          return fragments[0].start_pts_computed;
+          if (fragments.length)
+            return fragments[0].start_pts_computed;
+          else
+            return Number.NEGATIVE_INFINITY;
         }
 
         /** Return the fragment index from fragment sequence number **/

@@ -178,20 +178,25 @@ package com.mangui.HLS.streaming {
             }
             var level:Number;
             
-            /* in case IO Error has been raised, stick to same level */
+            /* in case IO Error has been raised, stick to same level */   
             if(_bIOError == true) {
               level = _level;
-            /* else if last fragment was loaded for PTS analysis,
-            stick to same level */
+            /* in case fragment was loaded for PTS analysis, stick to same level */
             } else if(_playlist_pts_loaded == true) {
               _playlist_pts_loaded = false;
               level = _level;
-              } else {
-              if (_manual_level == -1) {
-                 level = _getnextlevel(buffer);
-              } else {
-                 level = _manual_level;
-              }
+              /* in case we are switching levels (waiting for playlist to reload), stick to same level */
+            } else if(_switchlevel == true) {
+              level = _level;
+            } else if (_manual_level == -1 ) {
+              level = _getnextlevel(buffer);
+            } else {
+              level = _manual_level;
+            }
+            if(level != _level) {
+                _level = level;
+                _switchlevel = true;
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.SWITCH,_level));
             }
             // reset IO Error when loading new fragment
             _bIOError = false;
@@ -253,11 +258,7 @@ package com.mangui.HLS.streaming {
             _seqnum = seqnum;
                         
             _hasDiscontinuity = false;
-            if(level != _level) {
-                _level = level;
-                _switchlevel = true;   
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.SWITCH,_level));
-            } else {
+            if (_switchlevel == false) {
               // same level. check if discontinuity occurs
               if(frag.continuity != _continuity) {
                 // set flags, discontinuity tag will be inserted at a later stage

@@ -177,17 +177,17 @@ package com.mangui.HLS.streaming {
             _buffer_current_index = 0;
             var seek_pts:Number = min_pts + (PlaybackStartPosition-start_offset)*1000;
             if (_playback_start_pts == Number.NEGATIVE_INFINITY) {
-               _playback_start_pts = seek_pts;
+               _playback_start_pts = seek_pts < min_pts ? min_pts : seek_pts;
                _playlist_start_pts = _loader.getPlayListStartPTS();
                _playback_start_position = (_playback_start_pts-_playlist_start_pts)/1000;
-            }            
+            }
             _buffer_last_pts = max_pts;
             tags.sort(_sortTagsbyDTS);
             for each (var t:Tag in tags) {
                 _filterTag(t,seek_pts) && _buffer.push(t);
             }
             _buffer_next_time=_playback_start_position+(_buffer_last_pts-_playback_start_pts)/1000;
-            Log.txt("_loaderCallback,_buffer_next_time:"+ _buffer_next_time);
+            Log.txt("_loaderCallback:start_offset/_buffer_next_time:"+start_offset + "/" + _buffer_next_time);
             _loading = false;
         };
 

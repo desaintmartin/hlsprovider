@@ -21,8 +21,6 @@ package com.mangui.HLS.streaming {
         private var _urlloader:URLLoader;
         /** Link to the M3U8 file. **/
         private var _url:String;
-        /** Amount of playlists still need loading. **/
-        private var _toLoad:Number;
         /** are all playlists filled ? **/
         private var _canStart:Boolean;
         /** Timeout ID for reloading live playlists. **/
@@ -31,11 +29,14 @@ package com.mangui.HLS.streaming {
         private var _type:String;
         /** last reload manifest time **/
         private var _reload_playlists_timer:uint;
+        /** current level **/
+        private var _current_level:Number=0;
 
         /** Setup the loader. **/
         public function ManifestLoader(hls:HLS) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
+            _hls.addEventListener(HLSEvent.SWITCH,_levelSwitchHandler);
             _levels = [];
             _urlloader = new URLLoader();
             _urlloader.addEventListener(Event.COMPLETE,_loaderHandler);
@@ -46,23 +47,16 @@ package com.mangui.HLS.streaming {
 
         /** Loading failed; return errors. **/
         private function _errorHandler(event:ErrorEvent):void {
-            var txt:String = "Cannot load M3U8: "+event.text;
+            var txt:String;
             if(event is SecurityErrorEvent) {
                 txt = "Cannot load M3U8: crossdomain access denied";
             } else if (event is IOErrorEvent) {
-                txt = "Cannot load M3U8: 404 not found";
+                Log.txt("I/O Error while trying to load Playlist, retry in 2s");
+                _timeoutID = setTimeout(_loadPlaylist,2000);
+            } else {
+               txt = "Cannot load M3U8: "+event.text;
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR,txt));
-        };
-
-        /** return true if first two levels contain at least 2 fragments **/
-        private function _areFirstLevelsFilled():Boolean {
-           for(var i:Number = 0; (i < _levels.length) && (i < 2); i++) {
-            if(_levels[i].fragments.length < 2) {
-               return false;
-            }
-         }
-         return true;
         };
 
         /** Return the current manifest. **/
@@ -89,36 +83,35 @@ package com.mangui.HLS.streaming {
 
         /** Manifest loaded; check and parse it **/
         private function _loaderHandler(event:Event):void {
-            _loadManifest(String(event.target.data));
+            _parseManifest(String(event.target.data));
         };
         
-        /** load a playlist **/
-        private function _loadPlaylist(string:String,url:String,index:Number):void {
+        /** parse a playlist **/
+        private function _parsePlaylist(string:String,url:String,index:Number):void {
             if(string != null && string.length != 0) {
                var frags:Array = Manifest.getFragments(string,url);
                // set fragment and update sequence number range
                _levels[index].updateFragments(frags);
                _levels[index].targetduration = Manifest.getTargetDuration(string);
             }
-            if(--_toLoad == 0) {
+  
             // Check whether the stream is live or not finished yet
             if(Manifest.hasEndlist(string)) {
                 _type = HLSTypes.VOD;
             } else {
                 _type = HLSTypes.LIVE;
                 var timeout:Number = Math.max(100,_reload_playlists_timer + 1000*_levels[index].averageduration - getTimer());
-                Log.txt("Live Playlist parsing finished: reload in " + timeout + " ms");
-                _timeoutID = setTimeout(_loadPlaylists,timeout);
+                Log.txt("Level " + index + " Live Playlist parsing finished: reload in " + timeout + " ms");
+                _timeoutID = setTimeout(_loadPlaylist,timeout);
             }
-               if (!_canStart && (_canStart =_areFirstLevelsFilled())) {
-                  Log.txt("first 2 levels are filled with at least 2 fragments, notify event");
-                  _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST,_levels));
-              }
+            if (!_canStart && (_canStart = (_levels[index].fragments.length >= 2  ))) {
+               Log.txt("first level filled with at least 2 fragments, notify event");
+               _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST,_levels));
             }
         };
 
-        /** load First Level Playlist **/
-        private function _loadManifest(string:String):void {
+        /** Parse First Level Playlist **/
+        private function _parseManifest(string:String):void {
             // Check for M3U8 playlist or manifest.
             if(string.indexOf(Manifest.HEADER) == 0) {
                //1 level playlist, create unique level and parse playlist
@@ -126,13 +119,12 @@ package com.mangui.HLS.streaming {
                     var level:Level = new Level();
                     level.url = _url;
                     _levels.push(level);
-                    _toLoad = 1;
                     Log.txt("1 Level Playlist, load it");
-                    _loadPlaylist(string,_url,0);
+                    _parsePlaylist(string,_url,0);
                 } else if(string.indexOf(Manifest.LEVEL) > 0) {
                   //adaptative playlist, extract levels from playlist, get them and parse them
                   _levels = Manifest.extractLevels(string,_url);
-                  _loadPlaylists();
+                  _loadPlaylist();
                 }
             } else {
                 var message:String = "Manifest is not a valid M3U8 file" + _url;
@@ -140,13 +132,20 @@ package com.mangui.HLS.streaming {
             }
         };
 
-        /** load/reload all M3U8 playlists **/
-        private function _loadPlaylists():void {
+        /** load/reload active M3U8 playlist **/
+        private function _loadPlaylist():void {
             _reload_playlists_timer = getTimer();
-            _toLoad = _levels.length;
-            //Log.txt("HLS Playlist, with " + _toLoad + " levels");
-            for(var i:Number = 0; i < _levels.length; i++) {
-                new Manifest().loadPlaylist(_levels[i].url,_loadPlaylist,_errorHandler,i);
+            // load active M3U8 playlist only
+            new Manifest().loadPlaylist(_levels[_current_level].url,_parsePlaylist,_errorHandler,_current_level);
+        };
+
+        /** When level switch occurs, assess the need of (re)loading new level playlist **/
+        public function _levelSwitchHandler(event:HLSEvent):void {
+            _current_level = event.level;
+            if(_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0) {
+              Log.txt("switch Level, (Re)Load Playlist");
+              clearTimeout(_timeoutID);
+              _timeoutID = setTimeout(_loadPlaylist,0);
             }
         };
 

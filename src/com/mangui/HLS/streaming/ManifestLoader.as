@@ -30,13 +30,15 @@ package com.mangui.HLS.streaming {
         /** last reload manifest time **/
         private var _reload_playlists_timer:uint;
         /** current level **/
-        private var _current_level:Number=0;
+        private var _current_level:Number;
+        /** current level **/
+        private var _load_in_progress:Boolean = false;
 
         /** Setup the loader. **/
         public function ManifestLoader(hls:HLS) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
-            _hls.addEventListener(HLSEvent.SWITCH,_levelSwitchHandler);
+            _hls.addEventListener(HLSEvent.QUALITY_SWITCH,_levelSwitchHandler);
             _levels = [];
             _urlloader = new URLLoader();
             _urlloader.addEventListener(Event.COMPLETE,_loaderHandler);
@@ -75,6 +77,7 @@ package com.mangui.HLS.streaming {
         public function load(url:String):void {
             _url = url;
             _levels = [];
+            _current_level = 0;
             _canStart = false;
             _reload_playlists_timer = getTimer();
             _urlloader.load(new URLRequest(_url));
@@ -106,8 +109,10 @@ package com.mangui.HLS.streaming {
             }
             if (!_canStart && (_canStart = (_levels[index].fragments.length >= 2  ))) {
                Log.txt("first level filled with at least 2 fragments, notify event");
-               _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST,_levels));
+               _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED,_levels));
             }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_UPDATED,index));
+            _load_in_progress = false;
         };
 
         /** Parse First Level Playlist **/
@@ -134,6 +139,7 @@ package com.mangui.HLS.streaming {
 
         /** load/reload active M3U8 playlist **/
         private function _loadPlaylist():void {
+            _load_in_progress = true;
             _reload_playlists_timer = getTimer();
             // load active M3U8 playlist only
             new Manifest().loadPlaylist(_levels[_current_level].url,_parsePlaylist,_errorHandler,_current_level);
@@ -142,7 +148,7 @@ package com.mangui.HLS.streaming {
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
         public function _levelSwitchHandler(event:HLSEvent):void {
             _current_level = event.level;
-            if(_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0) {
+            if(_load_in_progress == false && (_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0)) {
               Log.txt("switch Level, (Re)Load Playlist");
               clearTimeout(_timeoutID);
               _timeoutID = setTimeout(_loadPlaylist,0);

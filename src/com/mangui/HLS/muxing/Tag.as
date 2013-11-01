@@ -20,6 +20,8 @@ package com.mangui.HLS.muxing {
         public static const AVC_NALU:String = 'AVC NALU';
         /** MP3 Data Type ID. **/
         public static const MP3_RAW:String = 'MP3 RAW';
+        /** Discontinuity Data Type ID. **/
+        public static const DISCONTINUITY:String = 'DISCONTINUITY';
 
 
         /** Is this an AVC keyframe. **/

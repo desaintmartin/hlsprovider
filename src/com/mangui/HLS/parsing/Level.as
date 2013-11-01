@@ -46,22 +46,29 @@ package com.mangui.HLS.parsing {
 
         /** Return the sequence number nearest a given time position. **/
         public function getSeqNumNearestPosition(position:Number):Number {
+          
+          if(position < fragments[0].start_time)
+            return start_seqnum;
+         
             for(var i:Number = 0; i < fragments.length; i++) {
                   /* check nearest fragment */
                 if( Math.abs(fragments[i].start_time-position) < Math.abs(fragments[i].start_time+fragments[i].duration-position)) {
                   return (start_seqnum+i);
                 }
             }
-            return -1;
+            return end_seqnum;
         };
 
         /** Return the sequence number nearest a PTS **/
-        public function getSeqNumNearestPTS(pts:Number):Number {         
-         if(fragments.length == 0 || fragments[0].start_pts_computed == Number.NEGATIVE_INFINITY) {
+        public function getSeqNumNearestPTS(pts:Number,continuity:Number):Number {         
+          if(fragments.length == 0) 
             return -1;
-         }
-         
-          for(var i:Number= 0; i< fragments.length; i++) {
+          var firstIndex:Number = getFirstIndexfromContinuity(continuity);
+          if (firstIndex == -1 || fragments[firstIndex].start_pts_computed == Number.NEGATIVE_INFINITY)
+            return -1;
+          var lastIndex:Number = getLastIndexfromContinuity(continuity);
+        
+          for(var i:Number= firstIndex; i<= lastIndex; i++) {
                 /* check nearest fragment */
               if( Math.abs(fragments[i].start_pts_computed-pts) < Math.abs(fragments[i].start_pts_computed+1000*fragments[i].duration-pts)) {
                 return fragments[i].seqnum;
@@ -96,6 +103,53 @@ package com.mangui.HLS.parsing {
                return -1;
             }
         }
+
+        /** Return the first index matching with given continuity counter **/
+        private function getFirstIndexfromContinuity(continuity:Number):Number {
+          // look for first fragment matching with given continuity index
+          for(var i:Number= 0; i< fragments.length; i++) {
+            if(fragments[i].continuity == continuity)
+              return i;
+          }
+          return -1;
+        }
+        
+        /** Return the first seqnum matching with given continuity counter **/
+        public function getFirstSeqNumfromContinuity(continuity:Number):Number {
+          var index:Number = getFirstIndexfromContinuity(continuity);
+          if (index == -1) {
+            return Number.NEGATIVE_INFINITY;
+          }
+          return fragments[index].seqnum;
+        }
+
+        /** Return the last seqnum matching with given continuity counter **/
+        public function getLastSeqNumfromContinuity(continuity:Number):Number {
+          var index:Number = getLastIndexfromContinuity(continuity);
+          if (index == -1) {
+            return Number.NEGATIVE_INFINITY;
+          }
+          return fragments[index].seqnum;
+        }
+
+
+        /** Return the last index matching with given continuity counter **/
+        private function getLastIndexfromContinuity(continuity:Number):Number {
+          var firstIndex:Number = getFirstIndexfromContinuity(continuity);
+          if (firstIndex == -1)
+            return -1;
+          
+          var lastIndex:Number = firstIndex;
+          // look for first fragment matching with given continuity index
+          for(var i:Number= firstIndex; i< fragments.length; i++) {
+            if(fragments[i].continuity == continuity)
+              lastIndex = i;
+            else
+              break;
+          }
+          return lastIndex;
+        }
+
 
         /** set Fragments **/
         public function updateFragments(_fragments:Array):void {
@@ -159,13 +213,13 @@ package com.mangui.HLS.parsing {
           //Log.txt("SN["+fragments[fragIdx].seqnum+"]:pts/duration:" + fragments[fragIdx].start_pts_computed + "/" + fragments[fragIdx].duration);
 
           // adjust fragment PTS/duration from seqnum-1 to frag 0
-          for(var i:Number = fragIdx ; i > 0; i--) {
+          for(var i:Number = fragIdx ; i > 0 && fragments[i-1].continuity == frag.continuity; i--) {
             updateFragmentPTS(i,i-1);
             //Log.txt("SN["+fragments[i-1].seqnum+"]:pts/duration:" + fragments[i-1].start_pts_computed + "/" + fragments[i-1].duration);
           }
          
          // adjust fragment PTS/duration from seqnum to last frag
-          for(i = fragIdx ; i < fragments.length-1; i++) {
+          for(i = fragIdx ; i < fragments.length-1 && fragments[i+1].continuity == frag.continuity; i++) {
             updateFragmentPTS(i,i+1);
             //Log.txt("SN["+fragments[i+1].seqnum+"]:pts/duration:" + fragments[i+1].start_pts_computed + "/" + fragments[i+1].duration);
           }
@@ -175,7 +229,7 @@ package com.mangui.HLS.parsing {
            for(i= 0; i < fragments.length; i++) {
               fragments[i].start_time = start_time_offset;
               start_time_offset+=fragments[i].duration;
-              //Log.txt("SN["+fragments[i].seqnum+"]:pts/duration:" + fragments[i].start_pts_computed + "/" + fragments[i].duration);
+              //Log.txt("SN["+fragments[i].seqnum+"]:start_time/continuity/pts/duration:" + fragments[i].start_time + "/" + fragments[i].continuity + "/"+ fragments[i].start_pts_computed + "/" + fragments[i].duration);
            }
            duration = start_time_offset;
            return frag.start_time;

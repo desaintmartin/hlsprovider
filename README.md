@@ -21,6 +21,7 @@ the following M3U8 tags are supported:
 * #EXT-X-ENDLIST (supports live / event / VOD playlist)
 * #EXT-X-MEDIA-SEQUENCE (value is used for live playlist update)
 * #EXT-X-TARGETDURATION (value is used as live playlist reload interval)
+* #EXT-X-DISCONTINUITY
 
 ##HLSProvider in action :
 

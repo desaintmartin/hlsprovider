@@ -124,12 +124,12 @@ package com.mangui.jwplayer.media {
             _video.attachNetStream(_stream);            
               _hls = new HLS(_stream);
             _hls.volume(cfg.volume);
-            _hls.addEventListener(HLSEvent.COMPLETE,_completeHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT,_fragmentHandler);
-            _hls.addEventListener(HLSEvent.MANIFEST,_manifestHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED,_fragmentHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED,_manifestHandler);
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
-            _hls.addEventListener(HLSEvent.AUDIO, _audioHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_ONLY, _audioHandler);
             _level = 0;
 			mute(cfg.mute);
         };

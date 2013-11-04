@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html><head><title>HLSProvider in JW5</title>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-<meta content="utf-8" http-equiv="encoding">
-</head>
+<meta content="utf-8" http-equiv="encoding"></head>
 <body style="color: Black; background-color: White;" link="Blue" vlink="Purple">
 <div style="text-align: center;">
 <div style="text-align: center;">
@@ -38,16 +37,33 @@ issue is reported with a sample playlist, it will be added in the list
 and verified after bugfixing </div>
 <ul id="streamlist">
 </ul>
-<div style="text-align: left;">
+
+
+Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
+<input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Play</button><br>
+<p>
+  
+<script type="text/javascript">
+function userSubmit() {
+   loadStream(document.getElementById('userInput').value);
+}
+</script>
+
+</p><div style="text-align: left;">
 <script type="text/javascript" src="../../../playlists/streams.js"></script>
 <script type="text/javascript">
+  
+
 function listStreams(list, container) {
 for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
 entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
 document.getElementById(container).appendChild(entry);
 }
 }
+
+
 listStreams(teststreams, "streamlist");
+
 </script>
 </div><div style="width: 640px; height: 360px;" id="player"></div>
 <div style="text-align: left;" id="log2"></div>
@@ -56,12 +72,12 @@ listStreams(teststreams, "streamlist");
 <table id="history" class="data" border="0" cellpadding="0" cellspacing="0">
 <tbody>
    <tr class="header2">
-      <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">Date/Time</td>
-      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">Position</td>
-      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">BufferPercent</td>      
-      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Bandwidth</td>
-      <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px">Quality</td>
-      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px">Width</td>
+      <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px;">Date/Time</td>
+      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px;">Position</td>
+      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px;">BufferPercent</td>      
+      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px;">Bandwidth</td>
+      <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px;">Quality</td>
+      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px;">Width</td>
    </tr>
 </tbody>
 </table>
@@ -139,5 +155,5 @@ function dateTime(){
   currentDateTime = curr_year+'-'+curr_month+'-'+curr_date+' '+curr_hour+':'+curr_min+':'+curr_sec;
 }
 </script>
-</div>
+
 </body></html>

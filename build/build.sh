@@ -22,4 +22,4 @@ echo ""
 echo "Compiling HLSProviderOSMF.swf"
 echo ""
 
-$FLEXPATH/bin/mxmlc ../src/com/mangui/osmf/plugins/HLSPlugin.as -sp ../src -o ../test/osmf/HLSProviderOSMF.swf -library-path+=../lib/OSMF -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true
+$FLEXPATH/bin/mxmlc ../src/HLSOSMFDynamicPlugin.as -sp ../src -o ../test/osmf/HLSProviderOSMF.swf -library-path+=../lib/OSMF -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true

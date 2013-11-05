@@ -1,7 +1,7 @@
 package { 
 
 
-    import com.mangui.HLS.*;
+    import org.mangui.HLS.*;
     import flash.display.*;
     import flash.events.*;
     import flash.net.*;

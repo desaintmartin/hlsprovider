@@ -3,7 +3,7 @@ package
 	import flash.display.Sprite;
 	import flash.system.Security;
 	
-	import com.mangui.osmf.plugins.HLSPlugin;
+	import org.mangui.osmf.plugins.HLSPlugin;
 	import org.osmf.media.PluginInfo;
 	
 	public class HLSOSMFDynamicPlugin extends Sprite

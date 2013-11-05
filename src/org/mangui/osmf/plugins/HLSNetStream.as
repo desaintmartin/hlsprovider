@@ -2,32 +2,18 @@ package org.mangui.osmf.plugins
 {
 	import flash.events.Event;
 	import flash.events.NetStatusEvent;
-	import flash.events.TimerEvent;
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
 	import flash.net.NetStreamPlayOptions;
-	import flash.net.NetStreamPlayTransitions;
-	import flash.utils.ByteArray;
-	import flash.utils.Timer;
 
   import org.mangui.HLS.utils.*;
   import org.mangui.HLS.HLS;
 	
 
-	import org.osmf.media.MediaResourceBase;
 	import org.osmf.media.URLResource;
 	import org.osmf.net.NetClient;
 	import org.osmf.net.NetStreamCodes;
-	import org.osmf.net.NetStreamPlaybackDetailsRecorder;
 	import org.osmf.net.StreamingURLResource;
-	import org.osmf.utils.OSMFSettings;
-	
-	CONFIG::LOGGING 
-	{	
-		import org.osmf.logging.Log;
-		import org.osmf.logging.Logger;
-	}
-	
 	
 	/**
 	 * 
@@ -48,7 +34,6 @@ package org.mangui.osmf.plugins
 	 */	
 	public class HLSNetStream extends NetStream
 	{
-	  private var _resource:URLResource;
 		private var _playStreamName:String = null;
 		private var _playStart:Number = -1;
 		private var _playForDuration:Number = -1;
@@ -69,9 +54,8 @@ package org.mangui.osmf.plugins
 		 *  @playerversion AIR 1.5
 		 *  @productversion OSMF 1.0
 		 */
-		public function HLSNetStream(connection:NetConnection, resource:URLResource = null)
+		public function HLSNetStream(connection:NetConnection)
 		{
-			_resource = resource;
 			super(connection);
 		}
 		
@@ -205,14 +189,6 @@ package org.mangui.osmf.plugins
 			{
 				_playForDuration = Number(args[2]);
 			}
-		}
-			
-		private static const HIGH_PRIORITY:int = int.MAX_VALUE;
-		
-		CONFIG::LOGGING
-		{
-			private static const logger:Logger = Log.getLogger("org.denivip.osmf.net.httpstreaming.hls.HTTPHLSNetStream") as Logger;
-			private var previouslyLoggedState:String = null;
 		}
 	}
 }

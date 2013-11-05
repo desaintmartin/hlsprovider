@@ -72,6 +72,8 @@ package com.mangui.jwplayer.media {
             item.duration = _levels[0].duration;
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: item.duration});
             _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
+            /* start seeking on manifest load */
+            _hls.seek(0);
         };
 
 
@@ -121,8 +123,9 @@ package com.mangui.jwplayer.media {
             _connection = new NetConnection();
             _connection.connect(null);
             _stream = new NetStream(_connection);
-            _video.attachNetStream(_stream);            
-              _hls = new HLS(_stream);
+            _video.attachNetStream(_stream);
+            _hls = new HLS();
+            _hls.NetStream = _stream;
             _hls.volume(cfg.volume);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);

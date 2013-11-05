@@ -51,15 +51,10 @@ package com.mangui.HLS.streaming {
 
         private var _was_playing:Boolean = false;
         /** Create the buffer. **/
-        public function Buffer(hls:HLS, loader:FragmentLoader, stream:NetStream):void {
+        public function Buffer(hls:HLS, loader:FragmentLoader):void {
             _hls = hls;
             _loader = loader;
-            _stream = stream;
-            _stream.inBufferSeek = true;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED,_manifestHandler);
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED,_lastVODFragmentLoadedHandler);
-            _transform = new SoundTransform();
-            _transform.volume = 0.9;
             _setState(HLSStates.IDLE);
         };
 
@@ -221,16 +216,6 @@ package com.mangui.HLS.streaming {
           return bufSize;
         }
       
-        /** Start streaming on manifest load. **/
-        private function _manifestHandler(event:HLSEvent):void {
-            if(_state == HLSStates.IDLE) {
-                _stream.close();
-                _stream.play(null);
-                _stream.soundTransform = _transform;
-                seek(PlaybackStartPosition);
-            }
-        };
-
         private function _lastVODFragmentLoadedHandler(event:HLSEvent):void {
           _reached_vod_end = true;
         }
@@ -313,6 +298,8 @@ package com.mangui.HLS.streaming {
                _buffer_start_pts = new Array();
                _buffer_last_pts = new Array();
                 PlaybackStartPosition = position;
+                _stream.close();
+                _stream.play(null);
                _stream.seek(0);
                _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                _reached_vod_end = false;
@@ -343,5 +330,13 @@ package com.mangui.HLS.streaming {
                 _stream.soundTransform = _transform;
             }
         };
+        
+        public function set NetStream(netstream:NetStream):void {
+          _stream = netstream; 
+          _stream.inBufferSeek = true;
+          _transform = new SoundTransform();
+          _transform.volume = 0.9;
+          _stream.soundTransform = _transform;
+        }
     }
 }

@@ -23,11 +23,10 @@ import flash.net.NetStream;
 	private var _client:Object = {};
 
         /** Create and connect all components. **/
-    public function HLS(stream:NetStream):void {
-            _stream = stream;
+    public function HLS():void {
             _manifestLoader = new ManifestLoader(this);
             _loader = new FragmentLoader(this);
-            _buffer = new Buffer(this, _loader, stream);
+            _buffer = new Buffer(this, _loader);
         };
 
 
@@ -132,6 +131,13 @@ import flash.net.NetStream;
     public function set client(value:Object):void {
         _client = value;
     }
+    
+        /** Set NetStream **/
+        public function set NetStream(netstream:NetStream):void {
+            _stream = netstream;
+            _buffer.NetStream = netstream;
+        };    
+    
 }
 ;
 }

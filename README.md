@@ -1,9 +1,13 @@
 #HLSprovider
 
-**HLSProvider** is a media provider plugin that allows you to play HLS playlist using JWPlayer Flash free edition.
-It is compatible with both JWPlayer 5 and 6, and it is free of charge.
+**HLSProvider** is a media provider plugin that allows you to play HLS playlist using either :
 
-**HLSProvider** will soon also support HLS on top of OSMF 2.0. any help welcomed !
+* **JWPlayer** Flash free edition version **5.x**
+* **JWPlayer** Flash free edition version **6.x**
+* **OSMF** version **2.0** (early beta stage, any help welcomed !)
+
+it is free of charge.
+
 
 **HLSProvider** supports the following HLS features :
 
@@ -29,6 +33,7 @@ the following M3U8 tags are supported:
 
 * http://streambox.fr/HLSProvider/jwplayer5
 * http://streambox.fr/HLSProvider/jwplayer6
+* http://streambox.fr/HLSProvider/osmf
 
 ##How to use it :
 

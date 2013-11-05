@@ -1,36 +1,36 @@
 package com.mangui.osmf.plugins
 {
-	import org.osmf.elements.LoadFromDocumentElement;
-	import org.osmf.media.MediaElement;
-	import org.osmf.media.MediaFactoryItem;
-	import org.osmf.media.MediaFactoryItemType;
-	import org.osmf.media.MediaResourceBase;
-	import org.osmf.media.PluginInfo;
-	import org.osmf.media.URLResource;
-		
-	public class HLSPlugin extends PluginInfo
-	{
-		public function HLSPlugin(items:Vector.<MediaFactoryItem>=null, elementCreationNotifFunc:Function=null){
-			
-			items = new Vector.<MediaFactoryItem>();
-			items.push(
-				new MediaFactoryItem(
-					'com.mangui.osmf.plugins.HLSPlugin',
-					canHandleResource,
-					createMediaElement,
-					MediaFactoryItemType.STANDARD
-				)
-			);
-			
-			super(items, elementCreationNotifFunc);
-		}
-		
+  import org.osmf.elements.LoadFromDocumentElement;
+  import org.osmf.media.MediaElement;
+  import org.osmf.media.MediaFactoryItem;
+  import org.osmf.media.MediaFactoryItemType;
+  import org.osmf.media.MediaResourceBase;
+  import org.osmf.media.PluginInfo;
+  import org.osmf.media.URLResource;
+    
+  public class HLSPlugin extends PluginInfo
+  {
+    public function HLSPlugin(items:Vector.<MediaFactoryItem>=null, elementCreationNotifFunc:Function=null){
+      
+      items = new Vector.<MediaFactoryItem>();
+      items.push(
+        new MediaFactoryItem(
+          'com.mangui.osmf.plugins.HLSPlugin',
+          canHandleResource,
+          createMediaElement,
+          MediaFactoryItemType.STANDARD
+        )
+      );
+      
+      super(items, elementCreationNotifFunc);
+    }
+    
 		private function canHandleResource(resource:MediaResourceBase):Boolean{
-            return true; 
+            return HLSLoaderBase.canHandle(resource);
 		}
 		
 		private function createMediaElement():MediaElement{
-			return new MediaElement();
+			return new LoadFromDocumentElement(null, new HLSLoaderBase());
 		}
 	}
 }

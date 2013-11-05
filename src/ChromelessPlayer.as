@@ -160,12 +160,13 @@ package {
             if (available && stage.stageVideos.length > 0) {
               _video = stage.stageVideos[0];
               _video.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
-              _hls = new HLS(_stream);
+              _hls = new HLS();
             } else {
               var video:Video = new Video(stage.stageWidth, stage.stageHeight);
               addChild(video);
-              _hls = new HLS(_stream);
+              _hls = new HLS();
             }
+            _hls.NetStream = _stream;
             _hls.setWidth(stage.stageWidth);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);

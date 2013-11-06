@@ -2,9 +2,6 @@ package org.mangui.osmf.plugins
 {
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
-	import flash.net.URLLoader;
-	import flash.net.URLRequest;
-  import flash.media.Video;
   import flash.net.*;
 	
 	
@@ -18,9 +15,9 @@ package org.mangui.osmf.plugins
 	import org.osmf.traits.LoadState;
 	import org.osmf.traits.LoadTrait;
 	import org.osmf.traits.LoaderBase;
-		
+			
 	import org.mangui.HLS.HLS;
-	import org.mangui.HLS.HLSEvent;  
+	import org.mangui.HLS.HLSEvent;
 	
 	/**
 	 * Loader for .m3u8 playlist file.
@@ -30,11 +27,6 @@ package org.mangui.osmf.plugins
 	{
 		
 		private var _loadTrait:LoadTrait;
-		private var _parser:Object = null;
-		private var _loadTime:int = 0;
-		private var _playlistLoader:URLLoader = null;
-    /** Reference to the quality levels. **/
-    protected var _levels:Array;		
     /** Reference to the framework. **/
     private static var _hls:HLS = null;
 		
@@ -101,12 +93,9 @@ package org.mangui.osmf.plugins
   /** Update video A/R on manifest load. **/
   private function _manifestHandler(event:HLSEvent):void {
       var resource:MediaResourceBase = URLResource(_loadTrait.resource);
-      _levels = event.levels;
-      var duration:Number = _levels[0].duration;
-      _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
       
 			try{
-				var loadedElem:MediaElement = new VideoElement(null, new HLSNetLoader());
+				var loadedElem:MediaElement = new VideoElement(null, new HLSNetLoader(_hls,event.levels[0].duration));
 				loadedElem.resource = resource;
 				
 				LoadFromDocumentLoadTrait(_loadTrait).mediaElement = loadedElem;
@@ -116,12 +105,6 @@ package org.mangui.osmf.plugins
 				updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);
 				_loadTrait.dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(e.errorID, e.message)));
 			}
-  };
-
-  /** Update playback position. **/
-  private function _mediaTimeHandler(event:HLSEvent):void {
-      var duration:Number = event.mediatime.duration;
-      var _bufferPercent:Number = 100*(event.mediatime.position+event.mediatime.buffer)/event.mediatime.duration;
   };
 	}
 }

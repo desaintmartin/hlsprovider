@@ -300,7 +300,6 @@ package org.mangui.HLS.streaming {
                 PlaybackStartPosition = position;
                 _stream.close();
                 _stream.play(null);
-               _stream.seek(0);
                _stream.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                _reached_vod_end = false;
                _playback_start_position_real = Number.NEGATIVE_INFINITY;

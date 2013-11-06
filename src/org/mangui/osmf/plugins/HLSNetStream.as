@@ -61,25 +61,18 @@ package org.mangui.osmf.plugins
 		
 		///////////////////////////////////////////////////////////////////////
 		/// Public API overrides
-		///////////////////////////////////////////////////////////////////////
-		
-		override public function set client(object:Object):void
-		{
-		  //Log.txt("HLSNetStream:set Client:" + object);
-			super.client = object;
-		}
-		
+		///////////////////////////////////////////////////////////////////////	
 		/**
 		 * Plays the specified stream with respect to provided arguments.
 		 */
 		override public function play(...args):void 
 		{
+		
+			Log.txt("HLSNetStream:play");
 			if(args.length == 1) {
 			  super.play(args[0]);
 			  return;
 			}
-			//processPlayParameters(args);
-			Log.txt("HLSNetStream:play initiated for [" + _playStreamName +"] with parameters ( start = " + _playStart.toString() + ", duration = " + _playForDuration.toString() +" ).");
 			_hls = HLSLoaderBase.hls;
 			_hls.NetStream = this;
 			_hls.seek(0);
@@ -122,6 +115,7 @@ package org.mangui.osmf.plugins
 			{
 				offset = 0;		// FMS rule. Seek to <0 is same as seeking to zero.
 			}
+			_hls.seek(offset);
 						
 			dispatchEvent(
 				new NetStatusEvent(
@@ -153,42 +147,6 @@ package org.mangui.osmf.plugins
 		{
 		  Log.txt("HLSNetStream:set Buffer Time:" + value);
 			super.bufferTime = value;
-		}
-		
-		/**
-		 * @inheritDoc
-		 */
-		override public function get time():Number
-		{
-		  Log.txt("HLSNetStream:get time()");
-		    return 0;
-		}
-		
-		/**
-		 * @private
-		 * 
-		 * Processes provided arguments to obtain the actual
-		 * play parameters.
-		 */
-		private function processPlayParameters(args:Array):void
-		{
-			if (args.length < 1)
-			{
-				throw new Error("HTTPNetStream.play() requires at least one argument");
-			}
-
-			_playStreamName = args[0];
-			_playStart = 0;
-			if (args.length >= 2)
-			{
-				_playStart = Number(args[1]);
-			}
-			
-			_playForDuration = -1;
-			if (args.length >= 3)
-			{
-				_playForDuration = Number(args[2]);
-			}
 		}
 	}
 }

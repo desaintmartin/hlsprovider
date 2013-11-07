@@ -29,10 +29,6 @@ package org.mangui.jwplayer.media {
         protected var _levels:Array;
         /** Reference to the video object. **/
         private var _video:Video;
-        /** Netstream instance used for playing the stream. **/
-        private var _stream:NetStream;
-        /** NetConnection legacy stuff. **/
-        private var _connection:NetConnection;
 
         public function HLSProvider() {
             super('hls');
@@ -118,15 +114,11 @@ package org.mangui.jwplayer.media {
         /** Set the volume on init. **/
         override public function initializeMediaProvider(cfg:PlayerConfig):void {
             super.initializeMediaProvider(cfg);
+            _hls = new HLS();
+            _hls.volume(cfg.volume);
             _video = new Video(320,180);
             _video.smoothing = true;
-            _connection = new NetConnection();
-            _connection.connect(null);
-            _stream = new NetStream(_connection);
-            _video.attachNetStream(_stream);
-            _hls = new HLS();
-            _hls.NetStream = _stream;
-            _hls.volume(cfg.volume);
+            _video.attachNetStream(_hls.stream);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED,_fragmentHandler);

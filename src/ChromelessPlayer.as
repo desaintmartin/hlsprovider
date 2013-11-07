@@ -24,10 +24,6 @@ package {
         private var _video:StageVideo;
         /** Javascript callbacks. **/
         private var _callbacks:Object = {};
-        /** Netstream instance used for playing the stream. **/
-        private var _stream:NetStream;
-        /** NetConnection legacy stuff. **/
-        private var _connection:NetConnection;
 
         /** Initialization. **/
         public function ChromelessPlayer():void {
@@ -153,10 +149,6 @@ package {
         /** StageVideo detector. **/
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
             var available:Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
-            _connection = new NetConnection();
-            _connection.connect(null);
-            _stream = new NetStream(_connection);
-            _video.attachNetStream(_stream);
             if (available && stage.stageVideos.length > 0) {
               _video = stage.stageVideos[0];
               _video.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
@@ -166,7 +158,7 @@ package {
               addChild(video);
               _hls = new HLS();
             }
-            _hls.NetStream = _stream;
+            _video.attachNetStream(_hls.stream);
             _hls.setWidth(stage.stageWidth);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);

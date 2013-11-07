@@ -30,7 +30,7 @@
 		
 		override protected function createNetStream(connection:NetConnection, resource:URLResource):NetStream
 		{
-			return new HLSNetStream(connection);
+			return _hls.stream;
 		}
 		
 		override protected function processFinishLoading(loadTrait:NetStreamLoadTrait):void

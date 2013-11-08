@@ -100,6 +100,7 @@ package org.mangui.HLS.muxing {
                   // push previous NAL unit if new start delimiter found, dont push unit with type = 0
                     if(unit_start && unit_type) {
                         units.push({
+                            header: unit_header,
                             length: nalu.position - 4 - unit_start,
                             start: unit_start,
                             type: unit_type

@@ -65,7 +65,7 @@ package org.mangui.HLS.streaming {
             // Calculate the buffer and position.
             if(_buffer.length) {
               /* remaining buffer is total duration buffered since beginning minus playback time */
-               buffer = getTotalBufferedDuration()+ super.bufferLength-super.time;
+               buffer = getTotalBufferedDuration()-super.time;
                /** Absolute playback position (start position + play time) **/
                var playback_absolute_position:Number = (Math.round(super.time*100 + _playback_start_position_real*100)/100);
                /** Relative playback position (Absolute Position - playlist sliding, non null for Live Playlist) **/

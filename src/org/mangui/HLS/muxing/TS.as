@@ -54,8 +54,8 @@ package org.mangui.HLS.muxing {
 		public var _timer:Timer;
 		/** Byte data to be read **/
 		private var _data:ByteArray;
-		/* last key Frame PES packet */
-		private var _lastKeyFrame:PES = null;
+		/* last PES packet containing AVCC Frame (SPS/PPS) */
+		private var _lastAVCCFrame:PES = null;
 		
 		
 		/** Transmux the M2TS file into an FLV file. **/
@@ -122,7 +122,7 @@ package org.mangui.HLS.muxing {
 			if(_firstKey == -1) {
 				return new ByteArray();
 			}
-			return AVC.getAVCC(_lastKeyFrame.data,_lastKeyFrame.payload);
+			return AVC.getAVCC(_lastAVCCFrame.data,_lastAVCCFrame.payload);
 		};
 		
 		
@@ -208,11 +208,12 @@ package org.mangui.HLS.muxing {
 						// Unit type 5 indicates a keyframe.
 						if(units[j].type == 5) {
 							videoTags[videoTags.length-1].keyframe = true;
+						}
+					} else if (units[j].type == 7 || units[j].type == 8) {
 							if(_firstKey == -1) {
 								_firstKey = i;
-								_lastKeyFrame=_videoPES[i];
+								_lastAVCCFrame=_videoPES[i];
 							}
-						}
 					}
 				}
 			}

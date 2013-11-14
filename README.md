@@ -4,10 +4,9 @@
 
 * **JWPlayer** Flash free edition version **5.x**
 * **JWPlayer** Flash free edition version **6.x**
-* **OSMF** version **2.0** (early beta stage, any help welcomed !)
+* **OSMF** version **2.0** (beta stage, any help welcomed !)
 
 it is free of charge.
-
 
 **HLSProvider** supports the following HLS features :
 
@@ -38,6 +37,10 @@ the following M3U8 tags are supported:
 ##How to use it :
 
 download package : https://github.com/mangui/HLSprovider/archive/master.zip
+
+
+###OSMF based setup:
+from zip, extract test/osmf folder, and get inspired by index.html
 
 ###jwplayer5 based setup:
 from zip, extract test/jwplayer5 folder, and get inspired by example.html
@@ -74,10 +77,25 @@ from zip, extract test/jwplayer6 folder, and get inspired by example.html
     });
 
 ###License
-The use of the HLSProvider is governed by a Creative Commons license.
-You can use, modify, copy, and distribute this edition as long as it's for non-commercial use, you provide attribution, and share under a similar license.
+the following files (from [jwplayer.com](http://www.jwplayer.com)) are governed by a Creative Commons license:
+
+* lib/jw5/jwplayer-5-lib.swc
+* lib/jw5/jwplayer-5-classes.xml
+* lib/jw6/jwplayer-6-lib.swc
+* lib/jw6/jwplayer-6-classes.xml
+* test/HLSProvider5/jwplayer.js
+* test/HLSProvider5/jwplayer.js
+* test/HLSProvider5/player.swf
+* test/HLSProvider6/jwplayer.js
+* test/HLSProvider6/jwplayer.html5.js
+* test/HLSProvider6/jwplayer.flash.swf
+
+You can use, modify, copy, and distribute them as long as it's for non-commercial use, you provide attribution, and share under a similar license.
 
 The license summary and full text can be found here: [CC BY-NC-SA 3.0](http://creativecommons.org/licenses/by-nc-sa/3.0/ "CC BY-NC-SA 3.0")
+
+**All other files (source code and executable) are governed by MPL 2.0** (Mozilla Public License 2.0).
+The license full text can be found here: [MPL 2.0](http://www.mozilla.org/MPL/2.0/)
 
 ###Donate
 If you'd like to support future development and new product features, please make a donation via PayPal - a secure online banking service.These donations are used to cover my ongoing expenses - web hosting, domain registrations, and software and hardware purchases.

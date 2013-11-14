@@ -84,7 +84,6 @@ the following files (from [jwplayer.com](http://www.jwplayer.com)) are governed 
 * lib/jw6/jwplayer-6-lib.swc
 * lib/jw6/jwplayer-6-classes.xml
 * test/HLSProvider5/jwplayer.js
-* test/HLSProvider5/jwplayer.js
 * test/HLSProvider5/player.swf
 * test/HLSProvider6/jwplayer.js
 * test/HLSProvider6/jwplayer.html5.js

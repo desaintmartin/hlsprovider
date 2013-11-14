@@ -1,16 +1,15 @@
 #HLSprovider
 
-**HLSProvider** is a media provider plugin that allows you to play HLS playlist using either :
+**HLSProvider** is an AS3 plugin that allows you to play HLS playlist using either :
 
 * **JWPlayer** Flash free edition version **5.x**
 * **JWPlayer** Flash free edition version **6.x**
 * **OSMF** version **2.0** (beta stage, any help welcomed !)
+* **Chromeless** Flash Player 
 
-it is free of charge.
+**HLSProvider** supports the following features :
 
-**HLSProvider** supports the following HLS features :
-
-* VOD/live/DVR playlist
+* VOD/live/DVR playlists
 * multiple bitrate playlist / adaptive streaming
 * automatic quality switching, using serial segment fetching method described in [http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf](http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf)
 * manual quality switching (JWPlayer 6 only)

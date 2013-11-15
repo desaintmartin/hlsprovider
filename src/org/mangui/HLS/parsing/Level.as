@@ -44,15 +44,15 @@ package org.mangui.HLS.parsing {
             this.fragments = new Array();
         };
 
-        /** Return the sequence number nearest a given time position. **/
-        public function getSeqNumNearestPosition(position:Number):Number {
+        /** Return the sequence number before a given time position. **/
+        public function getSeqNumBeforePosition(position:Number):Number {
           
           if(position < fragments[0].start_time)
             return start_seqnum;
          
             for(var i:Number = 0; i < fragments.length; i++) {
-                  /* check nearest fragment */
-                if( Math.abs(fragments[i].start_time-position) < Math.abs(fragments[i].start_time+fragments[i].duration-position)) {
+                  /* check whether fragment contains current position */
+                if(fragments[i].start_time<=position && fragments[i].start_time+fragments[i].duration>position) {
                   return (start_seqnum+i);
                 }
             }

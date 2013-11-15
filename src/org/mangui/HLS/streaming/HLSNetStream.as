@@ -30,6 +30,8 @@ package org.mangui.HLS.streaming {
         public var PlaybackStartPosition:Number = 0;
          /** real start position , retrieved from first fragment **/
         private var _playback_start_position_real:Number;
+        /** initial seek offset, difference between seek position and first fragment start time **/
+        private var _seek_offset:Number;
         /** Current play position (relative position from beginning of sliding window) **/
         private var _playback_current_position:Number;
         /** playlist sliding (non null for live playlist) **/
@@ -172,15 +174,16 @@ package org.mangui.HLS.streaming {
             _buffer = _buffer.slice(_buffer_current_index);
             _buffer_current_index = 0;
             
-            var seek_pts:Number = min_pts + (PlaybackStartPosition-start_offset)*1000;            
+            var seek_pts:Number = min_pts + (PlaybackStartPosition-start_offset)*1000;
             if (_playback_start_position_real == Number.NEGATIVE_INFINITY) {
                _playback_start_position_real = PlaybackStartPosition < start_offset ? start_offset : PlaybackStartPosition;
+               _seek_offset = _playback_start_position_real - start_offset;
             }
             /* check live playlist sliding here :
               _playback_start_position_real + getTotalBufferedDuration()  should be the start_position of the new fragment if the
               playlist is not sliding
               => live playlist sliding is the difference between these values */
-            _playlist_sliding_duration = (_playback_start_position_real + getTotalBufferedDuration()) - start_offset;
+              _playlist_sliding_duration = (_playback_start_position_real + getTotalBufferedDuration()) - start_offset - _seek_offset;
 
             /* if first fragment loaded, or if discontinuity, record discontinuity start PTS, and insert discontinuity TAG */
             if(hasDiscontinuity) {

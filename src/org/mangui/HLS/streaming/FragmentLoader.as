@@ -215,7 +215,7 @@ package org.mangui.HLS.streaming {
                Log.txt("loadfirstfragment : requested position:" + position + ",seek position:"+seek_position);
                position = seek_position;
             }
-            var seqnum:Number= _levels[_level].getSeqNumNearestPosition(position);
+            var seqnum:Number= _levels[_level].getSeqNumBeforePosition(position);
             _callback = callback;
             _started = new Date().valueOf();
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);

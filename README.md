@@ -16,6 +16,7 @@
 * seeking in VoD and live playlist
 * buffer progress report
 * error resilience (retry mechanism in case of I/O Errors)
+* accurate seeking (seek to exact position,not to fragment boundary)
 
 the following M3U8 tags are supported: 
 

@@ -11,6 +11,7 @@ package org.mangui.jwplayer.media {
     import com.longtailvideo.jwplayer.utils.Stretcher;
 
     import flash.display.DisplayObject;
+    import flash.media.SoundTransform;
     import flash.media.Video;
     import flash.system.Capabilities;
     import flash.events.Event;
@@ -69,7 +70,7 @@ package org.mangui.jwplayer.media {
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: item.duration});
             _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
             /* start seeking on manifest load */
-            _hls.seek(0);
+            _hls.stream.seek(item.start);
         };
 
 
@@ -115,7 +116,7 @@ package org.mangui.jwplayer.media {
         override public function initializeMediaProvider(cfg:PlayerConfig):void {
             super.initializeMediaProvider(cfg);
             _hls = new HLS();
-            _hls.volume(cfg.volume);
+            _hls.stream.soundTransform = new SoundTransform(cfg.volume/100);
             _video = new Video(320,180);
             _video.smoothing = true;
             _video.attachNetStream(_hls.stream);
@@ -163,7 +164,7 @@ package org.mangui.jwplayer.media {
         /** Resume playback of a paused item. **/
         override public function play():void {
             if(state == PlayerState.PAUSED) {
-                _hls.resume();
+                _hls.stream.resume();
             } else {
                 setState(PlayerState.BUFFERING);
                 _hls.play(item.file,item.start);
@@ -173,7 +174,7 @@ package org.mangui.jwplayer.media {
 
         /** Pause a playing item. **/
         override public function pause():void {
-            _hls.pause();
+            _hls.stream.pause();
         };
 
 
@@ -192,20 +193,20 @@ package org.mangui.jwplayer.media {
 
         /** Seek to a certain position in the item. **/
         override public function seek(pos:Number):void {
-            _hls.seek(pos);
+            _hls.stream.seek(pos);
         };
 
 
         /** Change the playback volume of the item. **/
         override public function setVolume(vol:Number):void {
-            _hls.volume(vol);
+            _hls.stream.soundTransform = new SoundTransform(vol/100);
             super.setVolume(vol);
         };
 
 
         /** Stop playback. **/
         override public function stop():void {
-            _hls.stop();
+            _hls.stream.close();
             super.stop();
             _hls.removeEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
             _level = 0;

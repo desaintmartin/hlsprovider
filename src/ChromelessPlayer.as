@@ -8,9 +8,10 @@ package {
     import flash.external.ExternalInterface;
     import flash.geom.Rectangle;
     import flash.media.Video;
+    import flash.media.SoundTransform;
     import flash.media.StageVideo;
     import flash.media.StageVideoAvailability;
-    import flash.utils.setTimeout;
+    import flash.utils.setTimeout;    
 
 
     public class ChromelessPlayer extends Sprite {
@@ -119,10 +120,10 @@ package {
 
         /** Javascript calls. **/
         private function _play(url:String,start:Number=0):void { _hls.play(url,start); };
-        private function _pause():void { _hls.pause(); };
-        private function _seek(position:Number):void { _hls.seek(position); };
-        private function _stop():void { _hls.stop(); };
-        private function _volume(percent:Number):void { _hls.volume(percent); };
+        private function _pause():void { _hls.stream.pause(); };
+        private function _seek(position:Number):void { _hls.stream.seek(position); };
+        private function _stop():void { _hls.stream.close(); };
+        private function _volume(percent:Number):void { _hls.stream.soundTransform = new SoundTransform(percent/100);};
 
 
         /** Javascript event subscriptions. **/
@@ -153,12 +154,13 @@ package {
               _video = stage.stageVideos[0];
               _video.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
               _hls = new HLS();
+              _video.attachNetStream(_hls.stream);
             } else {
               var video:Video = new Video(stage.stageWidth, stage.stageHeight);
               addChild(video);
               _hls = new HLS();
+              video.attachNetStream(_hls.stream);
             }
-            _video.attachNetStream(_hls.stream);
             _hls.setWidth(stage.stageWidth);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);

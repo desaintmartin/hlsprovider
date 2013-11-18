@@ -27,10 +27,10 @@ package org.mangui.HLS.streaming {
         /** Interval for checking buffer and position. **/
         private var _interval:Number;
         /** requested start position **/
-        public var PlaybackStartPosition:Number = 0;
+        private var _seek_position_requested:Number = 0;
          /** real start position , retrieved from first fragment **/
-        private var _playback_start_position_real:Number;
-        /** initial seek offset, difference between seek position and first fragment start time **/
+        private var _seek_position_real:Number;
+        /** initial seek offset, difference between real seek position and first fragment start time **/
         private var _seek_offset:Number;
         /** Current play position (relative position from beginning of sliding window) **/
         private var _playback_current_position:Number;
@@ -68,7 +68,7 @@ package org.mangui.HLS.streaming {
             if(_buffer.length) {
                buffer = this.bufferLength;
                /** Absolute playback position (start position + play time) **/
-               var playback_absolute_position:Number = (Math.round(super.time*100 + _playback_start_position_real*100)/100);
+               var playback_absolute_position:Number = (Math.round(super.time*100 + _seek_position_real*100)/100);
                /** Relative playback position (Absolute Position - playlist sliding, non null for Live Playlist) **/
                var playback_relative_position:Number = playback_absolute_position-_playlist_sliding_duration;
                
@@ -88,7 +88,7 @@ package org.mangui.HLS.streaming {
                 var loadstatus:Number;
                 if(super.time == 0 && _buffer.length == 0) {
                 // just after seek, load first fragment
-                  loadstatus = _fragmentLoader.loadfirstfragment(PlaybackStartPosition,_loaderCallback);
+                  loadstatus = _fragmentLoader.loadfirstfragment(_seek_position_requested,_loaderCallback);
                 } else {
                   loadstatus = _fragmentLoader.loadnextfragment(buffer,_loaderCallback);
                 }
@@ -174,16 +174,16 @@ package org.mangui.HLS.streaming {
             _buffer = _buffer.slice(_buffer_current_index);
             _buffer_current_index = 0;
             
-            var seek_pts:Number = min_pts + (PlaybackStartPosition-start_offset)*1000;
-            if (_playback_start_position_real == Number.NEGATIVE_INFINITY) {
-               _playback_start_position_real = PlaybackStartPosition < start_offset ? start_offset : PlaybackStartPosition;
-               _seek_offset = _playback_start_position_real - start_offset;
+            var seek_pts:Number = min_pts + (_seek_position_requested-start_offset)*1000;
+            if (_seek_position_real == Number.NEGATIVE_INFINITY) {
+               _seek_position_real = _seek_position_requested < start_offset ? start_offset : _seek_position_requested;
+               _seek_offset = _seek_position_real - start_offset;
             }
             /* check live playlist sliding here :
-              _playback_start_position_real + getTotalBufferedDuration()  should be the start_position of the new fragment if the
+              _seek_position_real + getTotalBufferedDuration()  should be the start_position of the new fragment if the
               playlist is not sliding
               => live playlist sliding is the difference between these values */
-              _playlist_sliding_duration = (_playback_start_position_real + getTotalBufferedDuration()) - start_offset - _seek_offset;
+              _playlist_sliding_duration = (_seek_position_real + getTotalBufferedDuration()) - start_offset - _seek_offset;
 
             /* if first fragment loaded, or if discontinuity, record discontinuity start PTS, and insert discontinuity TAG */
             if(hasDiscontinuity) {
@@ -314,12 +314,12 @@ package org.mangui.HLS.streaming {
                _buffer_current_index = 0;
                _buffer_start_pts = new Array();
                _buffer_last_pts = new Array();
-                PlaybackStartPosition = position;
+                _seek_position_requested = position;
                 super.close();
                 super.play(null);
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                _reached_vod_end = false;
-               _playback_start_position_real = Number.NEGATIVE_INFINITY;
+               _seek_position_real = Number.NEGATIVE_INFINITY;
                _last_buffer = 0;
                _was_playing = (_state == HLSStates.PLAYING) || (_state == HLSStates.IDLE);
                _setState(HLSStates.BUFFERING);

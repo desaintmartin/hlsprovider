@@ -7,7 +7,6 @@ import org.mangui.HLS.utils.*;
 import flash.events.*;
 import flash.net.NetStream;
 import flash.net.NetConnection;
-import flash.media.SoundTransform;
 
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
@@ -34,7 +33,7 @@ import flash.media.SoundTransform;
         override public function dispatchEvent(event:Event):Boolean {
             if(event.type == HLSEvent.ERROR) {
                 Log.txt(HLSEvent(event).message);
-                stop();
+                _hlsNetStream.close();
             }
             return super.dispatchEvent(event);
         };
@@ -79,40 +78,9 @@ import flash.media.SoundTransform;
         /** Start playing an new HLS stream. **/
         public function play(url:String,start:Number=0):void {
             _hlsNetStream.close();
-            _hlsNetStream.PlaybackStartPosition = start;
+            //_playbackStartPosition = start;
             _manifestLoader.load(url);
-        };
-
-
-    /** Pause playback **/
-    public function pause():void {
-       _hlsNetStream.pause();
-    };
-    
-    
-    /** Resume playback **/
-    public function resume():void {
-        _hlsNetStream.resume();
-        };
-
-
-        /** Seek to another position in the stream. **/
-        public function seek(position:Number):void {
-            _hlsNetStream.seek(position);
-        };
-
-
-        /** Stop streaming altogether. **/
-        public function stop():void {
-            _hlsNetStream.close();
-        };
-
-
-        /** Change the audio volume of the stream. **/
-        public function volume(percent:Number):void {
-            _hlsNetStream.soundTransform = new SoundTransform(percent/100);
-        };
-
+        };  
 
         /** Update the screen width. **/
         public function setWidth(width:Number):void {

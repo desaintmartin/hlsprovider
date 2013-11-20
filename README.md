@@ -2,10 +2,11 @@
 
 **HLSProvider** is an AS3 plugin that allows you to play HLS playlist using either :
 
+* **Chromeless** Flash Player
 * **JWPlayer** Flash free edition version **5.x**
 * **JWPlayer** Flash free edition version **6.x**
 * **OSMF** version **2.0** (beta stage, any help welcomed !)
-* **Chromeless** Flash Player 
+ 
 
 **HLSProvider** supports the following features :
 
@@ -30,14 +31,18 @@ the following M3U8 tags are supported:
 
 ##HLSProvider in action :
 
+* http://streambox.fr/HLSProvider/chromeless
 * http://streambox.fr/HLSProvider/jwplayer5
 * http://streambox.fr/HLSProvider/jwplayer6
 * http://streambox.fr/HLSProvider/osmf
+
 
 ##How to use it :
 
 download package : https://github.com/mangui/HLSprovider/archive/master.zip
 
+###jwplayer5 based setup:
+from zip, extract test/chromeless folder, and get inspired by example.html
 
 ###OSMF based setup:
 from zip, extract test/osmf folder, and get inspired by index.html

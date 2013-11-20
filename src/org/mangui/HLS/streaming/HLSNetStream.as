@@ -331,7 +331,6 @@ package org.mangui.HLS.streaming {
         /** Stop playback. **/
         override public function close():void {
             Log.txt("HLSNetStream:close");
-            return;
             super.close();
             _fragment_loading = false;
             clearInterval(_interval);

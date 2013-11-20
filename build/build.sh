@@ -13,10 +13,10 @@ echo ""
 $FLEXPATH/bin/mxmlc ../src/org/mangui/jwplayer/media/HLSProvider6.as -sp ../src -o ../test/jwplayer6/HLSProvider6.swf -library-path+=../lib/jw6 -load-externs=../lib/jw6/jwplayer-6-classes.xml -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true
 
 echo ""
-echo "Compiling chromelessPlayer.swf"
+echo "Compiling HLSProviderChromeless.swf"
 echo ""
 
-$FLEXPATH/bin/mxmlc ../src/ChromelessPlayer.as -sp ../src -o ../test/chromeless/chromelessPlayer.swf -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
+$FLEXPATH/bin/mxmlc ../src/ChromelessPlayer.as -sp ../src -o ../test/chromeless/HLSProviderChromeless.swf -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
 
 echo ""
 echo "Compiling HLSProviderOSMF.swf"

@@ -1,4 +1,4 @@
-package
+package org.mangui.osmf.plugins
 {
 	import flash.display.Sprite;
 	import flash.system.Security;
@@ -6,11 +6,11 @@ package
 	import org.mangui.osmf.plugins.HLSPlugin;
 	import org.osmf.media.PluginInfo;
 	
-	public class HLSOSMFDynamicPlugin extends Sprite
+	public class HLSDynamicPlugin extends Sprite
 	{
 		private var _pluginInfo:PluginInfo;
 		
-		public function HLSOSMFDynamicPlugin()
+		public function HLSDynamicPlugin()
 		{
 			super();
 			Security.allowDomain("*");

@@ -17,6 +17,7 @@ package org.mangui.osmf.plugins
 		{
 			super(timeTrait);
 			_hls = hls;
+			_hls.addEventListener(HLSEvent.STATE,_stateChangedHandler);
 		}
 
 
@@ -41,6 +42,15 @@ package org.mangui.osmf.plugins
     override public function canSeekTo(time:Number):Boolean {
       Log.txt("HLSSeekTrait:canSeekTo:"+time);
       return super.canSeekTo(time);
+    }
+    
+   /** state changed handler **/
+    private function _stateChangedHandler(event:HLSEvent):void {
+      Log.txt("HLSSeekTrait:_stateChangedHandler:" + event.state);
+      if (seeking && event.state == HLSStates.PLAYING) {
+        Log.txt("HLSSeekTrait:setSeeking(false);");
+        setSeeking(false,timeTrait.currentTime);
+      }
     }
   }
 }

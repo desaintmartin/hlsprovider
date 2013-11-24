@@ -20,7 +20,6 @@ package org.mangui.osmf.plugins
 			_hls.addEventListener(HLSEvent.STATE,_stateChangedHandler);
 		}
 
-
 		/**
 		 * @private
 		 * Communicates a <code>seeking</code> change to the media through the NetStream. 
@@ -28,25 +27,12 @@ package org.mangui.osmf.plugins
 		 * @param time Time to seek to, in seconds.
 		 */						
 		override protected function seekingChangeStart(newSeeking:Boolean, time:Number):void {
-		  Log.txt("HLSSeekTrait:seekingChangeStart:newSeeking/time:"+newSeeking+"/"+time);
 		  _hls.stream.seek(time);
 		  super.seekingChangeStart(newSeeking,time);
 		}
-		
-		override protected function seekingChangeEnd(time:Number):void
-		{
-		  Log.txt("HLSSeekTrait:seekingChangeEnd:"+time);
-			super.seekingChangeEnd(time);
-		}
-
-    override public function canSeekTo(time:Number):Boolean {
-      Log.txt("HLSSeekTrait:canSeekTo:"+time);
-      return super.canSeekTo(time);
-    }
     
    /** state changed handler **/
     private function _stateChangedHandler(event:HLSEvent):void {
-      Log.txt("HLSSeekTrait:_stateChangedHandler:" + event.state);
       if (seeking && event.state == HLSStates.PLAYING) {
         Log.txt("HLSSeekTrait:setSeeking(false);");
         setSeeking(false,timeTrait.currentTime);

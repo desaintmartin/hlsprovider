@@ -85,7 +85,6 @@ package org.mangui.osmf.plugins
 
     override protected function processReadyState():void
     {
-      Log.txt("HLSMediaElement:processReadyState");
       _stream = _hls.stream;
 
       // Set the video's dimensions so that it doesn't appear at the wrong size.
@@ -103,28 +102,28 @@ package org.mangui.osmf.plugins
       //loadTrait.netStream = _stream;
       //addTrait(MediaTraitType.LOAD, loadTrait);
       
-      Log.txt("HLSMediaElement:audioTrait");
+      //Log.txt("HLSMediaElement:audioTrait");
       var audioTrait:AudioTrait = new NetStreamAudioTrait(_stream);
       addTrait(MediaTraitType.AUDIO, audioTrait);
 
-      Log.txt("HLSMediaElement:BufferTrait");
+      //Log.txt("HLSMediaElement:BufferTrait");
       var bufferTrait:BufferTrait = new HLSBufferTrait(_hls);
       addTrait(MediaTraitType.BUFFER, bufferTrait);
 
-      Log.txt("HLSMediaElement:TimeTrait");
+      //Log.txt("HLSMediaElement:TimeTrait");
       var timeTrait:TimeTrait = new HLSTimeTrait(_hls,_defaultduration);
       addTrait(MediaTraitType.TIME, timeTrait);
 
-      Log.txt("HLSMediaElement:DisplayObjectTrait");
+      //Log.txt("HLSMediaElement:DisplayObjectTrait");
       var displayObjectTrait:DisplayObjectTrait = new DisplayObjectTrait(videoSurface, NaN, NaN);
       addTrait(MediaTraitType.DISPLAY_OBJECT, displayObjectTrait);
 
-      Log.txt("HLSMediaElement:PlayTrait");
+      //Log.txt("HLSMediaElement:PlayTrait");
       var playTrait:PlayTrait = new HLSPlayTrait(_hls);
       addTrait(MediaTraitType.PLAY, playTrait);
 
       // setup seek trait
-      Log.txt("HLSMediaElement:SeekTrait");
+      //Log.txt("HLSMediaElement:SeekTrait");
       var seekTrait:SeekTrait = new HLSSeekTrait(_hls, timeTrait);
       addTrait(MediaTraitType.SEEK, seekTrait);
 

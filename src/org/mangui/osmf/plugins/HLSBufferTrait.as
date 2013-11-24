@@ -22,15 +22,9 @@ package org.mangui.osmf.plugins
       return _hls.stream.bufferLength;
     }
 
-		override protected function bufferingChangeStart(newBuffering:Boolean):void
-		{
-		  Log.txt("HLSBufferTrait:bufferingChangeStart:"+ newBuffering);
-		}
-
 
    /** state changed handler **/
     private function _stateChangedHandler(event:HLSEvent):void {
-      Log.txt("HLSBufferTrait:_stateChangedHandler:" + event.state);
       switch(event.state) {
          case HLSStates.BUFFERING:
             Log.txt("HLSBufferTrait:_stateChangedHandler:setBuffering(true)");

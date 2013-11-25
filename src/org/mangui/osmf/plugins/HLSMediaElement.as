@@ -43,17 +43,27 @@ package org.mangui.osmf.plugins
     private var _smoothing:Boolean;
     private var _deblocking:int;
     private var _loader:LoaderBase;
+    private var _loadTrait:NetStreamLoadTrait;
 
-      public function HLSMediaElement(resource:MediaResourceBase, loader:LoaderBase, hls:HLS, duration:Number) {
+      public function HLSMediaElement(resource:MediaResourceBase, hls:HLS, duration:Number) {
         _hls = hls;
         _defaultduration = duration;
-        super(resource, new NetLoader());
-        processReadyState();
+        super(resource, new HLSNetLoader(hls));
+        initTraits();
       }
 
     protected function createVideo():Video
     {
       return new Video();
+    }
+
+    override protected function createLoadTrait(resource:MediaResourceBase, loader:LoaderBase):LoadTrait
+    {
+      if(_loadTrait == null) {
+        _loadTrait = new NetStreamLoadTrait(loader, resource);
+        _loadTrait.netStream = _hls.stream;
+      }
+       return _loadTrait;
     }
 
     /**
@@ -83,7 +93,7 @@ package org.mangui.osmf.plugins
       }
     }
 
-    override protected function processReadyState():void
+    private function initTraits():void
     {
       _stream = _hls.stream;
 
@@ -96,11 +106,6 @@ package org.mangui.osmf.plugins
       videoSurface.deblocking = 1;
       videoSurface.width = videoSurface.height = 0;
       videoSurface.attachNetStream(_stream);
-
-      
-      //var loadTrait:NetStreamLoadTrait = new NetStreamLoadTrait(loader,resource);
-      //loadTrait.netStream = _stream;
-      //addTrait(MediaTraitType.LOAD, loadTrait);
       
       //Log.txt("HLSMediaElement:audioTrait");
       var audioTrait:AudioTrait = new NetStreamAudioTrait(_stream);

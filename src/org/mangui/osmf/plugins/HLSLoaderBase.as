@@ -95,7 +95,7 @@ package org.mangui.osmf.plugins
       var resource:MediaResourceBase = URLResource(_loadTrait.resource);
       
 			try{
-				var loadedElem:MediaElement = new HLSMediaElement(resource,this,_hls,event.levels[0].duration);
+				var loadedElem:MediaElement = new HLSMediaElement(resource,_hls,event.levels[0].duration);
 				loadedElem.resource = resource;
 				
 				LoadFromDocumentLoadTrait(_loadTrait).mediaElement = loadedElem;

@@ -19,7 +19,6 @@ package org.mangui.osmf.plugins
   import org.osmf.media.MediaResourceBase;
   import org.osmf.traits.AudioTrait;
   import org.osmf.traits.BufferTrait;
-  import org.osmf.traits.DisplayObjectTrait;
   import org.osmf.traits.DynamicStreamTrait;
   import org.osmf.traits.LoadState;
   import org.osmf.traits.LoadTrait;
@@ -120,7 +119,7 @@ package org.mangui.osmf.plugins
       addTrait(MediaTraitType.TIME, timeTrait);
 
       //Log.txt("HLSMediaElement:DisplayObjectTrait");
-      var displayObjectTrait:DisplayObjectTrait = new DisplayObjectTrait(videoSurface, NaN, NaN);
+      var displayObjectTrait:HLSDisplayObjectTrait = new HLSDisplayObjectTrait(videoSurface, NaN, NaN);
       addTrait(MediaTraitType.DISPLAY_OBJECT, displayObjectTrait);
 
       //Log.txt("HLSMediaElement:PlayTrait");

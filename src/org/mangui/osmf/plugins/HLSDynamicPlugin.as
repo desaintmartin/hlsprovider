@@ -2,8 +2,6 @@ package org.mangui.osmf.plugins
 {
 	import flash.display.Sprite;
 	import flash.system.Security;
-	
-	import org.mangui.osmf.plugins.HLSPlugin;
 	import org.osmf.media.PluginInfo;
 	
 	public class HLSDynamicPlugin extends Sprite

@@ -17,6 +17,7 @@ package org.mangui.osmf.plugins
 			_duration = duration;
 			_hls = hls;
       _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
+      _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_playbackComplete);
 		}
 		
 		override public function get duration():Number
@@ -35,5 +36,10 @@ package org.mangui.osmf.plugins
       _position = event.mediatime.position;
       _duration = event.mediatime.duration;
   };
+  
+   /** playback complete handler **/
+    private function _playbackComplete(event:HLSEvent):void {
+      signalComplete();
+		}
 	}
 }

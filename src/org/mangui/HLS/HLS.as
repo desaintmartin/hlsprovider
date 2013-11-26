@@ -90,7 +90,10 @@ import flash.net.NetConnection;
         /* update playback quality level */
         public function setPlaybackQuality(level:Number):void {
             _fragmentLoader.setPlaybackQuality(level);
-            _hlsNetStream.seek(_hlsNetStream.getPosition());
+            var position:Number = _hlsNetStream.getPosition();
+            if (!isNaN(position)) {
+              _hlsNetStream.seek(position);
+            }
         };
     public function get stream():NetStream {
         return _hlsNetStream;

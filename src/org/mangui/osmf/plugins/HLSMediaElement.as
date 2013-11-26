@@ -131,9 +131,9 @@ package org.mangui.osmf.plugins
       var seekTrait:SeekTrait = new HLSSeekTrait(_hls, timeTrait);
       addTrait(MediaTraitType.SEEK, seekTrait);
 
-      // setup dynamic resource trait
+      // setup dynamic stream trait
       //Log.txt("HLSMediaElement:DynamicStreamingResource");
-      //var dsResource:DynamicStreamingResource = new NetStreamDynamicStreamTrait(_stream, loadTrait.switchManager, dsResource);
+      //var dsTrait:HLSDynamicStreamTrait = new HLSDynamicStreamTrait(_hls);
       //addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
       
       //setup drm trait

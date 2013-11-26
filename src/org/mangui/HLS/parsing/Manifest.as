@@ -75,7 +75,8 @@ package org.mangui.HLS.parsing {
             i = 0;
             while (i < lines.length) {
               if(lines[i].indexOf(Manifest.FRAGMENT) == 0) {
-                var duration:Number = lines[i].substr(8,lines[i].indexOf(',') - 8);
+                var comma_position:Number = lines[i].indexOf(',');
+                var duration:Number = (comma_position == -1) ? lines[i].substr(Manifest.FRAGMENT.length) : lines[i].substr(Manifest.FRAGMENT.length,comma_position-Manifest.FRAGMENT.length);
                 // Look for next non-blank line, for url
                 i++;
                 while(lines[i].match(/^\s*$/)) {

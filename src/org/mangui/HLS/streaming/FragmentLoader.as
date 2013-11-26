@@ -248,11 +248,12 @@ package org.mangui.HLS.streaming {
               here we try to retrieve the last seqnum of fragment, in new playlist
               new seqnum should be last seqnum + 1 */
             var last_seqnum:Number = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts,_last_segment_continuity_counter);
-            Log.txt("loadnextfragment : getSeqNumNearestPTS("+_last_segment_start_pts+","+_last_segment_continuity_counter+")="+last_seqnum);
+            Log.txt("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:"+_level+","+_last_segment_start_pts+","+_last_segment_continuity_counter+")="+last_seqnum);
             if (last_seqnum == -1) {
               /* we need to perform PTS analysis on fragments from same continuity range 
               get first fragment from playlist matching with criteria and load pts */
               last_seqnum = _levels[_level].getFirstSeqNumfromContinuity(_last_segment_continuity_counter);
+              Log.txt("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:"+_level+","+_last_segment_continuity_counter+")="+last_seqnum);
               if (last_seqnum == Number.NEGATIVE_INFINITY) {
                 // playlist not yet received
                 return 1;

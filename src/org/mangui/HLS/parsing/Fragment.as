@@ -1,5 +1,6 @@
 package org.mangui.HLS.parsing {
 
+//import org.mangui.HLS.utils.Log;
 
     /** HLS streaming chunk. **/
     public class Fragment {
@@ -31,6 +32,7 @@ package org.mangui.HLS.parsing {
             this.continuity = continuity;
             this.start_pts = Number.NEGATIVE_INFINITY;
             this.start_pts_computed = Number.NEGATIVE_INFINITY;
+            //Log.txt("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
         };
     }
 

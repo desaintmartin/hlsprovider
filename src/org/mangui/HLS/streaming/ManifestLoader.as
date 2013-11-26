@@ -149,7 +149,7 @@ package org.mangui.HLS.streaming {
         public function _levelSwitchHandler(event:HLSEvent):void {
             _current_level = event.level;
             if(_load_in_progress == false && (_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0)) {
-              Log.txt("switch Level, (Re)Load Playlist");
+              Log.txt("switch to level "+ _current_level + ", load Playlist");
               clearTimeout(_timeoutID);
               _timeoutID = setTimeout(_loadPlaylist,0);
             }

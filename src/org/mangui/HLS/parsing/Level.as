@@ -58,6 +58,21 @@ package org.mangui.HLS.parsing {
             }
             return end_seqnum;
         };
+        
+        /** Return the sequence number from a given program date **/
+        public function getSeqNumFromProgramDate(program_date:Number):Number {
+          
+          if(program_date < fragments[0].program_date)
+            return -1;
+         
+            for(var i:Number = 0; i < fragments.length; i++) {
+                  /* check whether fragment contains current position */
+                if(fragments[i].program_date<=program_date && fragments[i].program_date+1000*fragments[i].duration>program_date) {
+                  return (start_seqnum+i);
+                }
+            }
+            return -1;
+        };
 
         /** Return the sequence number nearest a PTS **/
         public function getSeqNumNearestPTS(pts:Number,continuity:Number):Number {         
@@ -165,6 +180,8 @@ package org.mangui.HLS.parsing {
                 idx_with_pts = i;
               }
             }
+            updateFragmentsProgramDate(_fragments);
+            
             fragments = _fragments;
             start_seqnum = _fragments[0].seqnum;
             end_seqnum = _fragments[len-1].seqnum;
@@ -177,6 +194,25 @@ package org.mangui.HLS.parsing {
             }
             averageduration = duration/len;
         }
+      
+      private function updateFragmentsProgramDate(_fragments:Array):void {
+        var len:Number = _fragments.length;
+        var continuity:Number;
+        var program_date:Number;
+        var frag:Fragment;
+        for(var i:Number = 0; i < len; i++) {
+          frag = _fragments[i];
+          if(frag.continuity != continuity) {
+            continuity = frag.continuity;
+            program_date = 0;
+          }
+          if (frag.program_date) {
+            program_date = frag.program_date + 1000*frag.duration;
+          } else if(program_date) {
+            frag.program_date = program_date;
+          }
+        }
+      }
       
       private function updateFragmentPTS(from_index:Number, to_index:Number):void {
         //Log.txt("updateFragmentPTS from/to:" + from_index + "/" + to_index);

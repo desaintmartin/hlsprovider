@@ -199,7 +199,7 @@ package org.mangui.HLS.streaming {
             for each (var t:Tag in tags) {
                 _filterTag(t,seek_pts) && _buffer.push(t);
             }
-            Log.txt("_loaderCallback:start_offset/hasDiscontinuity/_playlist_sliding_duration:"+start_offset + "/" + hasDiscontinuity + "/" + _playlist_sliding_duration);
+            Log.txt("Loaded offset/duration/sliding/discontinuity:"+start_offset.toFixed(2) + "/" +((max_pts-min_pts)/1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2)+ "/" + hasDiscontinuity );
             _fragment_loading = false;
         };
 

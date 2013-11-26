@@ -28,6 +28,7 @@ the following M3U8 tags are supported:
 * #EXT-X-MEDIA-SEQUENCE (value is used for live playlist update)
 * #EXT-X-TARGETDURATION (value is used as live playlist reload interval)
 * #EXT-X-DISCONTINUITY
+* #EXT-X-PROGRAM-DATE-TIME (if this tag is available, it is used to find next sequence number to load when bitrate is switching from one level to another)
 
 ##HLSProvider in action :
 

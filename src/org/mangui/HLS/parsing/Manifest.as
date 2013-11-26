@@ -23,6 +23,8 @@ package org.mangui.HLS.parsing {
         private static const TARGETDURATION:String = '#EXT-X-TARGETDURATION:';
         /** Tag that indicates discontinuity in the stream */
         private static const DISCONTINUITY:String = '#EXT-X-DISCONTINUITY';
+        /** Tag that provides date/time information */
+        private static const PROGRAMDATETIME:String = '#EXT-X-PROGRAM-DATE-TIME';
 
         /** Index in the array with levels. **/
         private var _index:Number;
@@ -60,6 +62,7 @@ package org.mangui.HLS.parsing {
             var seqnum:Number = 0;
             // fragment start time (in sec)
             var start_time:Number = 0;
+            var program_date:Number=0;
             // fragment continuity index incremented at each discontinuity
             var continuity_index:Number = 0;
             var i:Number = 0;
@@ -74,7 +77,16 @@ package org.mangui.HLS.parsing {
                }
             i = 0;
             while (i < lines.length) {
-              if(lines[i].indexOf(Manifest.FRAGMENT) == 0) {
+              if(lines[i].indexOf(Manifest.PROGRAMDATETIME) == 0) {
+                //Log.txt(lines[i]);
+                var year:Number    = lines[i].substr(25,4);
+                var month:Number   = lines[i].substr(30,2);
+                var day:Number     = lines[i].substr(33,2);
+                var hour:Number    = lines[i].substr(36,2);
+                var minutes:Number = lines[i].substr(39,2);
+                var seconds:Number = lines[i].substr(42,2);
+                program_date = new Date(year,month,day,hour,minutes,seconds).getTime();
+              } else if(lines[i].indexOf(Manifest.FRAGMENT) == 0) {
                 var comma_position:Number = lines[i].indexOf(',');
                 var duration:Number = (comma_position == -1) ? lines[i].substr(Manifest.FRAGMENT.length) : lines[i].substr(Manifest.FRAGMENT.length,comma_position-Manifest.FRAGMENT.length);
                 // Look for next non-blank line, for url
@@ -83,8 +95,9 @@ package org.mangui.HLS.parsing {
                   i++;
                 }
                 var url:String = Manifest._extractURL(lines[i],base);
-                fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index));
+                fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date));
                 start_time+=duration;
+                program_date = 0;
               } else if(lines[i].indexOf(Manifest.DISCONTINUITY) == 0) {
                 continuity_index++;
                 Log.txt("discontinuity found at seqnum " + seqnum);

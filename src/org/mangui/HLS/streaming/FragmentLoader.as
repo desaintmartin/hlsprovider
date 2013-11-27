@@ -29,6 +29,8 @@ package org.mangui.HLS.streaming {
         private var _last_segment_continuity_counter:Number = 0;
         /** program date of the last fragment load. **/
         private var _last_segment_program_date:Number = 0;
+        /** last updated level. **/
+        private var _last_updated_level:Number = 0;
         /** Callback for passing forward the fragment tags. **/
         private var _callback:Function;
         /** sequence number that's currently loading. **/
@@ -65,10 +67,6 @@ package org.mangui.HLS.streaming {
         /** boolean to track playlist PTS loading/loaded state */
         private var _playlist_pts_loading:Boolean=false;
         private var _playlist_pts_loaded:Boolean=false;
-        /* playlist total duration */
-        private var _playlist_duration:Number;
-        /* playlist average duration */
-        private var _playlist_average_duration:Number;
 
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
@@ -162,15 +160,15 @@ package org.mangui.HLS.streaming {
 
         /** Get the playlist duration **/
         public function getPlayListDuration():Number {
-            return _playlist_duration;
+            return _levels[_last_updated_level].duration;
         };
 
         /** Get segment average duration **/
         public function getSegmentAverageDuration():Number {
-            return _playlist_average_duration;
+            return _levels[_last_updated_level].averageduration;
         };
 
-       private function newLevel(buffer:Number):Number {
+       private function updateLevel(buffer:Number):Number {
           var level:Number;
           /* in case IO Error has been raised, stick to same level */
           if(_bIOError == true) {
@@ -187,6 +185,11 @@ package org.mangui.HLS.streaming {
           } else {
             level = _manual_level;
           }
+          if(level != _level) {
+            _level = level;
+            _switchlevel = true;
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
+          }          
           return level;
        }
 
@@ -198,17 +201,12 @@ package org.mangui.HLS.streaming {
             _switchlevel = true;
             // reset IO Error when loading new fragment
             _bIOError = false;
-            var level:Number = newLevel(0);
+            updateLevel(0);
 
-            if(level != _level) {
-              _level = level;
-              _switchlevel = true;
-              _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
-            }
-
-            if (_levels[level].fragments.length == 0) {
+            // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
+            if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {
               // playlist not yet received
-              //Log.txt("loadfirstfragment  :playlist not received for level:"+level);
+              //Log.txt("loadfirstfragment : playlist not received for level:"+level);
               return 1;
             }
 
@@ -258,15 +256,9 @@ package org.mangui.HLS.streaming {
             // reset IO Error when loading new fragment
             _bIOError = false;
 
-            var level:Number = newLevel(buffer);
-            
-            if(level != _level) {
-              _level = level;
-              _switchlevel = true;
-              _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
-            }
-            
-            if (_levels[level].fragments.length == 0) {
+            updateLevel(buffer);
+            // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
+            if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {
               // playlist not yet received
               //Log.txt("loadnextfragment : playlist not received for level:"+level);
               return 1;
@@ -275,6 +267,7 @@ package org.mangui.HLS.streaming {
             var new_seqnum:Number;
             var last_seqnum:Number = -1;
             var log_prefix:String;
+            var frag:Fragment;
 
             if(_switchlevel == false) {
               last_seqnum = _seqnum;
@@ -308,32 +301,32 @@ package org.mangui.HLS.streaming {
             }
 
             if(_playlist_pts_loading == false) {
-              // if we found last seqnum position, then increment it to get new seqnum
               if(last_seqnum == _levels[_level].end_seqnum) {
-              // if VOD and last fragment, notify last fragment loaded event, and return 1
+              // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
               if (_hls.getType() == HLSTypes.VOD)
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
               return 1;
               } else {
+                // if previous segment is not the last one, increment it to get new seqnum
                 new_seqnum = last_seqnum + 1;
-                log_prefix = "Loading       ";
                 if(new_seqnum < _levels[_level].start_seqnum) {
                   // we are late ! report to caller
                   return -1;
                 }
+                frag = _levels[_level].getFragmentfromSeqNum(new_seqnum);
+                // update program date
+                _last_segment_program_date = frag.program_date;
+                // update discontinuity counter
+                _last_segment_continuity_counter = frag.continuity;
+                // check whether there is a discontinuity between last segment and new segment
+                _hasDiscontinuity = (_levels[_level].getFragmentfromSeqNum(last_seqnum).continuity != _last_segment_continuity_counter);
+                log_prefix = "Loading       ";
               }
             }
             _seqnum = new_seqnum;
             _callback = callback;
             _started = new Date().valueOf();
-            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
-            if (frag == null) {
-              return 1;
-            }
-            _hasDiscontinuity = (frag.continuity != _last_segment_continuity_counter);
-            _last_segment_continuity_counter = frag.continuity;
-            _last_segment_program_date = frag.program_date;
-
+            frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             try {
@@ -353,8 +346,7 @@ package org.mangui.HLS.streaming {
         
         /** Store the manifest data. **/
         private function _levelUpdatedHandler(event:HLSEvent):void {
-          _playlist_duration = _levels[event.level].duration;
-          _playlist_average_duration = _levels[event.level].averageduration;
+          _last_updated_level = event.level;
         };
         
         /** Parse a TS fragment. **/

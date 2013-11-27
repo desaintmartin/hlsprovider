@@ -5,60 +5,13 @@
 <meta name="author" content="mangui">
 <meta name="description" content="Chromeless HLS Flash Player">
 <meta name="keywords" content="hls, m3u8, http live streaming, apple hls, plugin, h264, H.264, x264, aac, mp3, flash, flashplayer, flash player, video, audio, mbr, multibitrate, multi bitrate, chromeless, vod, video on demand, live, live stream, dvr, dvr stream, digital video recorder">
-<style media="screen" type="text/css">
-#media_control
-{
-    text-align:left;
-}
-#Play,#Pause,#Resume,#Stop,#Seek,#Volume,#Level
-{
-    display:inline;
-}
-.box
-{
-    border:1px solid black;
-    background-color: #0F0;
-}
-</style>
-
 </head>
 <body>
 <body style="color: Black; background-color: White;" link="Blue" vlink="Purple">
 <big style="font-weight: bold;"><big><code>HLSProvider/Chromeless player</code></big></big><br>
-<h3> Test Videos </h3>
-<div> The following videos should stream correctly. Each time an
-issue is reported with a sample playlist, it will be added in the list
-and verified after bugfixing </div>
-<ul id="streamlist">
-</ul>
-
-
-Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
-<input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Play</button><br>
-<p>
-  
-<script type="text/javascript">
-function userSubmit() {
-   loadStream(document.getElementById('userInput').value);
-}
-</script>
 
 </p><div style="text-align: left;">
-<script type="text/javascript" src="../../../playlists/streams.js"></script>
-<script type="text/javascript">
-  
 
-function listStreams(list, container) {
-for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
-entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
-document.getElementById(container).appendChild(entry);
-}
-}
-
-function loadStream(url) {
-  play(url);
-}
-</script>
 
 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
  codebase="" id="mymoviename" width="640" height="360">
@@ -80,6 +33,60 @@ function loadStream(url) {
 </embed>
 </object>
 
+<table border id="mediaInfo" width="640">
+<TR BGCOLOR="#0F0">
+  <TD colspan="2" style="cursor:pointer" onclick=play(current_url)>Play</TD>
+  <TD colspan="2" style="cursor:pointer" onclick=pause()>Pause</TD>
+  <TD colspan="1" style="cursor:pointer" onclick=resume()>Resume</TD>
+  <TD colspan="2" style="cursor:pointer" onclick=stop()>Stop</TD>
+</TR>
+<TR><TD>state</TD><TD>Position</TD><TD>Duration</TD><TD>Buffer Size</TD><TD>Max Buffer Size</TD><TD>Quality Level</TD></TR>
+<TR><TD>IDLE</TD><TD>0</TD><TD>0</TD><TD>0</TD><TD>0</TD><TD>0</TD></TR>
+</table>
+
+<table border id="mediaControl">
+<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)>Seek to</TD><TD><INPUT type=text name="seek_position"></TD></TR>
+<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)>Set Volume</TD>	<TD><INPUT type=text name="volume_level">	</TD></TR>
+<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=setlevel(document.getElementById('mediaControl').rows[2].cells[1].children[0].value)>Set Level</TD><TD><INPUT type=text name="quality_level">	</TD></TR>
+<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=setmaxBufferLength(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)>Set max Buffer Size</TD><TD><INPUT type=text name="max_buffer_size"></TD></TR>
+</table>
+
+<script type="text/javascript" src="../../../playlists/streams.js"></script>
+<script type="text/javascript">
+  
+var current_url;
+
+function loadStream(url) {
+  current_url = url;
+  play(url);
+}
+
+function listStreams(list, container) {
+for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
+entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
+document.getElementById(container).appendChild(entry);
+}
+current_url=list[0].file;
+}
+
+</script>
+
+<h3> Test Videos </h3>
+Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
+<input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Play</button><br>
+<p>
+<div> The following videos should stream correctly. Each time an
+issue is reported with a sample playlist, it will be added in the list
+and verified after bugfixing </div>
+<ul id="streamlist">
+</ul>
+
+  
+<script type="text/javascript">
+function userSubmit() {
+   play(document.getElementById('userInput').value);
+}
+</script>
 
 <script type="text/javascript">
 
@@ -145,6 +152,28 @@ function volume(percent) {
   }
 }
 
+function getbufferLength() {
+  var obj = getFlashMovieObject("mymoviename");
+  if(obj != null) {
+    return obj.getbufferLength();
+  }
+}
+
+function getMaxBufferLength() {
+  var obj = getFlashMovieObject("mymoviename");
+  if(obj != null) {
+    return obj.getmaxBufferLength();
+  }
+}
+
+function setmaxBufferLength(new_len) {
+  var obj = getFlashMovieObject("mymoviename");
+  if(obj != null) {
+    obj.setmaxBufferLength(new_len);
+    document.getElementById("videoStatus").innerHTML += "force max buffer len to :" + new_len + "<br />";
+  }
+}
+
 function onComplete(message) {
   document.getElementById("videoStatus").innerHTML += "onComplete(), playback completed<br />";
 }
@@ -161,14 +190,20 @@ function onManifest(message) {
 }
 
 function onPosition(position,duration) {
-  document.forms['mediaTime'].mediaPosition.value = position;
-  document.forms['mediaTime'].mediaDuration.value = duration;
+  document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  position.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[3].innerHTML =  getbufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[4].innerHTML =  getMaxBufferLength().toFixed(2);
 }
-function onState(message) {
-  document.getElementById("videoStatus").innerHTML += "switching state to "+ message + "<br />";
+
+function onState(newState) {
+  document.getElementById("videoStatus").innerHTML += "switching state to "+ newState + "<br />";
+  document.getElementById('mediaInfo').rows[2].cells[0].innerHTML =  newState;
 }
-function onSwitch(message) {
-  document.getElementById("videoStatus").innerHTML += "switching level to "+ message + "<br />";
+
+function onSwitch(newLevel) {
+  document.getElementById("videoStatus").innerHTML += "switching level to "+ newLevel + "<br />";
+  document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  newLevel;
 }
 
 function getFlashMovieObject(movieName)
@@ -188,24 +223,6 @@ function getFlashMovieObject(movieName)
   }
 }
 </script>
-<form name="mediaTime">
-	media position <br />
-	<textarea name="mediaPosition" rows="1"></textarea>
-  <textarea name="mediaDuration" rows="1"></textarea>
-</form>
-<div id="media_control">
-<div id="Play" class="box">Play</div>
-<div id="Pause" class="box" onclick=pause()>Pause</div>
-<div id="Resume" class="box" onclick=resume()>Resume</div>
-<div id="Stop" class="box" onclick=stop()>Stop</div>
-<div id="Seek" class=box" onclick=seek(document.forms['seekPos'].seekPosition.value)>Seek</div>
-<div id="Volume" class=box" onclick=volume(document.forms['volLevel'].volumeLevel.value)>Volume</div>
-<div id="Level" class=box" onclick=setlevel(document.forms['QualityLevel'].QualityLevel.value)>Level</div>
-</div>
-
-<form name="seekPos"> seek to	<textarea name="seekPosition" rows="1">0</textarea> </form>
-<form name="volLevel"> set volume level to	<textarea name="volumeLevel" rows="1">100</textarea> </form>
-<form name="QualityLevel"> force quality level to	<textarea name="QualityLevel" rows="1">-1</textarea> </form>
 <div id="videoStatus">Video status messages<br /></div>
 </body>
 </html>

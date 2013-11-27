@@ -104,6 +104,22 @@ import flash.net.NetConnection;
     public function set client(value:Object):void {
         _client = value;
     }
+
+    /** get current Buffer Length  **/
+    public function getBufferLength():Number {
+      return _hlsNetStream.bufferLength;
+    };
+
+
+    /** set max Buffer Length  **/
+    public function set maxBufferLength(new_len:Number):void {
+      _hlsNetStream.maxBufferLength = new_len;
+    }
+    
+    /** get max Buffer Length  **/
+    public function get maxBufferLength():Number {
+      return _hlsNetStream.maxBufferLength;
+    };
 }
 ;
 }

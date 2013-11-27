@@ -96,6 +96,7 @@ package org.mangui.HLS.streaming {
                // set fragment and update sequence number range
                _levels[index].updateFragments(frags);
                _levels[index].targetduration = Manifest.getTargetDuration(string);
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED,_levels[index].duration));
             }
   
             // Check whether the stream is live or not finished yet

@@ -47,6 +47,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getPosition",_getPosition);
             ExternalInterface.addCallback("getState",_getState);
             ExternalInterface.addCallback("getType",_getType);
+            ExternalInterface.addCallback("getmaxBufferLength",_getmaxBufferLength);
+            ExternalInterface.addCallback("getbufferLength",_getbufferLength);
             // Connect calls to JS.
             ExternalInterface.addCallback("play",_play);
             ExternalInterface.addCallback("pause",_pause);
@@ -55,6 +57,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("stop",_stop);
             ExternalInterface.addCallback("volume",_volume);
             ExternalInterface.addCallback("setLevel",_setLevel);
+            ExternalInterface.addCallback("setmaxBufferLength",_setmaxBufferLength);
             setTimeout(_pingJavascript,50);
         };
 
@@ -110,7 +113,8 @@ package org.mangui.chromeless {
         private function _getPosition():Number { return _hls.getPosition(); };
         private function _getState():String { return _hls.getState(); };
         private function _getType():String { return _hls.getType(); };
-
+        private function _getbufferLength():Number { return _hls.getBufferLength(); };
+        private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
 
         /** Javascript calls. **/
         private function _play(url:String,start:Number=0):void { _hls.play(url,start); };
@@ -120,6 +124,7 @@ package org.mangui.chromeless {
         private function _stop():void { _hls.stream.close(); };
         private function _volume(percent:Number):void { _hls.stream.soundTransform = new SoundTransform(percent/100);};
         private function _setLevel(level:Number):void { _hls.setPlaybackQuality(level);};
+        private function _setmaxBufferLength(new_len:Number):void { _hls.maxBufferLength = new_len;};
 
 
         /** Mouse click handler. **/

@@ -26,13 +26,15 @@ package org.mangui.HLS {
         public static const QUALITY_SWITCH:String = "hlsEventQualitySwitch";
         /** Identifier for a level updated event (playlist loaded) **/
         public static const LEVEL_UPDATED:String = "hlsEventLevelUpdated";
-        /** Identifier for a Level Time Stamp updated event (PTS updated) **/
-        public static const LEVEL_PTS_UPDATED:String = "hlsEventLevelPTSUpdated";
+        /** Identifier for a Playlist Duration updated event **/
+        public static const PLAYLIST_DURATION_UPDATED:String = "hlsPlayListDurationUpdated";
         /** Identifier for a audio only fragment **/        
         public static const AUDIO_ONLY:String = "audioOnly";
 
         /** The current quality level. **/
         public var level:Number;
+        /** The current playlist duration. **/
+        public var duration:Number;
         /** The list with quality levels. **/
         public var levels:Array;
         /** The error message. **/
@@ -69,8 +71,8 @@ package org.mangui.HLS {
                 case HLSEvent.LEVEL_UPDATED:
                     level = parameter as Number;
                     break;
-                case HLSEvent.LEVEL_PTS_UPDATED:
-                    level = parameter as Number;
+                case HLSEvent.PLAYLIST_DURATION_UPDATED:
+                    duration = parameter as Number;
                     break;
             }
             super(type, false, false);

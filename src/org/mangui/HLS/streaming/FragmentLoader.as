@@ -417,7 +417,7 @@ package org.mangui.HLS.streaming {
           if(_ts.audioTags[0].type == Tag.AAC_RAW) {
             var adifTag:Tag = new Tag(Tag.AAC_HEADER,_ts.audioTags[0].pts,_ts.audioTags[0].dts,true);
             adifTag.push(_levels[_level].adif,0,2)
-            //_tags.push(adifTag);
+            _tags.push(adifTag);
           }
         }
       }
@@ -426,7 +426,7 @@ package org.mangui.HLS.streaming {
         _tags.push(_ts.videoTags[i]);
       }
       for(var j:Number=0; j < _ts.audioTags.length; j++) {
-        //_tags.push(_ts.audioTags[j]);
+        _tags.push(_ts.audioTags[j]);
       }
 
       // change the media to null if the file is only audio.

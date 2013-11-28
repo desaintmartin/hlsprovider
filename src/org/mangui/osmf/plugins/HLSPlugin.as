@@ -1,6 +1,5 @@
 package org.mangui.osmf.plugins
 {
-  import org.osmf.elements.LoadFromDocumentElement;
   import org.osmf.media.MediaElement;
   import org.osmf.media.MediaFactoryItem;
   import org.osmf.media.MediaFactoryItemType;
@@ -30,7 +29,7 @@ package org.mangui.osmf.plugins
 		}
 		
 		private function createMediaElement():MediaElement{
-			return new LoadFromDocumentElement(null, new HLSLoaderBase());
+			return new HLSLoadFromDocumentElement(null, new HLSLoaderBase());
 		}
 	}
 }

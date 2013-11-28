@@ -42,7 +42,7 @@ package org.mangui.osmf.plugins
     private var _smoothing:Boolean;
     private var _deblocking:int;
     private var _loader:LoaderBase;
-    private var _loadTrait:NetStreamLoadTrait;
+    private var _loadTrait:HLSNetStreamLoadTrait;
 
       public function HLSMediaElement(resource:MediaResourceBase, hls:HLS, duration:Number) {
         _hls = hls;
@@ -59,8 +59,7 @@ package org.mangui.osmf.plugins
     override protected function createLoadTrait(resource:MediaResourceBase, loader:LoaderBase):LoadTrait
     {
       if(_loadTrait == null) {
-        _loadTrait = new NetStreamLoadTrait(loader, resource);
-        _loadTrait.netStream = _hls.stream;
+        _loadTrait = new HLSNetStreamLoadTrait(_hls,_defaultduration,loader, resource);
       }
        return _loadTrait;
     }

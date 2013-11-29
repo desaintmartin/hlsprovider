@@ -11,7 +11,18 @@
         <script type="text/javascript" src="lib/ParsedQueryString.js">
         </script>
         <script type="text/javascript">
-            
+
+        function jsbridge(playerId, event, data) {
+          switch(event) {
+             case "timeChange":
+             case "timeupdate":
+             case "progress":
+               break;
+             default:
+              console.log(event, data);
+            }
+        }
+
             // Collect query parameters in an object that we can
             // forward to SWFObject:
             
@@ -19,11 +30,13 @@
             var parameterNames = pqs.params(false);
             var parameters = {
                 src: "http://streambox.fr/playlists/test_001/stream.m3u8",
+				//src: "http://localhost:8082/playlists/test_001/stream.m3u8",
                 autoPlay: "false",
                 verbose: true,
                 controlBarAutoHide: "true",
                 controlBarPosition: "bottom",
                 poster: "images/poster.png",
+                javascriptCallbackFunction: "jsbridge",
                 plugin_hls: "HLSProviderOSMF.swf"
             };
             

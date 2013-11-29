@@ -17,6 +17,7 @@ package org.mangui.osmf.plugins
   import org.osmf.traits.MediaTraitType;
   import org.osmf.media.videoClasses.VideoSurface;
   import org.osmf.media.MediaResourceBase;
+  import org.osmf.media.URLResource;
   import org.osmf.traits.AudioTrait;
   import org.osmf.traits.BufferTrait;
   import org.osmf.traits.DynamicStreamTrait;
@@ -30,6 +31,8 @@ package org.mangui.osmf.plugins
   import org.osmf.traits.TimeTrait;
   import org.osmf.utils.OSMFSettings;
   import org.osmf.net.NetLoader;
+  import org.osmf.net.DynamicStreamingResource;
+  import org.osmf.net.DynamicStreamingItem;
   import org.osmf.net.NetStreamAudioTrait;
   import org.osmf.net.NetStreamLoadTrait;
 
@@ -130,11 +133,26 @@ package org.mangui.osmf.plugins
       var seekTrait:SeekTrait = new HLSSeekTrait(_hls, timeTrait);
       addTrait(MediaTraitType.SEEK, seekTrait);
 
-      // setup dynamic stream trait
-      //Log.txt("HLSMediaElement:DynamicStreamingResource");
-      //var dsTrait:HLSDynamicStreamTrait = new HLSDynamicStreamTrait(_hls);
-      //addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
-      
+      CONFIG::OSMF_DYNAMIC_SWITCHING {
+        var levels:Array = _hls.getLevels();
+        var nbLevel:Number = levels.length;
+        if(nbLevel > 1) {
+          var urlRes:URLResource = resource as URLResource;
+          var dynamicRes:DynamicStreamingResource = new DynamicStreamingResource(urlRes.url);
+          var streamItems:Vector.<DynamicStreamingItem> = new Vector.<DynamicStreamingItem>();
+          
+          for(var i:Number=0; i < nbLevel; i++) {
+            var name:String = levels[i].height + 'p / ' + Math.round(levels[i].bitrate/1024) + 'kb';
+            streamItems.push(new DynamicStreamingItem(name, levels[i].bitrate/1024, levels[i].width, levels[i].height));
+          }
+          dynamicRes.streamItems = streamItems;
+          dynamicRes.initialIndex = 0;
+          resource = dynamicRes;
+          // setup dynamic stream trait
+          var dsTrait:HLSDynamicStreamTrait = new HLSDynamicStreamTrait(_hls);
+          addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
+        }
+      }
       //setup drm trait
       //addTrait(MediaTraitType.DRM, drmTrait);
 

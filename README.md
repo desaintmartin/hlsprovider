@@ -35,7 +35,8 @@ the following M3U8 tags are supported:
 * http://streambox.fr/HLSProvider/chromeless
 * http://streambox.fr/HLSProvider/jwplayer5
 * http://streambox.fr/HLSProvider/jwplayer6
-* http://streambox.fr/HLSProvider/osmf
+* http://streambox.fr/HLSProvider/osmf/GrindPlayer.html (support dynamic switching control)
+* http://streambox.fr/HLSProvider/osmf/StrobeMediaPlayback.html
 
 
 ##How to use it :

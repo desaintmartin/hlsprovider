@@ -25,6 +25,8 @@ package org.mangui.chromeless {
         private var _video:StageVideo;
         /** Javascript callbacks. **/
         private var _callbacks:Object = {};
+        /** current media position */
+        private var _media_position:Number;
 
         /** Initialization. **/
         public function ChromelessPlayer():void {
@@ -92,6 +94,7 @@ package org.mangui.chromeless {
         };
         private function _mediaTimeHandler(event:HLSEvent):void {
             if (ExternalInterface.available) {
+                _media_position = event.mediatime.position;
                 ExternalInterface.call("onPosition",event.mediatime.position,event.mediatime.duration);
             }
         };
@@ -123,7 +126,7 @@ package org.mangui.chromeless {
         private function _seek(position:Number):void { _hls.stream.seek(position); };
         private function _stop():void { _hls.stream.close(); };
         private function _volume(percent:Number):void { _hls.stream.soundTransform = new SoundTransform(percent/100);};
-        private function _setLevel(level:Number):void { _hls.setPlaybackQuality(level);};
+        private function _setLevel(level:Number):void { _hls.setPlaybackQuality(level); if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
         private function _setmaxBufferLength(new_len:Number):void { _hls.maxBufferLength = new_len;};
 
 

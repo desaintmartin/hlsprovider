@@ -30,6 +30,8 @@ package org.mangui.jwplayer.media {
         protected var _levels:Array;
         /** Reference to the video object. **/
         private var _video:Video;
+        /** current position **/
+        protected var _media_position:Number;
 
         public function HLSProvider() {
             super('hls');
@@ -77,11 +79,12 @@ package org.mangui.jwplayer.media {
         /** Update playback position. **/
         private function _mediaTimeHandler(event:HLSEvent):void {
             item.duration = event.mediatime.duration;
-            var _bufferPercent:Number = 100*(event.mediatime.position+event.mediatime.buffer)/event.mediatime.duration;
+            _media_position = event.mediatime.position;
+            var _bufferPercent:Number = 100*(_media_position+event.mediatime.buffer)/event.mediatime.duration;
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {
                 bufferPercent: _bufferPercent,
                 offset: 0,
-                position: event.mediatime.position,
+                position: _media_position,
                 duration: event.mediatime.duration
             });
         };

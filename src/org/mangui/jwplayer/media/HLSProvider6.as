@@ -1,5 +1,6 @@
 package org.mangui.jwplayer.media {
 
+    import flash.net.NetStream;
     import com.longtailvideo.jwplayer.events.MediaEvent;
     import com.longtailvideo.jwplayer.model.PlayerConfig;    
     import org.mangui.HLS.HLSEvent;
@@ -44,6 +45,9 @@ package org.mangui.jwplayer.media {
       /** Change the current quality. **/
       override public function set currentQuality(quality:Number):void {
          _hls.setPlaybackQuality(quality-1);
+         if (!isNaN(_media_position)) {
+           _hls.stream.seek(_media_position);
+         }
          _currentQuality = quality;
          sendQualityEvent(MediaEvent.JWPLAYER_MEDIA_LEVEL_CHANGED, _qualityLevels, quality);
       }

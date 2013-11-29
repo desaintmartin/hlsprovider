@@ -107,3 +107,5 @@ The license full text can be found here: [MPL 2.0](http://www.mozilla.org/MPL/2.
 If you'd like to support future development and new product features, please make a donation via PayPal - a secure online banking service.These donations are used to cover my ongoing expenses - web hosting, domain registrations, and software and hardware purchases.
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=463RB2ALVXJLA)
+
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/c3d851ee2663072644e59cc07088cf97 "githalytics.com")](http://githalytics.com/mangui/HLSprovider)

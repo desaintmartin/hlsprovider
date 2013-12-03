@@ -17,6 +17,8 @@ package org.mangui.HLS.streaming {
     public class FragmentLoader {
         /** Reference to the HLS controller. **/
         private var _hls:HLS;
+        /** reference to auto level manager */
+        private var _autoLevelManager:AutoLevelManager;
         /** Bandwidth of the last loaded fragment **/
         private var _last_bandwidth:int = 0;
         /** fetch time of the last loaded fragment **/
@@ -55,20 +57,19 @@ package org.mangui.HLS.streaming {
         private var _width:Number = 480;
         /** The current TS packet being read **/
         private var _ts:TS;
-        /** switch up threshold **/
-        private var _switchup:Array = null;
-        /** switch down threshold **/
-        private var _switchdown:Array = null;
         /* variable to deal with IO Error retry */
         private var _bIOError:Boolean=false;
         private var _nIOErrorDate:Number=0;
+
         /** boolean to track playlist PTS loading/loaded state */
         private var _playlist_pts_loading:Boolean=false;
         private var _playlist_pts_loaded:Boolean=false;
 
+
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
             _hls = hls;
+            _autoLevelManager = new AutoLevelManager(hls);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
             _urlstreamloader = new URLStream();
@@ -159,7 +160,7 @@ package org.mangui.HLS.streaming {
           } else if(_switchlevel == true) {
             level = _level;
           } else if (_manual_level == -1 ) {
-            level = _getnextlevel(buffer);
+            level = _autoLevelManager.getnextlevel(_level,buffer,_last_segment_duration,_last_fetch_duration,_last_bandwidth);
           } else {
             level = _manual_level;
           }
@@ -167,7 +168,7 @@ package org.mangui.HLS.streaming {
             _level = level;
             _switchlevel = true;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
-          }          
+          }
           return level;
        }
 
@@ -215,7 +216,7 @@ package org.mangui.HLS.streaming {
             _last_segment_continuity_counter = frag.continuity;
             _last_segment_program_date = frag.program_date;
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
-            Log.txt("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);            
+            Log.txt("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             try {
                _urlstreamloader.load(new URLRequest(frag.url));
             } catch (error:Error) {
@@ -241,7 +242,7 @@ package org.mangui.HLS.streaming {
               //Log.txt("loadnextfragment : playlist not received for level:"+level);
               return 1;
             }
-            
+
             var new_seqnum:Number;
             var last_seqnum:Number = -1;
             var log_prefix:String;
@@ -319,14 +320,13 @@ package org.mangui.HLS.streaming {
         private function _manifestLoadedHandler(event:HLSEvent):void {
             _levels = event.levels;
             _level = 0;
-            _initlevelswitch();
         };
-        
+
         /** Store the manifest data. **/
         private function _levelUpdatedHandler(event:HLSEvent):void {
           _last_updated_level = event.level;
         };
-        
+
         /** Parse a TS fragment. **/
         private function _parseTS():void {
           //if(_switchlevel) {
@@ -348,7 +348,7 @@ package org.mangui.HLS.streaming {
        var ts:TS = _ts;
        if (ts == null)
         return;
-    
+
        if (ts.audioTags.length > 0) {
         ptsTags = ts.audioTags;
       } else {
@@ -366,7 +366,7 @@ package org.mangui.HLS.streaming {
        then return. this will force the Buffer Manager to reload the
        fragment at right offset */
        if(_playlist_pts_loading == true) {
-         _levels[_level].updatePTS(_seqnum,min_pts,max_pts);        
+         _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
          Log.txt("analyzed  PTS " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
          _playlist_pts_loading = false;
          _playlist_pts_loaded = true;
@@ -423,95 +423,6 @@ package org.mangui.HLS.streaming {
       }
     }
 
-    /* initialize level switching heuristic tables */
-    private function _initlevelswitch():void {
-      var i:Number;
-      var maxswitchup:Number=0;
-      var minswitchdwown:Number=Number.MAX_VALUE;
-      _switchup = new Array(_levels.length);
-      _switchdown = new Array(_levels.length);
-
-      for(i=0 ; i < _levels.length-1; i++) {
-         _switchup[i] = (_levels[i+1].bitrate - _levels[i].bitrate) / _levels[i].bitrate;
-         maxswitchup = Math.max(maxswitchup,_switchup[i]);
-      }
-      for(i=0 ; i < _levels.length-1; i++) {
-         _switchup[i] = Math.min(maxswitchup,2*_switchup[i]);
-         //Log.txt("_switchup["+i+"]="+_switchup[i]);
-      }
-
-
-      for(i = 1; i < _levels.length; i++) {
-         _switchdown[i] = (_levels[i].bitrate - _levels[i-1].bitrate) / _levels[i].bitrate;
-         minswitchdwown  =Math.min(minswitchdwown,_switchdown[i]);
-      }
-      for(i = 1; i < _levels.length; i++) {
-         _switchdown[i] = Math.max(2*minswitchdwown,_switchdown[i]);
-         //Log.txt("_switchdown["+i+"]="+_switchdown[i]);
-      }
-    }
-
-        /** Update the quality level for the next fragment load. **/
-        private function _getnextlevel(buffer:Number):Number {
-         var i:Number;
-
-            var level:Number = -1;
-            // Select the lowest non-audio level.
-            for(i = 0; i < _levels.length; i++) {
-                if(!_levels[i].audio) {
-                    level = i;
-                    break;
-                }
-            }
-            if(level == -1) {
-                Log.txt("No other quality levels are available");
-                return -1;
-            }
-            if(_last_fetch_duration == 0 || _last_segment_duration == 0) {
-               return 0;
-            }
-            var fetchratio:Number = _last_segment_duration/_last_fetch_duration;
-            var bufferratio:Number = 1000*buffer/_last_segment_duration;
-            //Log.txt("fetchratio:" + fetchratio);
-            //Log.txt("bufferratio:" + bufferratio);
-
-            /* to switch level up :
-              fetchratio should be greater than switch up condition,
-               but also, when switching levels, we might have to load two fragments :
-                - first one for PTS analysis,
-                - second one for NetStream injection
-               the condition (bufferratio > 2*_levels[_level+1].bitrate/_last_bandwidth)
-               ensures that buffer time is bigger than than the time to download 2 fragments from _level+1, if we keep same bandwidth
-            */
-            if((_level < _levels.length-1) && (fetchratio > (1+_switchup[_level])) && (bufferratio > 2*_levels[_level+1].bitrate/_last_bandwidth)) {
-               //Log.txt("fetchratio:> 1+_switchup[_level]="+(1+_switchup[_level]));
-               Log.txt("switch to level " + (_level+1));
-                  //level up
-                  return (_level+1);
-            }
-            /* to switch level down :
-              fetchratio should be smaller than switch down condition,
-               or buffer time is too small to retrieve one fragment with current level
-            */
-
-            else if(_level > 0 &&((fetchratio < (1-_switchdown[_level])) || (bufferratio < 1)) ) {
-                  //Log.txt("bufferratio < 2 || fetchratio: < 1-_switchdown[_level]="+(1-_switchdown[_level]));
-                  /* find suitable level matching current bandwidth, starting from current level
-                     when switching level down, we also need to consider that we might need to load two fragments.
-                     the condition (bufferratio > 2*_levels[j].bitrate/_last_bandwidth)
-                    ensures that buffer time is bigger than than the time to download 2 fragments from level j, if we keep same bandwidth
-                  */
-                  for(var j:Number = _level-1; j > 0; j--) {
-                     if( _levels[j].bitrate <= _last_bandwidth && (bufferratio > 2*_levels[j].bitrate/_last_bandwidth)) {
-                          Log.txt("switch to level " + j);
-                          return j;
-                      }
-                  }
-                  Log.txt("switch to level 0");
-                  return 0;
-               }
-            return _level;
-        }
 
         /** Provide the loader with screen width information. **/
         public function setWidth(width:Number):void {

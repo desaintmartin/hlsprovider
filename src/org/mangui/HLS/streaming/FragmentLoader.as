@@ -89,8 +89,8 @@ package org.mangui.HLS.streaming {
             if( _urlstreamloader.bytesAvailable > 0 ) {
               var loaderData:ByteArray = new ByteArray();
               _urlstreamloader.readBytes(loaderData,0,0);
+              _cancel_load = false;              
               var ts:TS = new TS(loaderData,_readHandler);
-              _cancel_load = false;
             }
         };
 

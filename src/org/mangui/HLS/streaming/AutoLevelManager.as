@@ -79,46 +79,48 @@ package org.mangui.HLS.streaming {
             if(last_fetch_duration == 0 || last_segment_duration == 0) {
                return 0;
             }
-            var fetchratio:Number = last_segment_duration/last_fetch_duration;
-            var bufferratio:Number = 1000*buffer/last_segment_duration;
-            //Log.txt("fetchratio:" + fetchratio);
-            //Log.txt("bufferratio:" + bufferratio);
+
+            /* rsft : remaining segment fetch time : available time to fetch next segment
+              it depends on the current playback timestamp , the timestamp of the first frame of the next segment
+              and TBMT, indicating a desired latency between the time instant to receive the last byte of a
+              segment to the playback of the first media frame of a segment
+              buffer is start time of next segment
+              TBMT is the buffer size we need to ensure (we need at least 2 segments buffered */
+            var rsft:Number = Math.max(0,1000*buffer-2*last_fetch_duration);
+            var sftm:Number = Math.min(last_segment_duration,rsft)/last_fetch_duration;
+            //Log.txt("rsft:" + rsft);
+            //Log.txt("sftm:" + sftm);
 
             /* to switch level up :
-              fetchratio should be greater than switch up condition,
-               but also, when switching levels, we might have to load two fragments :
-                - first one for PTS analysis,
-                - second one for NetStream injection
-               the condition (bufferratio > 2*_levels[_level+1].bitrate/_last_bandwidth)
-               ensures that buffer time is bigger than than the time to download 2 fragments from current_level+1, if we keep same bandwidth
+              rsft should be greater than switch up condition,
             */
-            if((current_level < _nbLevel-1) && (fetchratio > (1+_switchup[current_level])) && (bufferratio > 2*_bitrate[current_level+1]/last_bandwidth)) {
-               //Log.txt("fetchratio:> 1+_switchup[_level]="+(1+_switchup[current_level]));
-               //Log.txt("switch to level " + (current_level+1));
+            if((current_level < _nbLevel-1) && (sftm > (1+_switchup[current_level]))) {
+               //Log.txt("sftm:> 1+_switchup[_level]="+(1+_switchup[current_level]));
+               Log.txt("switch to level " + (current_level+1));
                   //level up
                   return (current_level+1);
             }
-            /* to switch level down :
-              fetchratio should be smaller than switch down condition,
-               or buffer time is too small to retrieve one fragment with current level
-            */
 
-            else if(current_level > 0 && ((fetchratio < (1-_switchdown[current_level])) || (bufferratio < 1)) ) {
-                  //Log.txt("bufferratio < 2 || fetchratio: < 1-_switchdown[_level]="+(1-_switchdown[_level]));
-                  /* find suitable level matching current bandwidth, starting from current level
-                     when switching level down, we also need to consider that we might need to load two fragments.
-                     the condition (bufferratio > 2*_levels[j].bitrate/_last_bandwidth)
-                    ensures that buffer time is bigger than than the time to download 2 fragments from level j, if we keep same bandwidth
-                  */
-                  for(var j:Number = current_level-1; j > 0; j--) {
-                     if( _bitrate[j] <= last_bandwidth && (bufferratio > 2*_bitrate[j]/last_bandwidth)) {
-                          Log.txt("switch to level " + j);
-                          return j;
-                      }
-                  }
-                  Log.txt("switch to level 0");
-                  return 0;
-               }
+            /* to switch level down :
+              rsft should be smaller than switch up condition,
+            */
+            else if(current_level > 0 && (sftm < 1-_switchdown[current_level])) {
+                Log.txt("sftm < 1-_switchdown[current_level]="+ _switchdown[current_level]);
+                var bufferratio:Number = 1000*buffer/last_segment_duration;
+                /* find suitable level matching current bandwidth, starting from current level
+                   when switching level down, we also need to consider that we might need to load two fragments.
+                   the condition (bufferratio > 2*_levels[j].bitrate/_last_bandwidth)
+                  ensures that buffer time is bigger than than the time to download 2 fragments from level j, if we keep same bandwidth
+                */
+                for(var j:Number = current_level-1; j > 0; j--) {
+                   if( _bitrate[j] <= last_bandwidth && (bufferratio > 2*_bitrate[j]/last_bandwidth)) {
+                        Log.txt("switch to level " + j);
+                        return j;
+                    }
+                }
+                Log.txt("switch to level 0");
+                return 0;
+            }
             return current_level;
         }
     }

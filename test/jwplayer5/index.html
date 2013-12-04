@@ -77,9 +77,9 @@ listStreams(teststreams, "streamlist");
    <tr class="header2">
       <td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px;">Date/Time</td>
       <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px;">Position</td>
-      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px;">BufferPercent</td>      
-      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px;">Bandwidth</td>
-      <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px;">Quality</td>
+      <td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px;">Buffer</td>
+      <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px;">Bandwidth (kB)</td>
+      <td style="text-align: center; width: 200px; padding-left: 0px; padding-right: 0px;">Level</td>
       <td style="text-align: center; width: 90px; padding-left: 0px; padding-right: 0px;">Width</td>
    </tr>
 </tbody>
@@ -102,14 +102,15 @@ jwplayer("player").play();
 return false;
 }
 jwplayer("player").onTime(function(evt){
-  currentTime = evt.position;
-  currentBuffer = evt.bufferPercent;
-  currentLength = evt.duration;
+  currentTime = evt.position.toFixed(1);
+  currentBuffer = ((evt.bufferPercent*evt.duration)/100-evt.position).toFixed(1);
+  if(isNaN(currentBuffer)) currentBuffer=0;
+  currentLength = evt.duration.toFixed(1);
   
-      var html = 'evt.position: '+currentTime;
-      html += '<br>evt.bufferPercent: '+ currentBuffer;
-      html += '<br>evt.duration: '+ currentLength;
-      document.getElementById('log2').innerHTML = html;  
+      var html =  'position : '+currentTime + 's';
+      html += ',buffer : '+ currentBuffer + 's';
+      html += ',duration : '+ currentLength + 's';
+      document.getElementById('log2').innerHTML = html;
   
 });
 
@@ -117,7 +118,7 @@ jwplayer("player").onTime(function(evt){
    if(event.metadata.bandwidth) {
       width = event.metadata.width;
       currentLevel = event.metadata.currentLevel;
-      currentBandwidth = event.metadata.bandwidth;
+      currentBandwidth = event.metadata.bandwidth.toFixed(0);
       dateTime();
       $('#history tr:first').after('<tr><td style="text-align: center; width: 160px; padding-left: 0px; padding-right: 0px">'+currentDateTime+
                                    '</td><td style="text-align: center; width: 70px; padding-left: 0px; padding-right: 0px">'+currentTime+

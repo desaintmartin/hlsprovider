@@ -55,8 +55,8 @@ package org.mangui.HLS.streaming {
         private var _hasDiscontinuity:Boolean;
         /** Width of the stage. **/
         private var _width:Number = 480;
-        /** The current TS packet being read **/
-        private var _ts:TS;
+	/* flag handling load cancelled (if new seek occurs for example) */
+        private var _cancel_load:Boolean;
         /* variable to deal with IO Error retry */
         private var _bIOError:Boolean=false;
         private var _nIOErrorDate:Number=0;
@@ -74,13 +74,9 @@ package org.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
             _urlstreamloader = new URLStream();
             _urlstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
-            //_urlstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _httpStatusHandler);
             _urlstreamloader.addEventListener(Event.COMPLETE, _completeHandler);
         };
 
-         private function _httpStatusHandler(event:HTTPStatusEvent):void {
-            //Log.txt("httpStatusHandler: " + event);
-          }
 
         /** Fragment load completed. **/
         private function _completeHandler(event:Event):void {
@@ -89,13 +85,13 @@ package org.mangui.HLS.streaming {
             // Calculate bandwidth
             _last_fetch_duration = (new Date().valueOf() - _started);
             _last_bandwidth = Math.round(_urlstreamloader.bytesAvailable * 8000 / _last_fetch_duration);
-			// Collect stream loader data
-			if( _urlstreamloader.bytesAvailable > 0 ) {
-				_loaderData = new ByteArray();
-				_urlstreamloader.readBytes(_loaderData,0,0);
-			}
-            // Extract tags.
-            _parseTS();
+            // Collect stream loader data
+            if( _urlstreamloader.bytesAvailable > 0 ) {
+              var loaderData:ByteArray = new ByteArray();
+              _urlstreamloader.readBytes(loaderData,0,0);
+              var ts:TS = new TS(loaderData,_readHandler);
+              _cancel_load = false;
+            }
         };
 
 
@@ -104,7 +100,7 @@ package org.mangui.HLS.streaming {
 			if(_urlstreamloader.connected) {
 				_urlstreamloader.close();
 			}
-			_ts = null;
+			_cancel_load = true;
       _bIOError = false;
 		}
 
@@ -327,33 +323,18 @@ package org.mangui.HLS.streaming {
           _last_updated_level = event.level;
         };
 
-        /** Parse a TS fragment. **/
-        private function _parseTS():void {
-          //if(_switchlevel) {
-            _ts = new TS(_loaderData);
-            _ts.addEventListener(TS.READCOMPLETE, _readHandler);
-            _ts.startReading();
-          //} else {
-           // _ts.addData(_loaderData);
-          //}
-        };
-
-
     /** Handles the actual reading of the TS fragment **/
-    private function _readHandler(e:Event):void {
+    private function _readHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray):void {
        var min_pts:Number = Number.POSITIVE_INFINITY;
        var max_pts:Number = Number.NEGATIVE_INFINITY;
        // Tags used for PTS analysis
        var ptsTags:Vector.<Tag>;
-       var ts:TS = _ts;
-       if (ts == null)
-        return;
 
-       if (ts.audioTags.length > 0) {
-        ptsTags = ts.audioTags;
+       if (audioTags.length > 0) {
+        ptsTags = audioTags;
       } else {
       // no audio, video only stream
-        ptsTags = ts.videoTags;
+        ptsTags = videoTags;
       }
 
       for(var k:Number=0; k < ptsTags.length; k++) {
@@ -376,37 +357,40 @@ package org.mangui.HLS.streaming {
       var tags:Vector.<Tag> = new Vector.<Tag>();
       // Save codecprivate when not available.
       if(!_levels[_level].avcc && !_levels[_level].adif) {
-        _levels[_level].avcc = ts.getAVCC();
-        _levels[_level].adif = ts.getADIF();
+        _levels[_level].avcc = avcc;
+        _levels[_level].adif = adif;
       }
       // Push codecprivate tags only when switching.
       if(_switchlevel) {
-        if (ts.videoTags.length > 0) {
+        if (videoTags.length > 0) {
           // Audio only file don't have videoTags[0]
-          var avccTag:Tag = new Tag(Tag.AVC_HEADER,ts.videoTags[0].pts,ts.videoTags[0].dts,true);
+          var avccTag:Tag = new Tag(Tag.AVC_HEADER,videoTags[0].pts,videoTags[0].dts,true);
           avccTag.push(_levels[_level].avcc,0,_levels[_level].avcc.length);
           tags.push(avccTag);
         }
-        if (ts.audioTags.length > 0) {
-          if(ts.audioTags[0].type == Tag.AAC_RAW) {
-            var adifTag:Tag = new Tag(Tag.AAC_HEADER,ts.audioTags[0].pts,ts.audioTags[0].dts,true);
+        if (audioTags.length > 0) {
+          if(audioTags[0].type == Tag.AAC_RAW) {
+            var adifTag:Tag = new Tag(Tag.AAC_HEADER,audioTags[0].pts,audioTags[0].dts,true);
             adifTag.push(_levels[_level].adif,0,2)
             tags.push(adifTag);
           }
         }
       }
       // Push regular tags into buffer.
-      for(var i:Number=0; i < ts.videoTags.length; i++) {
-        tags.push(ts.videoTags[i]);
+      for(var i:Number=0; i < videoTags.length; i++) {
+        tags.push(videoTags[i]);
       }
-      for(var j:Number=0; j < ts.audioTags.length; j++) {
-        tags.push(ts.audioTags[j]);
+      for(var j:Number=0; j < audioTags.length; j++) {
+        tags.push(audioTags[j]);
       }
 
       // change the media to null if the file is only audio.
-      if(ts.videoTags.length == 0) {
+      if(videoTags.length == 0) {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_ONLY));
       }
+
+      if (_cancel_load == true)
+        return;
 
       try {
          _switchlevel = false;

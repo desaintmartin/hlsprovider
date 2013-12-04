@@ -16,18 +16,15 @@ package org.mangui.HLS.muxing {
 		
 		
 		/** TS Sync byte. **/
-		public static const SYNCBYTE:uint = 0x47;
+		private static const SYNCBYTE:uint = 0x47;
 		/** TS Packet size in byte. **/
-		public static const PACKETSIZE:uint = 188;
-		/** Identifier for read complete event **/
-		public static const READCOMPLETE:String = "readComplete"
-		private static const COUNT:uint = 5000;	
-		
-		
+		private static const PACKETSIZE:uint = 188;
+		/** loop counter to avoid blocking **/
+		private static const COUNT:uint = 5000;
 		/** Packet ID of the AAC audio stream. **/
 		private var _aacId:Number = -1;
 		/** List with audio frames. **/
-		public var audioTags:Vector.<Tag> = new Vector.<Tag>();
+		private var audioTags:Vector.<Tag> = new Vector.<Tag>();
 		/** List of packetized elementary streams with AAC. **/
 		private var _audioPES:Vector.<PES> = new Vector.<PES>();
 		/** has PMT been parsed ? **/
@@ -47,30 +44,33 @@ package org.mangui.HLS.muxing {
 		/** List with video frames. **/
 		/** Packet ID of the SDT (is always 17). **/
 		private var _sdtId:Number = 17;
-		public var videoTags:Vector.<Tag> = new Vector.<Tag>();
+		private var videoTags:Vector.<Tag> = new Vector.<Tag>();
 		/** List of packetized elementary streams with AVC. **/
 		private var _videoPES:Vector.<PES> = new Vector.<PES>();
 		/** Timer for reading packets **/ 
-		public var _timer:Timer;
+		private var _timer:Timer;
 		/** Byte data to be read **/
 		private var _data:ByteArray;
 		/* last PES packet containing AVCC Frame (SPS/PPS) */
 		private var _lastAVCCFrame:PES = null;
-		
+		/* callback function upon read complete */
+		private var _callback:Function;
 		
 		/** Transmux the M2TS file into an FLV file. **/
-		public function TS(data:ByteArray) {
+		public function TS(data:ByteArray,callback:Function) {
 			// Extract the elementary streams.
 			_data = data;
+			_callback = callback;
 			_timer = new Timer(0,0);
 			_timer.addEventListener(TimerEvent.TIMER, _readData);
+			_timer.start();
 		};
 		
-		/** add new data into Buffer */
-		public function addData(newData:ByteArray):void {
-		  newData.readBytes(_data,_data.position);
-		  _timer.start();
-		}
+		/** append new TS data */
+		//public function appendData(newData:ByteArray):void {
+		//  newData.readBytes(_data,_data.length);
+		//  _timer.start();
+		//}
 		
 		/** Read a small chunk of packets each time to avoid blocking **/
 		private function _readData(e:Event):void {
@@ -86,29 +86,24 @@ package org.mangui.HLS.muxing {
 			}
 		}
 		
-		/** start the timer in order to start reading data **/
-		public function startReading():void {;
-			_timer.start();
-		}
-		
 		/** setup the video and audio tag vectors from the read data **/
 		private function _extractFrames():void {
 			if (_videoPES.length == 0 && _audioPES.length == 0 ) {
 				throw new Error("No AAC audio and no AVC video stream found.");
 			}
-			// Extract the ADTS or MPEG audio frames.
+			// Extract the ADTS or MP3 audio frames (transform PES packets into audio tags)
 			if(_aacId > 0) {
 				_readADTS();
 			} else {
 				_readMPEG();
 			}
-			// Extract the NALU video frames.
+			// Extract the NALU video frames (transform PES packets into video tags)
 			_readNALU();
-			dispatchEvent(new Event(TS.READCOMPLETE));
+			_callback(audioTags,videoTags,_getADIF(),_getAVCC());
 		}
 		
 		/** Get audio configuration data. **/
-		public function getADIF():ByteArray {
+		private function _getADIF():ByteArray {
 			if(_aacId > 0 && audioTags.length > 0) {
 				return AAC.getADIF(_audioPES[0].data,_audioPES[0].payload);
 			} else { 
@@ -118,7 +113,7 @@ package org.mangui.HLS.muxing {
 		
 		
 		/** Get video configuration data. **/
-		public function getAVCC():ByteArray {
+		private function _getAVCC():ByteArray {
 			if(_firstKey == -1) {
 				return new ByteArray();
 			}

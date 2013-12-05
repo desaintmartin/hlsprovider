@@ -1,8 +1,8 @@
 #HLSprovider
 
-**HLSProvider** is an AS3 plugin that allows you to play HLS playlist using either :
+**HLSProvider** is a Flash/AS3 plugin that allows you to play HLS streams using either :
 
-* **Chromeless** Flash Player
+* a **Chromeless** Flash Player
 * **JWPlayer** Flash free edition version **5.x**
 * **JWPlayer** Flash free edition version **6.x**
 * **OSMF** version **2.0** (beta stage, any help welcomed !)
@@ -13,7 +13,7 @@
 * VOD/live/DVR playlists
 * multiple bitrate playlist / adaptive streaming
 * automatic quality switching, using serial segment fetching method described in [http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf](http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf)
-* manual quality switching (JWPlayer 6 only)
+* manual quality switching
 * seeking in VoD and live playlist
 * buffer progress report
 * error resilience (retry mechanism in case of I/O Errors)
@@ -28,7 +28,7 @@ the following M3U8 tags are supported:
 * #EXT-X-MEDIA-SEQUENCE (value is used for live playlist update)
 * #EXT-X-TARGETDURATION (value is used as live playlist reload interval)
 * #EXT-X-DISCONTINUITY
-* #EXT-X-PROGRAM-DATE-TIME (if this tag is available, it is used to find next sequence number to load when bitrate is switching from one level to another)
+* #EXT-X-PROGRAM-DATE-TIME (optional, used to synchronize time-stamps and sequence number when switching from one level to another)
 
 ##HLSProvider in action :
 
@@ -43,7 +43,7 @@ the following M3U8 tags are supported:
 
 download package : https://github.com/mangui/HLSprovider/archive/master.zip
 
-###jwplayer5 based setup:
+###chromeless based setup:
 from zip, extract test/chromeless folder, and get inspired by example.html
 
 ###OSMF based setup:

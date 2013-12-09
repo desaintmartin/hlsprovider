@@ -25,7 +25,11 @@ package org.mangui.HLS.muxing {
         /** Get ADIF header from ADTS stream. **/
         public static function getADIF(adts:ByteArray,position:Number=0):ByteArray {
             adts.position = position;
-            var short:uint = adts.readUnsignedShort();
+            var short:uint;
+            do {
+              short = adts.readUnsignedShort();
+            } while(!(short == SYNCWORD) && !(short == SYNCWORD_2) && !(short == SYNCWORD_3) && adts.bytesAvailable > 1);
+            
             if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
                 var profile:uint = (adts.readByte() & 0xF0) >> 6;
                 // Correcting zero-index of ADIF and Flash playing only LC/HE.
@@ -55,6 +59,10 @@ package org.mangui.HLS.muxing {
             var frames:Array = [];
             var frame_start:uint;
             var frame_length:uint;
+            var id3_len:Number = ID3.length(adts);
+            if(id3_len >0) {
+              position+=id3_len;
+            }
             // Get raw AAC frames from audio stream.
             adts.position = position;
             var samplerate:uint;

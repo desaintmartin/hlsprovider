@@ -45,8 +45,6 @@ package org.mangui.HLS.streaming {
         private var _levels:Array;
         /** Util for loading the fragment. **/
         private var _urlstreamloader:URLStream;
-         /** Data read from stream loader **/
-        private var _loaderData:ByteArray;
         /** Time the loading started. **/
         private var _started:Number;
         /** Did the stream switch quality levels. **/
@@ -55,7 +53,7 @@ package org.mangui.HLS.streaming {
         private var _hasDiscontinuity:Boolean;
         /** Width of the stage. **/
         private var _width:Number = 480;
-	/* flag handling load cancelled (if new seek occurs for example) */
+        /* flag handling load cancelled (if new seek occurs for example) */
         private var _cancel_load:Boolean;
         /* variable to deal with IO Error retry */
         private var _bIOError:Boolean=false;
@@ -89,11 +87,63 @@ package org.mangui.HLS.streaming {
             if( _urlstreamloader.bytesAvailable > 0 ) {
               var loaderData:ByteArray = new ByteArray();
               _urlstreamloader.readBytes(loaderData,0,0);
-              _cancel_load = false;              
-              var ts:TS = new TS(loaderData,_readHandler);
+              _cancel_load = false;
+              _demuxfragment(loaderData,_levels[_level].getFragmentfromSeqNum(_seqnum).start_time);
             }
         };
 
+    private function _demuxfragment(data:ByteArray,start_time:Number):void {
+      /* probe file type */
+      var header:uint = data.readUnsignedInt();
+      data.position = 0;
+      var syncbyte:uint = header >>> 24;
+      var syncword:uint = header >>> 16;
+      var tag:uint = header >>> 8;
+      if(tag == ID3.TAG)
+      {
+         var taglen:Number = ID3.length(data);
+         if(taglen > 0)
+         {
+            data.position = taglen;
+            syncword = data.readUnsignedShort();
+            syncbyte = syncword >> 8;
+         }
+      }
+      data.position = 0;
+      if (syncbyte == TS.SYNCBYTE) {
+        var ts:TS = new TS(data,_readHandler);
+      } else {
+        var audioTags:Vector.<Tag> = new Vector.<Tag>();
+        var adif:ByteArray = new ByteArray();
+        if(syncword == AAC.SYNCWORD || syncword == AAC.SYNCWORD_2 || syncword == AAC.SYNCWORD_3) {
+          /* parse AAC, convert Elementary Streams to TAG */
+          var frames:Array = AAC.getFrames(data,0);
+          adif = AAC.getADIF(data,0);
+          var audioTag:Tag;
+          var stamp:Number;
+          var i:Number = 0;
+          
+          while(i < frames.length)
+          {
+             stamp = Math.round(1000*start_time+i*1024*1000 / frames[i].rate);
+             audioTag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
+             if (i != frames.length-1) {
+              audioTag.push(data,frames[i].start,frames[i].length);
+            } else {
+              audioTag.push(data,frames[i].start,data.length-frames[i].start);
+            }
+            audioTags.push(audioTag);
+            i++;
+          }
+        } else {
+          if (syncword == 0xFFFB) {
+          /* parse MP3, convert Elementary Streams to TAG */
+          }
+        }
+        _last_segment_continuity_counter = -1;
+        _readHandler(audioTags,new Vector.<Tag>(),adif, new ByteArray());
+      }
+    }
 
 		/** Kill any active load **/
 		public function clearLoader():void {
@@ -173,10 +223,10 @@ package org.mangui.HLS.streaming {
              if(_urlstreamloader.connected) {
                 _urlstreamloader.close();
             }
-            _switchlevel = true;
             // reset IO Error when loading new fragment
             _bIOError = false;
             updateLevel(0);
+            _switchlevel = true;
 
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
             if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {
@@ -244,7 +294,7 @@ package org.mangui.HLS.streaming {
             var log_prefix:String;
             var frag:Fragment;
 
-            if(_switchlevel == false) {
+            if(_switchlevel == false || _last_segment_continuity_counter == -1) {
               last_seqnum = _seqnum;
             } else  { // level switch
               // trust program-time : if program-time defined in previous loaded fragment, try to find seqnum matching program-time in new level.
@@ -269,8 +319,8 @@ package org.mangui.HLS.streaming {
                   /* when probing PTS, take previous sequence number as reference if possible */
                   new_seqnum=Math.min(_seqnum+1,_levels[_level].getLastSeqNumfromContinuity(_last_segment_continuity_counter));
                   new_seqnum = Math.max(new_seqnum,_levels[_level].getFirstSeqNumfromContinuity(_last_segment_continuity_counter));
-                  _playlist_pts_loading = true;
-                  log_prefix = "analyzing PTS ";
+                    _playlist_pts_loading = true;
+                    log_prefix = "analyzing PTS ";
                 }
               }
             }

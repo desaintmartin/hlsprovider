@@ -16,7 +16,7 @@ package org.mangui.HLS.muxing {
 		
 		
 		/** TS Sync byte. **/
-		private static const SYNCBYTE:uint = 0x47;
+		public static const SYNCBYTE:uint = 0x47;
 		/** TS Packet size in byte. **/
 		private static const PACKETSIZE:uint = 188;
 		/** loop counter to avoid blocking **/

@@ -124,9 +124,6 @@ package org.mangui.HLS.parsing {
                     for(var j:Number = 0; j<params.length; j++) {
                         if(params[j].indexOf('BANDWIDTH') > -1) {
                             level.bitrate = params[j].split('=')[1];
-                            if(level.bitrate < 150000) {
-                                level.audio = true;
-                            }
                         } else if (params[j].indexOf('RESOLUTION') > -1) {
                             level.height  = params[j].split('=')[1].split('x')[1];
                             level.width = params[j].split('=')[1].split('x')[0];

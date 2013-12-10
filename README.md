@@ -7,6 +7,7 @@
 * **JWPlayer** Flash free edition version **6.x**
 * **OSMF** version **2.0** (beta stage, any help welcomed !)
  
+HLSProvider could also be used as library to build a custom flash player thanks to its simple API/SDK.
 
 **HLSProvider** supports the following features :
 

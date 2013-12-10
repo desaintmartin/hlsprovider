@@ -1,34 +1,28 @@
 <!DOCTYPE html>
-<html><head><title>HLSProvider in JW6</title>
+<html><head><title>HLSProvider/ HLS Flash Plugin for JWPlayer 6.x</title>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
 <meta name="author" content="mangui">
-<meta name="description" content="HLS Plugin for JWPlayer">
+<meta name="description" content="HLSProvider is an HLS flash plugin/player (it can be embedded into any custom Flash Player, plugins are also available for JWPlayer 5.x,6.x and OSMF 2.0)">
 <meta name="keywords" content="hls, jwplayer, m3u8, http live streaming, apple hls, plugin, h264, H.264, x264, aac, mp3, flash, flashplayer, flash player, video, audio, mbr, multibitrate, multi bitrate, vod, video on demand, live, live stream, dvr, dvr stream, digital video recorder">
 </head>
 <body style="color: Black; background-color: White;" link="Blue" vlink="Purple">
 <div style="text-align: center;">
 <div style="text-align: center;">
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
-<script type="text/javascript" src="jwplayer.js"></script>&nbsp;<big style="font-weight: bold;"><big><code>HLSProvider
-in JWPlayer 6</code></big></big><br>
+<script type="text/javascript" src="jwplayer.js"></script>&nbsp;<big style="font-weight: bold;"><big><code>HLSProvider - HLS Flash Plugin for JWPlayer 6.x</code></big></big><br>
 </div>
 <code></code></div>
-<code><br>
-&lt;script
-type="text/javascript" src="<a href="jwplayer.js">jwplayer.js</a>"&gt;&lt;/script&gt;<br>
-<br>
-<left> jwplayer("player").setup({ <br>
-playlist: [{<br>
-file:'http://www.mywebsite.com/stream.m3u8',<br>
-provider:'<a href="https://github.com/mangui/HLSprovider/raw/master/test/HLSProvider6.swf">HLSProvider6.swf</a>',<br>
-}],<br>
-width: 640,<br>
-height: 480,<br>
-primary: "flash"<br>
-});</left></code>
-<br>
-<left></left>
+<code><left><br>
+</left></code>
+<header>
+  <div>HLSProvider is a Flash/AS3 plugin that plays back HLS streams.<br>
+   visit <a href="http://mangui.github.io/HLSprovider"> http://mangui.github.io/HLSprovider</a> for more details.<br>
+   player below is JWPlayer 6.6 integrated with HLSProvider6 plugin.<br>
+</div>
+</header>
+
+</div><div style="width: 640px; height: 360px;" id="player"></div>
 <h3> Test Videos </h3>
 <div> The following videos should stream correctly. Each time an
 issue is reported with a sample playlist, it will be added in the list
@@ -63,7 +57,6 @@ document.getElementById(container).appendChild(entry);
 listStreams(teststreams, "streamlist");
 
 </script>
-</div><div style="width: 640px; height: 360px;" id="player"></div>
 <div style="text-align: left;" id="log2"></div>
 <br>
 <br>

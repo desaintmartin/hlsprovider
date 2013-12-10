@@ -9,12 +9,8 @@ package org.mangui.HLS.parsing {
     public class Level {
 
 
-        /** Audio configuration packet (ADIF). **/
-        public var adif:ByteArray;
         /** Whether this is audio only. **/
         public var audio:Boolean;
-        /** Video configuration packet (AVCC). **/
-        public var avcc:ByteArray;
         /** Bitrate of the video in this level. **/
         public var bitrate:Number;
         /** Array with fragments for this level. **/

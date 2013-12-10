@@ -405,23 +405,17 @@ package org.mangui.HLS.streaming {
        }
 
       var tags:Vector.<Tag> = new Vector.<Tag>();
-      // Save codecprivate when not available.
-      if(!_levels[_level].avcc && !_levels[_level].adif) {
-        _levels[_level].avcc = avcc;
-        _levels[_level].adif = adif;
-      }
       // Push codecprivate tags only when switching.
       if(_switchlevel) {
         if (videoTags.length > 0) {
-          // Audio only file don't have videoTags[0]
           var avccTag:Tag = new Tag(Tag.AVC_HEADER,videoTags[0].pts,videoTags[0].dts,true);
-          avccTag.push(_levels[_level].avcc,0,_levels[_level].avcc.length);
+          avccTag.push(avcc,0,avcc.length);
           tags.push(avccTag);
         }
         if (audioTags.length > 0) {
           if(audioTags[0].type == Tag.AAC_RAW) {
             var adifTag:Tag = new Tag(Tag.AAC_HEADER,audioTags[0].pts,audioTags[0].dts,true);
-            adifTag.push(_levels[_level].adif,0,2)
+            adifTag.push(adif,0,2)
             tags.push(adifTag);
           }
         }

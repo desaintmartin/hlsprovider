@@ -9,7 +9,6 @@ package org.mangui.osmf.plugins
   public class HLSDynamicStreamTrait extends DynamicStreamTrait
   {
     private var _hls:HLS;
-    private var currentLevel:Number;
     public function HLSDynamicStreamTrait(hls:HLS)
     {
       _hls = hls;
@@ -24,8 +23,8 @@ package org.mangui.osmf.plugins
       {
         throw new RangeError(OSMFStrings.getString(OSMFStrings.STREAMSWITCH_INVALID_INDEX));
       }
-      var bitrate:Number = _hls.getLevels[index].bitrate/1024;
-      Log.txt("HLSDynamicStreamTrait:getBitrateForIndex("+index+")="+bitrate);
+      var bitrate:Number = _hls.getLevels()[index].bitrate/1024;
+      //Log.txt("HLSDynamicStreamTrait:getBitrateForIndex("+index+")="+bitrate);
       return bitrate;
     }
 

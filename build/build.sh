@@ -16,11 +16,10 @@ echo ""
 echo "Compiling HLSProviderChromeless.swf"
 echo ""
 
-$FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as -sp ../src -o ../test/chromeless/HLSProviderChromeless.swf -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
+$FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as -sp ../src -o ../test/chromeless/HLSProviderChromeless.swf -use-network=false -optimize=true -incremental=false -target-player="11.1" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
 
 echo ""
 echo "Compiling HLSProviderOSMF.swf"
 echo ""
 
-$FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as -sp ../src -o ../test/osmf/HLSProviderOSMF.swf -library-path+=../lib/OSMF -externs org.osmf.net.httpstreaming.HTTPNetStream -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true -define CONFIG::OSMF_DYNAMIC_SWITCHING false  #-compiler.verbose-stacktraces=true -link-report=../test/osmf/link-report.xml
-$FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as -sp ../src -o ../test/osmf/HLSProviderOSMFDynamicSwitching.swf -library-path+=../lib/OSMF -externs org.osmf.net.httpstreaming.HTTPNetStream -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true -define CONFIG::OSMF_DYNAMIC_SWITCHING true   #-compiler.verbose-stacktraces=true -link-report=../test/osmf/link-report.xml
+$FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as -sp ../src -o ../test/osmf/HLSProviderOSMF.swf -library-path+=../lib/OSMF -externs org.osmf.net.httpstreaming.HTTPNetStream -use-network=false -optimize=true -incremental=false -target-player="10.1" -static-link-runtime-shared-libraries=true #-compiler.verbose-stacktraces=true -link-report=../test/osmf/link-report.xml

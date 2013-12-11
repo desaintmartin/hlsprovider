@@ -29,7 +29,7 @@ package org.mangui.HLS.parsing {
 
 
         /** Create the fragment. **/
-        public function Fragment(url:String, duration:Number, seqnum:Number,start_time:Number,continuity:Number,program_date:Number,decrypt_url:String=undefined,decrypt_iv:ByteArray=undefined):void {
+        public function Fragment(url:String, duration:Number, seqnum:Number,start_time:Number,continuity:Number,program_date:Number,decrypt_url:String,decrypt_iv:ByteArray):void {
             this.duration = duration;
             this.url = url;
             this.seqnum = seqnum;

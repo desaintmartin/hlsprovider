@@ -48,7 +48,7 @@ package org.mangui.HLS.streaming {
         /** Util for loading the key. **/
         private var _keystreamloader:URLStream;
         /** key map **/
-        private var _keymap:Object;
+        private var _keymap:Object = new Object();
         /** Time the loading started. **/
         private var _started:Number;
         /** Did the stream switch quality levels. **/
@@ -302,7 +302,7 @@ package org.mangui.HLS.streaming {
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             
-            if(frag.decrypt_url != null && !(frag.decrypt_url in _keymap)) {
+            if(frag.decrypt_url != null && (_keymap[frag.decrypt_url] == undefined)) {
               // load key
               _keystreamloader.load(new URLRequest(frag.decrypt_url));
             } else {
@@ -399,7 +399,7 @@ package org.mangui.HLS.streaming {
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             
-            if(frag.decrypt_url != null && !(frag.decrypt_url in _keymap)) {
+            if(frag.decrypt_url != null && (_keymap[frag.decrypt_url] == undefined)) {
               // load key
               _keystreamloader.load(new URLRequest(frag.decrypt_url));
             } else {

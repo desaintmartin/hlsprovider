@@ -44,7 +44,7 @@ package org.mangui.HLS.streaming {
         /** Reference to the manifest levels. **/
         private var _levels:Array;
         /** Util for loading the fragment. **/
-        private var _urlstreamloader:URLStream;
+        private var _fragstreamloader:URLStream;
         /** Time the loading started. **/
         private var _started:Number;
         /** Did the stream switch quality levels. **/
@@ -70,29 +70,29 @@ package org.mangui.HLS.streaming {
             _autoLevelManager = new AutoLevelManager(hls);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
-            _urlstreamloader = new URLStream();
-            _urlstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
-            _urlstreamloader.addEventListener(Event.COMPLETE, _completeHandler);
+            _fragstreamloader = new URLStream();
+            _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
+            _fragstreamloader.addEventListener(Event.COMPLETE, _fragCompleteHandler);
         };
 
 
         /** Fragment load completed. **/
-        private function _completeHandler(event:Event):void {
+        private function _fragCompleteHandler(event:Event):void {
             //Log.txt("loading completed");
             _bIOError = false;
             // Calculate bandwidth
             _last_fetch_duration = (new Date().valueOf() - _started);
-            _last_bandwidth = Math.round(_urlstreamloader.bytesAvailable * 8000 / _last_fetch_duration);
+            _last_bandwidth = Math.round(_fragstreamloader.bytesAvailable * 8000 / _last_fetch_duration);
             // Collect stream loader data
-            if( _urlstreamloader.bytesAvailable > 0 ) {
+            if( _fragstreamloader.bytesAvailable > 0 ) {
               var loaderData:ByteArray = new ByteArray();
-              _urlstreamloader.readBytes(loaderData,0,0);
+              _fragstreamloader.readBytes(loaderData,0,0);
               _cancel_load = false;
-              _demuxfragment(loaderData,_levels[_level].getFragmentfromSeqNum(_seqnum).start_time);
+              _fragDemux(loaderData,_levels[_level].getFragmentfromSeqNum(_seqnum).start_time);
             }
         };
 
-    private function _demuxfragment(data:ByteArray,start_time:Number):void {
+    private function _fragDemux(data:ByteArray,start_time:Number):void {
       /* probe file type */
       var header:uint = data.readUnsignedInt();
       data.position = 0;
@@ -111,7 +111,7 @@ package org.mangui.HLS.streaming {
       }
       data.position = 0;
       if (syncbyte == TS.SYNCBYTE) {
-        var ts:TS = new TS(data,_readHandler);
+        var ts:TS = new TS(data,_fragReadHandler);
       } else {
         var audioTags:Vector.<Tag> = new Vector.<Tag>();
         var adif:ByteArray = new ByteArray();
@@ -141,14 +141,14 @@ package org.mangui.HLS.streaming {
           }
         }
         _last_segment_continuity_counter = -1;
-        _readHandler(audioTags,new Vector.<Tag>(),adif, new ByteArray());
+        _fragReadHandler(audioTags,new Vector.<Tag>(),adif, new ByteArray());
       }
     }
 
 		/** Kill any active load **/
 		public function clearLoader():void {
-			if(_urlstreamloader.connected) {
-				_urlstreamloader.close();
+			if(_fragstreamloader.connected) {
+				_fragstreamloader.close();
 			}
 			_cancel_load = true;
       _bIOError = false;
@@ -156,7 +156,7 @@ package org.mangui.HLS.streaming {
 
 
         /** Catch IO and security errors. **/
-        private function _errorHandler(event:ErrorEvent):void {
+        private function _fragErrorHandler(event:ErrorEvent):void {
             /* usually, errors happen in two situations :
             - bad networks  : in that case, the second or third reload of URL should fix the issue
             - live playlist : when we are trying to load an out of bound fragments : for example,
@@ -220,8 +220,8 @@ package org.mangui.HLS.streaming {
 
         public function loadfirstfragment(position:Number,callback:Function):Number {
         //Log.txt("loadfirstfragment(" + position + ")");
-             if(_urlstreamloader.connected) {
-                _urlstreamloader.close();
+             if(_fragstreamloader.connected) {
+                _fragstreamloader.close();
             }
             // reset IO Error when loading new fragment
             _bIOError = false;
@@ -264,7 +264,7 @@ package org.mangui.HLS.streaming {
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             try {
-               _urlstreamloader.load(new URLRequest(frag.url));
+               _fragstreamloader.load(new URLRequest(frag.url));
             } catch (error:Error) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
             }
@@ -275,8 +275,8 @@ package org.mangui.HLS.streaming {
         public function loadnextfragment(buffer:Number,callback:Function):Number {
           //Log.txt("loadnextfragment(buffer):(" + buffer+ ")");
 
-            if(_urlstreamloader.connected) {
-                _urlstreamloader.close();
+            if(_fragstreamloader.connected) {
+                _fragstreamloader.close();
             }
             // reset IO Error when loading new fragment
             _bIOError = false;
@@ -355,7 +355,7 @@ package org.mangui.HLS.streaming {
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             try {
-               _urlstreamloader.load(new URLRequest(frag.url));
+               _fragstreamloader.load(new URLRequest(frag.url));
             } catch (error:Error) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
             }
@@ -374,7 +374,7 @@ package org.mangui.HLS.streaming {
         };
 
     /** Handles the actual reading of the TS fragment **/
-    private function _readHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray):void {
+    private function _fragReadHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray):void {
        var min_pts:Number = Number.POSITIVE_INFINITY;
        var max_pts:Number = Number.NEGATIVE_INFINITY;
        // Tags used for PTS analysis

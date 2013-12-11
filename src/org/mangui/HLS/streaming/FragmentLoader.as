@@ -45,6 +45,10 @@ package org.mangui.HLS.streaming {
         private var _levels:Array;
         /** Util for loading the fragment. **/
         private var _fragstreamloader:URLStream;
+        /** Util for loading the key. **/
+        private var _keystreamloader:URLStream;
+        /** key map **/
+        private var _keymap:Object;
         /** Time the loading started. **/
         private var _started:Number;
         /** Did the stream switch quality levels. **/
@@ -73,8 +77,29 @@ package org.mangui.HLS.streaming {
             _fragstreamloader = new URLStream();
             _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
             _fragstreamloader.addEventListener(Event.COMPLETE, _fragCompleteHandler);
+            _keystreamloader = new URLStream();
+            _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
+            _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
         };
 
+
+        /** key load completed. **/
+        private function _keyCompleteHandler(event:Event):void {
+            //Log.txt("key loading completed");
+            // Collect key data
+            if( _keystreamloader.bytesAvailable > 0 ) {
+              var keyData:ByteArray = new ByteArray();
+              _keystreamloader.readBytes(keyData,0,0);
+              var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
+              _keymap[frag.decrypt_url] = keyData;
+              // now load fragment
+              try {
+                 _fragstreamloader.load(new URLRequest(frag.url));
+              } catch (error:Error) {
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
+              }
+            }
+        };
 
         /** Fragment load completed. **/
         private function _fragCompleteHandler(event:Event):void {
@@ -88,7 +113,15 @@ package org.mangui.HLS.streaming {
               var loaderData:ByteArray = new ByteArray();
               _fragstreamloader.readBytes(loaderData,0,0);
               _cancel_load = false;
-              _fragDemux(loaderData,_levels[_level].getFragmentfromSeqNum(_seqnum).start_time);
+              var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
+              //decrypt data if needed
+              if (frag.decrypt_url != null) {
+                var _decryptAES:AES = new AES(_keymap[frag.decrypt_url]);
+                _decryptAES.pad = "none";
+                _decryptAES.iv = frag.decrypt_iv;
+                _decryptAES.decrypt(loaderData);
+              }
+              _fragDemux(loaderData,frag.start_time);
             }
         };
 
@@ -154,6 +187,11 @@ package org.mangui.HLS.streaming {
       _bIOError = false;
 		}
 
+
+        /** Catch IO and security errors. **/
+        private function _keyErrorHandler(event:ErrorEvent):void {
+          _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "cannot load key"));
+        };
 
         /** Catch IO and security errors. **/
         private function _fragErrorHandler(event:ErrorEvent):void {
@@ -263,10 +301,16 @@ package org.mangui.HLS.streaming {
             _last_segment_program_date = frag.program_date;
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
-            try {
-               _fragstreamloader.load(new URLRequest(frag.url));
-            } catch (error:Error) {
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
+            
+            if(frag.decrypt_url != null && !(frag.decrypt_url in _keymap)) {
+              // load key
+              _keystreamloader.load(new URLRequest(frag.decrypt_url));
+            } else {
+              try {
+                 _fragstreamloader.load(new URLRequest(frag.url));
+              } catch (error:Error) {
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
+              }
             }
             return 0;
         }
@@ -354,10 +398,16 @@ package org.mangui.HLS.streaming {
             frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
-            try {
-               _fragstreamloader.load(new URLRequest(frag.url));
-            } catch (error:Error) {
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
+            
+            if(frag.decrypt_url != null && !(frag.decrypt_url in _keymap)) {
+              // load key
+              _keystreamloader.load(new URLRequest(frag.decrypt_url));
+            } else {
+              try {
+                 _fragstreamloader.load(new URLRequest(frag.url));
+              } catch (error:Error) {
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
+              }
             }
             return 0;
         };

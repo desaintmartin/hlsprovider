@@ -1,6 +1,6 @@
 package org.mangui.HLS.parsing {
 
-//import org.mangui.HLS.utils.Log;
+  import flash.utils.ByteArray;
 
     /** HLS streaming chunk. **/
     public class Fragment {
@@ -25,11 +25,11 @@ package org.mangui.HLS.parsing {
         /** URL of the key used to decrypt content **/
         public var decrypt_url:String;
         /** Initialization Vector to decrypt content **/
-        public var decrypt_iv:String;
+        public var decrypt_iv:ByteArray;
 
 
         /** Create the fragment. **/
-        public function Fragment(url:String, duration:Number, seqnum:Number,start_time:Number,continuity:Number,program_date:Number,decrypt_url:String=undefined,decrypt_iv:String=undefined):void {
+        public function Fragment(url:String, duration:Number, seqnum:Number,start_time:Number,continuity:Number,program_date:Number,decrypt_url:String=undefined,decrypt_iv:ByteArray=undefined):void {
             this.duration = duration;
             this.url = url;
             this.seqnum = seqnum;

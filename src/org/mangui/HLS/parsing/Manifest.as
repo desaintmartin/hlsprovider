@@ -2,6 +2,7 @@ package org.mangui.HLS.parsing {
 
 
     import flash.events.*;
+    import flash.utils.ByteArray;
     import flash.net.*;
     import org.mangui.HLS.utils.*;
 
@@ -75,7 +76,7 @@ package org.mangui.HLS.parsing {
             /* URL of decryption key */
             var decrypt_url:String = null;
             /* Initialization Vector */
-            var decrypt_iv:String = null;
+            var decrypt_iv:ByteArray = null;
             // fragment continuity index incremented at each discontinuity
             var continuity_index:Number = 0;
             var i:Number = 0;
@@ -128,7 +129,9 @@ package org.mangui.HLS.parsing {
                       decrypt_url = _extractURL(value,base);
                       break;
                     case "IV":
-                       decrypt_iv = zeropad(value.substr("0x".length),32);
+                       var decrypt_iv_str:String = zeropad(value.substr("0x".length),32);
+                       decrypt_iv = new ByteArray();
+                       decrypt_iv.writeMultiByte(decrypt_iv_str,"ascii");
                       break;
                     case "KEYFORMAT":
                     case "KEYFORMATVERSIONS":
@@ -159,14 +162,15 @@ package org.mangui.HLS.parsing {
                     if IV not defined, then use seqnum as IV :
                     http://tools.ietf.org/html/draft-pantos-http-live-streaming-11#section-5.2 
                  */
-                var fragment_decrypt_iv:String;
+                var fragment_decrypt_iv:ByteArray;
                 if(decrypt_url !=null) {
                   if(decrypt_iv != null) {
                     fragment_decrypt_iv = decrypt_iv;
                   } else {
-                    fragment_decrypt_iv = zeropad(seqnum.toString(16),32);
+                       fragment_decrypt_iv = new ByteArray();
+                       fragment_decrypt_iv.writeMultiByte(zeropad(seqnum.toString(16),32),"ascii");
                   }
-                  Log.txt("seqnum/decrypt_url/decrypt_iv:" +seqnum+"/"+decrypt_url+"/"+fragment_decrypt_iv);
+                  Log.txt("seqnum/decrypt_url/decrypt_iv:" +seqnum+"/"+decrypt_url+"/"+fragment_decrypt_iv.toString());
                 } else {
                   fragment_decrypt_iv = null;
                 }

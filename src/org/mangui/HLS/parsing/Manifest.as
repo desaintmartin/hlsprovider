@@ -4,6 +4,7 @@ package org.mangui.HLS.parsing {
     import flash.events.*;
     import flash.utils.ByteArray;
     import flash.net.*;
+    import com.hurlant.util.Hex;
     import org.mangui.HLS.utils.*;
 
     /** Helpers for parsing M3U8 files. **/
@@ -129,9 +130,7 @@ package org.mangui.HLS.parsing {
                       decrypt_url = _extractURL(value,base);
                       break;
                     case "IV":
-                       var decrypt_iv_str:String = zeropad(value.substr("0x".length),32);
-                       decrypt_iv = new ByteArray();
-                       decrypt_iv.writeMultiByte(decrypt_iv_str,"ascii");
+                       decrypt_iv = Hex.toArray(zeropad(value.substr("0x".length),32));
                       break;
                     case "KEYFORMAT":
                     case "KEYFORMATVERSIONS":
@@ -167,10 +166,9 @@ package org.mangui.HLS.parsing {
                   if(decrypt_iv != null) {
                     fragment_decrypt_iv = decrypt_iv;
                   } else {
-                       fragment_decrypt_iv = new ByteArray();
-                       fragment_decrypt_iv.writeMultiByte(zeropad(seqnum.toString(16),32),"ascii");
+                    fragment_decrypt_iv = Hex.toArray(zeropad(seqnum.toString(16),32));
                   }
-                  Log.txt("seqnum/decrypt_url/decrypt_iv:" +seqnum+"/"+decrypt_url+"/"+fragment_decrypt_iv.toString());
+                  //Log.txt("seqnum/decrypt_url/decrypt_iv:" +seqnum+"/"+decrypt_url+"/"+Hex.fromArray(fragment_decrypt_iv));
                 } else {
                   fragment_decrypt_iv = null;
                 }

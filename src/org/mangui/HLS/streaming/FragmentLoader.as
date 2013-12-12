@@ -112,14 +112,23 @@ package org.mangui.HLS.streaming {
             if( _fragstreamloader.bytesAvailable > 0 ) {
               var loaderData:ByteArray = new ByteArray();
               _fragstreamloader.readBytes(loaderData,0,0);
+              loaderData.position = 0;
+              //var dumpByteArray:ByteArray = new ByteArray();
+              //loaderData.readBytes(dumpByteArray,0,188);
+              //Log.txt(HexDump.dump(dumpByteArray));
               _cancel_load = false;
               var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
               //decrypt data if needed
               if (frag.decrypt_url != null) {
                 var _decryptAES:AES = new AES(_keymap[frag.decrypt_url]);
-                _decryptAES.pad = "none";
+                _decryptAES.pad = "pkcs7";
                 _decryptAES.iv = frag.decrypt_iv;
                 _decryptAES.decrypt(loaderData);
+                loaderData.position = 0;
+                //dumpByteArray = new ByteArray();
+                //loaderData.readBytes(dumpByteArray,0,188);
+                //loaderData.position = 0;
+                //Log.txt(HexDump.dump(dumpByteArray));
               }
               _fragDemux(loaderData,frag.start_time);
             }

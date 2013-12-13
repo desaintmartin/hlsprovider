@@ -28,39 +28,22 @@ package org.mangui.HLS.utils {
     private var _data:ByteArray;
     /** Byte data to be decrypt **/
     private var _decrypteddata:ByteArray;
-    /** loop counter to avoid blocking **/
-    private static const COUNT:uint = 16*128;
+    /** chunk size to avoid blocking **/
+    private static const CHUNK_SIZE:uint = 4096;
 
     
-    public function AES(key:ByteArray) {
+    public function AES(key:ByteArray,iv:ByteArray) {
+      var pad:IPad = new PKCS5;
       _key = new AESKey(key);
-    }
-    
-    public function set pad(type:String):void {
-      var pad:IPad;
-      if (type == "pkcs7") {
-        pad = new PKCS5;
-      } else {
-        pad = new NullPad;
-      }
       _mode = new CBCMode(_key, pad);
       pad.setBlockSize(_mode.getBlockSize());
-      // Reset IV if it was already set
-      if (_iv) {
-        this.iv = _iv;
-      }
-    }
-    
-    public function set iv(iv:ByteArray):void {
       _iv = iv;
-      if (_mode) {
-        if (_mode is IVMode) {
-          var ivmode:IVMode = _mode as IVMode;
-          ivmode.IV = iv;
-        }
+      if (_mode is IVMode) {
+        var ivmode:IVMode = _mode as IVMode;
+        ivmode.IV = iv;
       }
     }
-    
+
     public function decrypt(data:ByteArray):ByteArray {
       _mode.decrypt(data);
       return data;
@@ -86,32 +69,44 @@ package org.mangui.HLS.utils {
     private function _decryptData(e:Event):void {
       if(_data.bytesAvailable) {
         var dumpByteArray:ByteArray = new ByteArray();
+        var newIv:ByteArray;
         var bytes_to_read:Number
-        if(_data.bytesAvailable <= 4096) {
+        var pad:IPad;
+        if(_data.bytesAvailable <= CHUNK_SIZE) {
           bytes_to_read = _data.bytesAvailable;
-          this.pad = "pkcs7";
+          pad = new PKCS5;
+          _data.readBytes(dumpByteArray,0,bytes_to_read);
         } else {
-          bytes_to_read= 4096;
+          bytes_to_read= CHUNK_SIZE;
+          pad = new NullPad;
+          _data.readBytes(dumpByteArray,0,CHUNK_SIZE);
+          newIv = new ByteArray;
+          // Save new IV from ciphertext
+          dumpByteArray.position += (dumpByteArray.length-16);
+          dumpByteArray.readBytes(newIv, 0, 16);
         }
-        _data.readBytes(dumpByteArray,0,bytes_to_read);
-        // Save new IV from ciphertext
-        var newIv:ByteArray = new ByteArray;
-        dumpByteArray.position += (dumpByteArray.length-16);
-        dumpByteArray.readBytes(newIv, 0, 16);
         dumpByteArray.position = 0;
-        //Log.txt("before");
+        //Log.txt("before decrypt");
+        _mode = new CBCMode(_key, pad);
+        pad.setBlockSize(_mode.getBlockSize());
+        if (_mode is IVMode) {
+          var ivmode:IVMode = _mode as IVMode;
+          ivmode.IV = _iv;
+        }
         _mode.decrypt(dumpByteArray);
-        //Log.txt("after");
+        //Log.txt("after decrypt");
         _decrypteddata.writeBytes(dumpByteArray);
-      }
-      if (!_data.bytesAvailable) {
+        
+        // switch IV to new one in case more bytes are available
+        if(newIv) {
+          _iv = newIv;
+        }
+      } else {
         _timer.stop();
         _timer = null;
         // callback
         _decrypteddata.position=0;
         _callback(_decrypteddata);
-      } else {
-        this.iv = newIv;
       }
     }
     

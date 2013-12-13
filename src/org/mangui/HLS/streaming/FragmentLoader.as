@@ -31,6 +31,12 @@ package org.mangui.HLS.streaming {
         private var _last_segment_continuity_counter:Number = 0;
         /** program date of the last fragment load. **/
         private var _last_segment_program_date:Number = 0;
+        /** decrypt URL of last segment **/
+        private var _last_segment_decrypt_key_url:String;
+        /** IV of  last segment **/
+        private var _last_segment_decrypt_iv:ByteArray;
+        /** start time of last segment **/
+        private var _last_segment_start_time:Number;
         /** last updated level. **/
         private var _last_updated_level:Number = 0;
         /** Callback for passing forward the fragment tags. **/
@@ -115,38 +121,27 @@ package org.mangui.HLS.streaming {
               var loaderData:ByteArray = new ByteArray();
               _fragstreamloader.readBytes(loaderData,0,0);
               loaderData.position = 0;
-              //var dumpByteArray:ByteArray = new ByteArray();
-              //loaderData.readBytes(dumpByteArray,0,188);
-              //Log.txt(HexDump.dump(dumpByteArray));
               _cancel_load = false;
-              var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
               //decrypt data if needed
-              if (frag.decrypt_url != null) {
-                _decryptAES = new AES(_keymap[frag.decrypt_url]);
-                _decryptAES.pad = "none";
-                _decryptAES.iv = frag.decrypt_iv;
-                //_decryptAES.decrypt(loaderData);
+              if (_last_segment_decrypt_key_url != null) {
+                _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url],_last_segment_decrypt_iv);
                 Log.txt("encrypt length:"+loaderData.length);
                 _decryptAES.decryptasync(loaderData,_fragDecryptCompleteHandler);
-                loaderData.position = 0;
-                //dumpByteArray = new ByteArray();
-                //loaderData.readBytes(dumpByteArray,0,188);
-                //loaderData.position = 0;
-                //Log.txt(HexDump.dump(dumpByteArray));
               } else {
                 _decryptAES = null;
-                _fragDemux(loaderData,frag.start_time);
+                _fragDemux(loaderData,_last_segment_start_time);
               }
             }
         };
 
     private function _fragDecryptCompleteHandler(data:ByteArray):void {
       Log.txt("decrypt length:"+data.length);
-      _fragDemux(data,_levels[_level].getFragmentfromSeqNum(_seqnum).start_time);
+      _fragDemux(data,_last_segment_start_time);
     }
 
     private function _fragDemux(data:ByteArray,start_time:Number):void {
       /* probe file type */
+      data.position = 0;
       var header:uint = data.readUnsignedInt();
       data.position = 0;
       var syncbyte:uint = header >>> 24;
@@ -325,9 +320,13 @@ package org.mangui.HLS.streaming {
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             
-            if(frag.decrypt_url != null && (_keymap[frag.decrypt_url] == undefined)) {
+            
+            _last_segment_decrypt_key_url = frag.decrypt_url;
+            _last_segment_start_time = frag.start_time;
+            if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
+              _last_segment_decrypt_iv = frag.decrypt_iv;
               // load key
-              _keystreamloader.load(new URLRequest(frag.decrypt_url));
+              _keystreamloader.load(new URLRequest(_last_segment_decrypt_key_url));
             } else {
               try {
                  _fragstreamloader.load(new URLRequest(frag.url));
@@ -422,7 +421,10 @@ package org.mangui.HLS.streaming {
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             
-            if(frag.decrypt_url != null && (_keymap[frag.decrypt_url] == undefined)) {
+            _last_segment_decrypt_key_url = frag.decrypt_url;
+            _last_segment_start_time = frag.start_time;
+            if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
+              _last_segment_decrypt_iv = frag.decrypt_iv;
               // load key
               _keystreamloader.load(new URLRequest(frag.decrypt_url));
             } else {

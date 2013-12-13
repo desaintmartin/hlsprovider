@@ -49,6 +49,8 @@ package org.mangui.HLS.streaming {
         private var _keystreamloader:URLStream;
         /** key map **/
         private var _keymap:Object = new Object();
+        /** AES decryption instance **/
+        private var _decryptAES:AES
         /** Time the loading started. **/
         private var _started:Number;
         /** Did the stream switch quality levels. **/
@@ -120,19 +122,28 @@ package org.mangui.HLS.streaming {
               var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
               //decrypt data if needed
               if (frag.decrypt_url != null) {
-                var _decryptAES:AES = new AES(_keymap[frag.decrypt_url]);
-                _decryptAES.pad = "pkcs7";
+                _decryptAES = new AES(_keymap[frag.decrypt_url]);
+                _decryptAES.pad = "none";
                 _decryptAES.iv = frag.decrypt_iv;
-                _decryptAES.decrypt(loaderData);
+                //_decryptAES.decrypt(loaderData);
+                Log.txt("encrypt length:"+loaderData.length);
+                _decryptAES.decryptasync(loaderData,_fragDecryptCompleteHandler);
                 loaderData.position = 0;
                 //dumpByteArray = new ByteArray();
                 //loaderData.readBytes(dumpByteArray,0,188);
                 //loaderData.position = 0;
                 //Log.txt(HexDump.dump(dumpByteArray));
+              } else {
+                _decryptAES = null;
+                _fragDemux(loaderData,frag.start_time);
               }
-              _fragDemux(loaderData,frag.start_time);
             }
         };
+
+    private function _fragDecryptCompleteHandler(data:ByteArray):void {
+      Log.txt("decrypt length:"+data.length);
+      _fragDemux(data,_levels[_level].getFragmentfromSeqNum(_seqnum).start_time);
+    }
 
     private function _fragDemux(data:ByteArray,start_time:Number):void {
       /* probe file type */
@@ -191,6 +202,9 @@ package org.mangui.HLS.streaming {
 		public function clearLoader():void {
 			if(_fragstreamloader.connected) {
 				_fragstreamloader.close();
+			}
+			if(_decryptAES) {
+			 _decryptAES.cancel(); 
 			}
 			_cancel_load = true;
       _bIOError = false;

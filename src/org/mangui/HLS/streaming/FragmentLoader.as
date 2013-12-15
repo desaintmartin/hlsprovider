@@ -59,9 +59,10 @@ package org.mangui.HLS.streaming {
         private var _bIOError:Boolean=false;
         private var _nIOErrorDate:Number=0;
 
-        /** boolean to track playlist PTS loading/loaded state */
-        private var _playlist_pts_loading:Boolean=false;
-        private var _playlist_pts_loaded:Boolean=false;
+        /** boolean to track playlist PTS in loading */
+        private var _pts_loading_in_progress:Boolean=false;
+        /** boolean to indicate that PTS of new playlist has just been loaded */
+        private var _pts_just_loaded:Boolean=false;
 
 
         /** Create the loader. **/
@@ -179,7 +180,7 @@ package org.mangui.HLS.streaming {
         };
 
         public function needReload():Boolean {
-          return (_bIOError || _playlist_pts_loaded);
+          return (_bIOError || _pts_just_loaded);
         };
 
         /** Get the quality level for the next fragment. **/
@@ -199,8 +200,8 @@ package org.mangui.HLS.streaming {
           if(_bIOError == true) {
             level = _level;
           /* in case fragment was loaded for PTS analysis, stick to same level */
-          } else if(_playlist_pts_loaded == true) {
-            _playlist_pts_loaded = false;
+          } else if(_pts_just_loaded == true) {
+            _pts_just_loaded = false;
             level = _level;
             /* in case we are switching levels (waiting for playlist to reload), stick to same level */
           } else if(_switchlevel == true) {
@@ -319,13 +320,13 @@ package org.mangui.HLS.streaming {
                   /* when probing PTS, take previous sequence number as reference if possible */
                   new_seqnum=Math.min(_seqnum+1,_levels[_level].getLastSeqNumfromContinuity(_last_segment_continuity_counter));
                   new_seqnum = Math.max(new_seqnum,_levels[_level].getFirstSeqNumfromContinuity(_last_segment_continuity_counter));
-                    _playlist_pts_loading = true;
+                    _pts_loading_in_progress = true;
                     log_prefix = "analyzing PTS ";
                 }
               }
             }
 
-            if(_playlist_pts_loading == false) {
+            if(_pts_loading_in_progress == false) {
               if(last_seqnum == _levels[_level].end_seqnum) {
               // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
               if (_hls.getType() == HLSTypes.VOD)
@@ -392,17 +393,22 @@ package org.mangui.HLS.streaming {
          max_pts = Math.max(max_pts,ptsTags[k].pts);
       }
 
-       /* in case we are probing PTS, just retrieve
-       minimum PTS value to synchronize playlist PTS / sequence number.
-       then return. this will force the Buffer Manager to reload the
-       fragment at right offset */
-       if(_playlist_pts_loading == true) {
-         _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
-         Log.txt("analyzed  PTS " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
-         _playlist_pts_loading = false;
-         _playlist_pts_loaded = true;
-         return;
-       }
+      /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
+      if(_pts_loading_in_progress == true) {
+        _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
+        Log.txt("analyzed  PTS " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
+        /* check if fragment loaded for PTS analysis is the next one
+            if this is the expected one, then continue and notify Buffer Manager with parsed content
+            if not, then exit from here, this will force Buffer Manager to call loadnextfragment() and load the right seqnum
+         */
+        var next_seqnum:Number = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts,_last_segment_continuity_counter)+1;
+        //Log.txt("seq/next:"+ _seqnum+"/"+ next_seqnum);
+        if (next_seqnum != _seqnum) {
+          _pts_loading_in_progress = false;
+          _pts_just_loaded = true;
+          return;
+        }
+      }
 
       var tags:Vector.<Tag> = new Vector.<Tag>();
       // Push codecprivate tags only when switching.
@@ -445,6 +451,7 @@ package org.mangui.HLS.streaming {
          var start_offset:Number = _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED,_levels[_level].duration));
          _callback(tags,min_pts,max_pts,_hasDiscontinuity,start_offset);
+         _pts_loading_in_progress = false;
          _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, getMetrics()));
       } catch (error:Error) {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));

@@ -19,12 +19,14 @@ package org.mangui.HLS.streaming {
         private var _hls:HLS;
         /** reference to auto level manager */
         private var _autoLevelManager:AutoLevelManager;
-        /** Bandwidth of the last loaded fragment **/
+        /** overall processing bandwidth of last loaded fragment (fragment size divided by processing duration) **/
         private var _last_bandwidth:int = 0;
-        /** fetch time of the last loaded fragment **/
-        private var _last_fetch_duration:Number = 0;
+        /** overall processing time of the last loaded fragment (loading+decrypting+parsing) **/
+        private var _last_process_duration:Number = 0;
         /** duration of the last loaded fragment **/
         private var _last_segment_duration:Number = 0;
+        /** last loaded fragment size **/
+        private var _last_segment_size:Number = 0;
         /** duration of the last loaded fragment **/
         private var _last_segment_start_pts:Number = 0;
         /** continuity counter of the last fragment load. **/
@@ -58,7 +60,11 @@ package org.mangui.HLS.streaming {
         /** AES decryption instance **/
         private var _decryptAES:AES
         /** Time the loading started. **/
-        private var _started:Number;
+        private var _frag_loading_start_time:Number;
+        /** Time the decryption started. **/
+        private var _frag_decrypt_start_time:Number;
+        /** Time the parsing started. **/
+        //private var _frag_parsing_start_time:Number;
         /** Did the stream switch quality levels. **/
         private var _switchlevel:Boolean;
         /** Did a discontinuity occurs in the stream **/
@@ -114,19 +120,17 @@ package org.mangui.HLS.streaming {
         private function _fragCompleteHandler(event:Event):void {
             //Log.txt("loading completed");
             _bIOError = false;
-            // Calculate bandwidth
-            _last_fetch_duration = (new Date().valueOf() - _started);
-            _last_bandwidth = Math.round(_fragstreamloader.bytesAvailable * 8000 / _last_fetch_duration);
             // Collect stream loader data
             if( _fragstreamloader.bytesAvailable > 0 ) {
+              _last_segment_size = _fragstreamloader.bytesAvailable;
               var loaderData:ByteArray = new ByteArray();
               _fragstreamloader.readBytes(loaderData,0,0);
               loaderData.position = 0;
               _cancel_load = false;
               //decrypt data if needed
               if (_last_segment_decrypt_key_url != null) {
+                _frag_decrypt_start_time = new Date().valueOf();
                 _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url],_last_segment_decrypt_iv);
-                Log.txt("encrypt length:"+loaderData.length);
                 _decryptAES.decryptasync(loaderData,_fragDecryptCompleteHandler);
               } else {
                 _decryptAES = null;
@@ -136,11 +140,13 @@ package org.mangui.HLS.streaming {
         };
 
     private function _fragDecryptCompleteHandler(data:ByteArray):void {
-      Log.txt("decrypt length:"+data.length);
+      var decrypt_duration:Number = (new Date().valueOf() - _frag_decrypt_start_time);
+      Log.txt("Decrypted     duration/length/speed:"+decrypt_duration+ "/" + data.length + "/" + ((8000*data.length/decrypt_duration)/1024).toFixed(0) + " kb/s");
       _fragDemux(data,_last_segment_start_time);
     }
 
     private function _fragDemux(data:ByteArray,start_time:Number):void {
+      //_frag_parsing_start_time = new Date().valueOf();
       /* probe file type */
       data.position = 0;
       var header:uint = data.readUnsignedInt();
@@ -263,7 +269,7 @@ package org.mangui.HLS.streaming {
           } else if(_switchlevel == true) {
             level = _level;
           } else if (_manual_level == -1 ) {
-            level = _autoLevelManager.getnextlevel(_level,buffer,_last_segment_duration,_last_fetch_duration,_last_bandwidth);
+            level = _autoLevelManager.getnextlevel(_level,buffer,_last_segment_duration,_last_process_duration,_last_bandwidth);
           } else {
             level = _manual_level;
           }
@@ -312,7 +318,7 @@ package org.mangui.HLS.streaming {
             }
             var seqnum:Number= _levels[_level].getSeqNumBeforePosition(position);
             _callback = callback;
-            _started = new Date().valueOf();
+            _frag_loading_start_time = new Date().valueOf();
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
             _seqnum = seqnum;
             _hasDiscontinuity = true;
@@ -367,7 +373,7 @@ package org.mangui.HLS.streaming {
               // trust program-time : if program-time defined in previous loaded fragment, try to find seqnum matching program-time in new level.
               if(_last_segment_program_date) {
                 last_seqnum = _levels[_level].getSeqNumFromProgramDate(_last_segment_program_date);
-                Log.txt("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:"+_level+","+_last_segment_program_date+")="+last_seqnum);
+                //Log.txt("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:"+_level+","+_last_segment_program_date+")="+last_seqnum);
               }
               if(last_seqnum == -1) {
                 // if we are here, it means that no program date info is available in the playlist. try to get last seqnum position from PTS + continuity counter
@@ -417,7 +423,7 @@ package org.mangui.HLS.streaming {
             }
             _seqnum = new_seqnum;
             _callback = callback;
-            _started = new Date().valueOf();
+            _frag_loading_start_time = new Date().valueOf();
             frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
             //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
             Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
@@ -516,6 +522,10 @@ package org.mangui.HLS.streaming {
 
       if (_cancel_load == true)
         return;
+
+      // Calculate bandwidth
+      _last_process_duration = (new Date().valueOf() - _frag_loading_start_time);
+      _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_process_duration);
 
       try {
          _switchlevel = false;

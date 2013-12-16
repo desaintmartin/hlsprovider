@@ -19,7 +19,7 @@ HLSProvider could also be used as library to build a custom flash player thanks 
 * buffer progress report
 * error resilience (retry mechanism in case of I/O Errors)
 * accurate seeking (seek to exact position,not to fragment boundary)
-* AES-128 decryption (alpha release available in aes branch, please provide streams to test it)
+* AES-128 decryption (alpha stage, please provide streams to test it)
 
 the following M3U8 tags are supported: 
 
@@ -31,7 +31,7 @@ the following M3U8 tags are supported:
 * #EXT-X-TARGETDURATION (value is used as live playlist reload interval)
 * #EXT-X-DISCONTINUITY
 * #EXT-X-PROGRAM-DATE-TIME (optional, used to synchronize time-stamps and sequence number when switching from one level to another)
-* #EXT-X-KEY (AES-128 method supported only, alpha stage. available in aes branch)
+* #EXT-X-KEY (AES-128 method supported only, alpha stage)
 
 ##HLSProvider in action :
 

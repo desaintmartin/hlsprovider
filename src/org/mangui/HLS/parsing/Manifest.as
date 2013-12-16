@@ -2,7 +2,9 @@ package org.mangui.HLS.parsing {
 
 
     import flash.events.*;
+    import flash.utils.ByteArray;
     import flash.net.*;
+    import com.hurlant.util.Hex;
     import org.mangui.HLS.utils.*;
 
     /** Helpers for parsing M3U8 files. **/
@@ -16,7 +18,7 @@ package org.mangui.HLS.parsing {
         /** Starttag for a level. **/
         public static const LEVEL:String = '#EXT-X-STREAM-INF:';
         /** Tag that delimits the end of a playlist. **/
-        public static const ENDLIST:String = '#EXT-X-ENDLIST';	
+        public static const ENDLIST:String = '#EXT-X-ENDLIST';
         /** Tag that provides the sequence number. **/
         private static const SEQNUM:String = '#EXT-X-MEDIA-SEQUENCE:';
         /** Tag that provides the target duration for each segment. **/
@@ -25,6 +27,8 @@ package org.mangui.HLS.parsing {
         private static const DISCONTINUITY:String = '#EXT-X-DISCONTINUITY';
         /** Tag that provides date/time information */
         private static const PROGRAMDATETIME:String = '#EXT-X-PROGRAM-DATE-TIME';
+        /** Tag that provides fragment decryption info */
+        private static const KEY:String = '#EXT-X-KEY:';
 
         /** Index in the array with levels. **/
         private var _index:Number;
@@ -54,6 +58,13 @@ package org.mangui.HLS.parsing {
             _success(String(event.target.data),_url,_index);
         };
 
+        private static function zeropad(str:String, length:uint):String {
+           while(str.length < length) {
+             str = "0" + str;
+           }
+           return str;
+        }
+
         /** Extract fragments from playlist data. **/
         public static function getFragments(data:String,base:String=''):Array {
             var fragments:Array = [];
@@ -63,10 +74,14 @@ package org.mangui.HLS.parsing {
             // fragment start time (in sec)
             var start_time:Number = 0;
             var program_date:Number=0;
+            /* URL of decryption key */
+            var decrypt_url:String = null;
+            /* Initialization Vector */
+            var decrypt_iv:ByteArray = null;
             // fragment continuity index incremented at each discontinuity
             var continuity_index:Number = 0;
             var i:Number = 0;
-            
+
             // first look for sequence number
             while (i < lines.length) {
                 if(lines[i].indexOf(Manifest.SEQNUM) == 0) {
@@ -77,7 +92,53 @@ package org.mangui.HLS.parsing {
                }
             i = 0;
             while (i < lines.length) {
-              if(lines[i].indexOf(Manifest.PROGRAMDATETIME) == 0) {
+              if(lines[i].indexOf(Manifest.KEY) == 0) {
+                //#EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=52",IV=.....
+                var keyLine:String= lines[i].substr(Manifest.KEY.length);
+                // reset previous values
+                decrypt_url = null;
+                decrypt_iv = null;
+                // remove space, single and double quote
+                var replacespace:RegExp = new RegExp("\\s+","g");
+                var replacesinglequote:RegExp = new RegExp("\\\'","g");
+                var replacedoublequote:RegExp = new RegExp("\\\"","g");
+                keyLine=keyLine.replace(replacespace,"");
+                keyLine=keyLine.replace(replacesinglequote,"");
+                keyLine=keyLine.replace(replacedoublequote,"");
+                var keyArray:Array = keyLine.split(",");
+                for each(var keyProperty:String in keyArray) {
+                  var delimiter:Number = keyProperty.indexOf("=");
+                  if(delimiter == -1) {
+                    throw new Error("invalid playlist, no delimiter while parsing:" + keyProperty);
+                  }
+                  var tag:String = keyProperty.substr(0,delimiter).toUpperCase();
+                  var value:String = keyProperty.substr(delimiter+1);
+                  switch(tag) {
+                    case "METHOD":
+                      switch (value) {
+                        case "NONE":
+                        case "AES-128":
+                          break;
+                        case "AES-SAMPLE":
+                        throw new Error("encryption method " + value + "not supported (yet ;-))");
+                        default:
+                        throw new Error("invalid encryption method " + value);
+                          break;
+                      }
+                      break;
+                    case "URI":
+                      decrypt_url = _extractURL(value,base);
+                      break;
+                    case "IV":
+                       decrypt_iv = Hex.toArray(zeropad(value.substr("0x".length),32));
+                      break;
+                    case "KEYFORMAT":
+                    case "KEYFORMATVERSIONS":
+                    default:
+                      break;
+                  }
+                }
+              } else if(lines[i].indexOf(Manifest.PROGRAMDATETIME) == 0) {
                 //Log.txt(lines[i]);
                 var year:Number    = lines[i].substr(25,4);
                 var month:Number   = lines[i].substr(30,2);
@@ -94,8 +155,24 @@ package org.mangui.HLS.parsing {
                 while(lines[i].match(/^\s*$/)) {
                   i++;
                 }
-                var url:String = Manifest._extractURL(lines[i],base);
-                fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date));
+                var url:String = _extractURL(lines[i],base);
+                
+                /* as per HLS spec : 
+                    if IV not defined, then use seqnum as IV :
+                    http://tools.ietf.org/html/draft-pantos-http-live-streaming-11#section-5.2 
+                 */
+                var fragment_decrypt_iv:ByteArray;
+                if(decrypt_url !=null) {
+                  if(decrypt_iv != null) {
+                    fragment_decrypt_iv = decrypt_iv;
+                  } else {
+                    fragment_decrypt_iv = Hex.toArray(zeropad(seqnum.toString(16),32));
+                  }
+                  //Log.txt("seqnum/decrypt_url/decrypt_iv:" +seqnum+"/"+decrypt_url+"/"+Hex.fromArray(fragment_decrypt_iv));
+                } else {
+                  fragment_decrypt_iv = null;
+                }
+                fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date,decrypt_url,fragment_decrypt_iv));
                 start_time+=duration;
                 program_date = 0;
               } else if(lines[i].indexOf(Manifest.DISCONTINUITY) == 0) {
@@ -159,12 +236,12 @@ package org.mangui.HLS.parsing {
                 return false;
             }
         };
-        
+
         public static function getTargetDuration(data:String):Number {
             var lines:Array = data.split("\n");
             var i:Number = 0;
             var targetduration:Number = 0;
-            
+
             // first look for target duration
             while (i < lines.length) {
                 if(lines[i].indexOf(Manifest.TARGETDURATION) == 0) {
@@ -180,7 +257,7 @@ package org.mangui.HLS.parsing {
         /** Extract URL (check if absolute or not). **/
         private static function _extractURL(path:String,base:String):String {
          var _prefix:String = null;
-         var _suffix:String = null;          
+         var _suffix:String = null;
           if(path.substr(0,7) == 'http://' || path.substr(0,8) == 'https://') {
             return path;
           } else {

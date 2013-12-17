@@ -105,7 +105,7 @@ package org.mangui.HLS.streaming {
             } else {
                 _type = HLSTypes.LIVE;
                 var timeout:Number = Math.max(100,_reload_playlists_timer + 1000*_levels[index].averageduration - getTimer());
-                Log.txt("Level " + index + " Live Playlist parsing finished: reload in " + timeout + " ms");
+                Log.txt("Level " + index + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
                 _timeoutID = setTimeout(_loadPlaylist,timeout);
             }
             if (!_canStart && (_canStart = (_levels[index].fragments.length >= 2  ))) {

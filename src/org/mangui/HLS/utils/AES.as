@@ -28,8 +28,12 @@ package org.mangui.HLS.utils {
     private var _data:ByteArray;
     /** Byte data to be decrypt **/
     private var _decrypteddata:ByteArray;
+    /** read position **/
+    private var _read_position:Number;
     /** chunk size to avoid blocking **/
     private static const CHUNK_SIZE:uint = 4096;
+    /** is bytearray full ? **/
+    private var _data_complete:Boolean;
 
     
     public function AES(key:ByteArray,iv:ByteArray) {
@@ -44,19 +48,28 @@ package org.mangui.HLS.utils {
       }
     }
 
-    public function decrypt(data:ByteArray):ByteArray {
-      _mode.decrypt(data);
-      return data;
-    }
-
-    public function decryptasync(data:ByteArray,callback:Function):void {
+    public function decrypt(data:ByteArray,callback:Function):void {
       _data = data;
+      _data_complete = false;
       _callback = callback;
       _decrypteddata = new ByteArray();
+      _read_position = 0;
       _timer = new Timer(0,0);
       _timer.addEventListener(TimerEvent.TIMER, _decryptData);
       _timer.start();
     }
+
+    public function notifyappend():void {
+      //Log.txt("notify append");
+      _timer.start();
+    }
+    
+    public function notifycomplete():void {
+      //Log.txt("notify complete");
+      _data_complete = true;
+      _timer.start();
+    }
+
     
     public function cancel():void {
       if(_timer) {
@@ -67,18 +80,27 @@ package org.mangui.HLS.utils {
 
     /** decrypt a small chunk of packets each time to avoid blocking **/
     private function _decryptData(e:Event):void {
+      _data.position = _read_position;
       if(_data.bytesAvailable) {
         var dumpByteArray:ByteArray = new ByteArray();
         var newIv:ByteArray;
-        var bytes_to_read:Number
         var pad:IPad;
         if(_data.bytesAvailable <= CHUNK_SIZE) {
-          bytes_to_read = _data.bytesAvailable;
-          pad = new PKCS5;
-          _data.readBytes(dumpByteArray,0,bytes_to_read);
-        } else {
-          bytes_to_read= CHUNK_SIZE;
+          if (_data_complete) {
+            //Log.txt("data complete, last chunk");
+            pad = new PKCS5;
+            _read_position+=_data.bytesAvailable;
+            _data.readBytes(dumpByteArray,0,_data.bytesAvailable);
+          } else {
+            //Log.txt("data not complete, stop timer");
+            // data not complete, and available data less than chunk size, stop timer and return
+            _timer.stop();
+            return;
+          }
+        } else { // bytesAvailable > CHUNK_SIZE
+          //Log.txt("process chunk");
           pad = new NullPad;
+          _read_position+=CHUNK_SIZE;
           _data.readBytes(dumpByteArray,0,CHUNK_SIZE);
           newIv = new ByteArray;
           // Save new IV from ciphertext
@@ -102,11 +124,15 @@ package org.mangui.HLS.utils {
           _iv = newIv;
         }
       } else {
+        //Log.txt("no bytes available, stop timer");
         _timer.stop();
-        _timer = null;
-        // callback
-        _decrypteddata.position=0;
-        _callback(_decrypteddata);
+        if (_data_complete) {
+          //Log.txt("data complete + no bytes available, callback");
+          _timer = null;
+          // callback
+          _decrypteddata.position=0;
+          _callback(_decrypteddata);
+        }
       }
     }
     

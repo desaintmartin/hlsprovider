@@ -221,7 +221,7 @@ package org.mangui.HLS.muxing {
 			var todo:uint = TS.PACKETSIZE;
 			// Sync byte.
 			if(_data.readByte() != TS.SYNCBYTE) {
-				throw new Error("Could not parse TS file: sync byte not found.");
+				throw new Error("Could not parse TS file: sync byte not found @ offset/len " + _data.position + "/"+ _data.length);
 			}
 			todo--;
 			// Payload unit start indicator.

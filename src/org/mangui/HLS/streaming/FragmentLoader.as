@@ -57,6 +57,10 @@ package org.mangui.HLS.streaming {
         private var _keystreamloader:URLStream;
         /** key map **/
         private var _keymap:Object = new Object();
+        /** fragment bytearray **/
+        private var _fragByteArray:ByteArray;
+        /** fragment bytearray write position **/
+        private var _fragWritePosition:Number;
         /** AES decryption instance **/
         private var _decryptAES:AES
         /** Time the loading started. **/
@@ -91,7 +95,7 @@ package org.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
             _fragstreamloader = new URLStream();
             _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
-            _fragstreamloader.addEventListener(Event.COMPLETE, _fragCompleteHandler);
+            _fragstreamloader.addEventListener(ProgressEvent.PROGRESS,_fragProgressHandler);
             _keystreamloader = new URLStream();
             _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
             _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
@@ -116,31 +120,44 @@ package org.mangui.HLS.streaming {
             }
         };
 
-        /** Fragment load completed. **/
-        private function _fragCompleteHandler(event:Event):void {
+        private var _fragReadPosition:Number;
+        private function _fragProgressHandler(event:ProgressEvent):void {
+          if(_fragByteArray == null) {
+            _fragByteArray = new ByteArray();
+            _last_segment_size = event.bytesTotal;
+            _fragWritePosition = 0;
+            //decrypt data if needed
+            if (_last_segment_decrypt_key_url != null) {
+              _frag_decrypt_start_time = new Date().valueOf();
+              _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url],_last_segment_decrypt_iv);
+              _decryptAES.decrypt(_fragByteArray,_fragDecryptCompleteHandler);
+            } else {
+              _decryptAES = null;
+            }
+          }
+          // append new bytes into fragByteArray
+          _fragByteArray.position = _fragWritePosition;
+          _fragstreamloader.readBytes(_fragByteArray,_fragWritePosition,0);
+          _fragWritePosition=_fragByteArray.length;
+          if(_decryptAES != null) {
+            _decryptAES.notifyappend();
+          }
+          //Log.txt("fragWritePosition/event.bytesLoaded/event.bytesTotal:"+_fragWritePosition+"/"+event.bytesLoaded + "/"+ event.bytesTotal);
+          if(event.bytesLoaded == event.bytesTotal) {
             //Log.txt("loading completed");
             _bIOError = false;
-            // Collect stream loader data
-            if( _fragstreamloader.bytesAvailable > 0 ) {
-              _last_segment_size = _fragstreamloader.bytesAvailable;
-              var loaderData:ByteArray = new ByteArray();
-              _fragstreamloader.readBytes(loaderData,0,0);
-              loaderData.position = 0;
-              _cancel_load = false;
-              //decrypt data if needed
-              if (_last_segment_decrypt_key_url != null) {
-                _frag_decrypt_start_time = new Date().valueOf();
-                _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url],_last_segment_decrypt_iv);
-                _decryptAES.decryptasync(loaderData,_fragDecryptCompleteHandler);
-              } else {
-                _decryptAES = null;
-                _fragDemux(loaderData,_last_segment_start_time);
-              }
+            _cancel_load = false;
+            if(_decryptAES != null) {
+              _decryptAES.notifycomplete();
+            } else {
+              _fragDemux(_fragByteArray,_last_segment_start_time);
             }
-        };
+          }
+        }
 
     private function _fragDecryptCompleteHandler(data:ByteArray):void {
       var decrypt_duration:Number = (new Date().valueOf() - _frag_decrypt_start_time);
+      _decryptAES = null;
       Log.txt("Decrypted     duration/length/speed:"+decrypt_duration+ "/" + data.length + "/" + ((8000*data.length/decrypt_duration)/1024).toFixed(0) + " kb/s");
       _fragDemux(data,_last_segment_start_time);
     }
@@ -207,7 +224,9 @@ package org.mangui.HLS.streaming {
 			}
 			if(_decryptAES) {
 			 _decryptAES.cancel(); 
+			 _decryptAES = null;
 			}
+			_fragByteArray = null;
 			_cancel_load = true;
       _bIOError = false;
 		}
@@ -336,6 +355,7 @@ package org.mangui.HLS.streaming {
               _keystreamloader.load(new URLRequest(_last_segment_decrypt_key_url));
             } else {
               try {
+                 _fragByteArray = null;
                  _fragstreamloader.load(new URLRequest(frag.url));
               } catch (error:Error) {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
@@ -436,6 +456,7 @@ package org.mangui.HLS.streaming {
               _keystreamloader.load(new URLRequest(frag.decrypt_url));
             } else {
               try {
+                 _fragByteArray = null;
                  _fragstreamloader.load(new URLRequest(frag.url));
               } catch (error:Error) {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));

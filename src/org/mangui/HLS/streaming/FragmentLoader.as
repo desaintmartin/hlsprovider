@@ -60,7 +60,7 @@ package org.mangui.HLS.streaming {
         /** fragment bytearray **/
         private var _fragByteArray:ByteArray;
         /** fragment bytearray write position **/
-        private var _fragWritePosition:Number;
+        private var _fragWritePosition:Number;        
         /** AES decryption instance **/
         private var _decryptAES:AES
         /** Time the loading started. **/
@@ -78,14 +78,15 @@ package org.mangui.HLS.streaming {
         /* flag handling load cancelled (if new seek occurs for example) */
         private var _cancel_load:Boolean;
         /* variable to deal with IO Error retry */
-        private var _bIOError:Boolean=false;
+        private var _bIOError:Boolean;
         private var _nIOErrorDate:Number=0;
 
         /** boolean to track playlist PTS in loading */
         private var _pts_loading_in_progress:Boolean=false;
         /** boolean to indicate that PTS of new playlist has just been loaded */
         private var _pts_just_loaded:Boolean=false;
-
+        /** boolean to indicate whether Buffer could request new fragment load **/
+        private var _need_reload:Boolean=true;
 
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
@@ -96,6 +97,7 @@ package org.mangui.HLS.streaming {
             _fragstreamloader = new URLStream();
             _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
             _fragstreamloader.addEventListener(ProgressEvent.PROGRESS,_fragProgressHandler);
+            _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS,_fragHTTPStatusHandler);
             _keystreamloader = new URLStream();
             _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
             _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
@@ -120,7 +122,35 @@ package org.mangui.HLS.streaming {
             }
         };
 
-        private var _fragReadPosition:Number;
+        private function _fraghandleIOError(message:String):void {
+            /* usually, errors happen in two situations :
+            - bad networks  : in that case, the second or third reload of URL should fix the issue
+            - live playlist : when we are trying to load an out of bound fragments : for example,
+                              the playlist on webserver is from SN [51-61]
+                              the one in memory is from SN [50-60], and we are trying to load SN50.
+                              we will keep getting 404 error if the HLS server does not follow HLS spec,
+                              which states that the server should keep SN50 during EXT-X-TARGETDURATION period
+                              after it is removed from playlist
+                              in the meantime, ManifestLoader will keep refreshing the playlist in the background ...
+                              so if the error still happens after EXT-X-TARGETDURATION, it means that there is something wrong
+                              we need to report it.
+            */
+            Log.txt("I/O Error while loading fragment:"+message);
+            if(_bIOError == false) {
+              _bIOError=true;
+              _nIOErrorDate = new Date().valueOf();
+            } else if((new Date().valueOf() - _nIOErrorDate) > 1000*_levels[_last_updated_level].averageduration ) {
+              _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "I/O Error :" + message));
+            }
+            _need_reload = true;
+        }
+
+        private function _fragHTTPStatusHandler(event:HTTPStatusEvent):void {
+          if(event.status >= 400) {
+            _fraghandleIOError("HTTP Status:"+event.status.toString());
+          }
+        }
+
         private function _fragProgressHandler(event:ProgressEvent):void {
           if(_fragByteArray == null) {
             _fragByteArray = new ByteArray();
@@ -145,7 +175,6 @@ package org.mangui.HLS.streaming {
           //Log.txt("fragWritePosition/event.bytesLoaded/event.bytesTotal:"+_fragWritePosition+"/"+event.bytesLoaded + "/"+ event.bytesTotal);
           if(event.bytesLoaded == event.bytesTotal) {
             //Log.txt("loading completed");
-            _bIOError = false;
             _cancel_load = false;
             if(_decryptAES != null) {
               _decryptAES.notifycomplete();
@@ -168,7 +197,6 @@ package org.mangui.HLS.streaming {
       data.position = 0;
       var header:uint = data.readUnsignedInt();
       data.position = 0;
-      var syncbyte:uint = header >>> 24;
       var syncword:uint = header >>> 16;
       var tag:uint = header >>> 8;
       if(tag == ID3.TAG)
@@ -178,11 +206,13 @@ package org.mangui.HLS.streaming {
          {
             data.position = taglen;
             syncword = data.readUnsignedShort();
-            syncbyte = syncword >> 8;
          }
       }
       data.position = 0;
-      if (syncbyte == TS.SYNCBYTE) {
+      if (TS.probe(data)== true) {
+        if(data.position !=0) {
+          Log.txt("TS detected, first sync byte offset:"+data.position);
+        }
         var ts:TS = new TS(data,_fragReadHandler);
       } else {
         var audioTags:Vector.<Tag> = new Vector.<Tag>();
@@ -210,6 +240,11 @@ package org.mangui.HLS.streaming {
         } else {
           if (syncword == 0xFFFB) {
           /* parse MP3, convert Elementary Streams to TAG */
+          _fraghandleIOError("detected MP3 audio elementary streams, not supported yet");
+          } else {
+            // invalid fragment
+            _fraghandleIOError("invalid content received");
+            return;
           }
         }
         _last_segment_continuity_counter = -1;
@@ -239,29 +274,11 @@ package org.mangui.HLS.streaming {
 
         /** Catch IO and security errors. **/
         private function _fragErrorHandler(event:ErrorEvent):void {
-            /* usually, errors happen in two situations :
-            - bad networks  : in that case, the second or third reload of URL should fix the issue
-            - live playlist : when we are trying to load an out of bound fragments : for example,
-                              the playlist on webserver is from SN [51-61]
-                              the one in memory is from SN [50-60], and we are trying to load SN50.
-                              we will keep getting 404 error if the HLS server does not follow HLS spec,
-                              which states that the server should keep SN50 during EXT-X-TARGETDURATION period
-                              after it is removed from playlist
-                              in the meantime, ManifestLoader will keep refreshing the playlist in the background ...
-                              so if the error still happens after EXT-X-TARGETDURATION, it means that there is something wrong
-                              we need to report it.
-            */
-
-            if(_bIOError == false) {
-              _bIOError=true;
-              _nIOErrorDate = new Date().valueOf();
-            } else if((new Date().valueOf() - _nIOErrorDate) > 1000*_levels[_last_updated_level].averageduration ) {
-              _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "I/O Error"));
-            }
+          _fraghandleIOError(event.text);
         };
 
         public function needReload():Boolean {
-          return (_bIOError || _pts_just_loaded);
+          return _need_reload;
         };
 
         /** Get the quality level for the next fragment. **/
@@ -305,8 +322,9 @@ package org.mangui.HLS.streaming {
              if(_fragstreamloader.connected) {
                 _fragstreamloader.close();
             }
-            // reset IO Error when loading new fragment
+            // reset IO Error when loading first fragment
             _bIOError = false;
+            _need_reload = false;
             updateLevel(0);
             _switchlevel = true;
 
@@ -371,8 +389,11 @@ package org.mangui.HLS.streaming {
             if(_fragstreamloader.connected) {
                 _fragstreamloader.close();
             }
-            // reset IO Error when loading new fragment
-            _bIOError = false;
+            // in case IO Error reload same fragment
+            if(_bIOError) {
+              _seqnum--;
+            }
+            _need_reload = false;
 
             updateLevel(buffer);
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
@@ -483,6 +504,9 @@ package org.mangui.HLS.streaming {
        // Tags used for PTS analysis
        var ptsTags:Vector.<Tag>;
 
+      // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed
+      _bIOError = false;
+
        if (audioTags.length > 0) {
         ptsTags = audioTags;
       } else {
@@ -508,6 +532,8 @@ package org.mangui.HLS.streaming {
         if (next_seqnum != _seqnum) {
           _pts_loading_in_progress = false;
           _pts_just_loaded = true;
+          // tell that new fragment could be loaded
+          _need_reload = true;
           return;
         }
       }

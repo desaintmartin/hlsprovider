@@ -1,10 +1,8 @@
-/test/mongoose.conf
-/test/mongoose-3.7.exe
-/test/streams.js
-/test/osmf/HLSDynamicPlugin.swf
-
 /lib/HLSProvider.swc.cache
+/lib/HLSProviderOSMF.swc.cache
 /test/chromeless/HLSProviderChromeless.swf.cache
 /test/jwplayer5/HLSProvider5.swf.cache
 /test/jwplayer6/HLSProvider6.swf.cache
 /test/osmf/HLSProviderOSMF.swf.cache
+
+

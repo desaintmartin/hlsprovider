@@ -14,3 +14,6 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as -source-pat
 
 echo "Compiling HLSProviderOSMF.swf"
 $FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as -source-path ../src -o ../test/osmf/HLSProviderOSMF.swf -library-path+=../lib -library-path+=../lib/OSMF -externs org.osmf.net.httpstreaming.HTTPNetStream -use-network=false -optimize=true -incremental=true -target-player="10.1" -static-link-runtime-shared-libraries=true #-compiler.verbose-stacktraces=true -link-report=../test/osmf/link-report.xml
+
+echo "Compiling HLSProviderOSMF.swc"
+$FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf -output ../lib/HLSProviderOSMF.swc -library-path+=../lib -library-path+=../lib/OSMF  -use-network=false -optimize=true -incremental=true -target-player="10.1" -static-link-runtime-shared-libraries=true -debug=false -external-library-path+=../lib/OSMF

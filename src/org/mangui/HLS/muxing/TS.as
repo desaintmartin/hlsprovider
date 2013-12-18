@@ -16,7 +16,7 @@ package org.mangui.HLS.muxing {
 		
 		
 		/** TS Sync byte. **/
-		public static const SYNCBYTE:uint = 0x47;
+		private static const SYNCBYTE:uint = 0x47;
 		/** TS Packet size in byte. **/
 		private static const PACKETSIZE:uint = 188;
 		/** loop counter to avoid blocking **/
@@ -29,8 +29,8 @@ package org.mangui.HLS.muxing {
 		private var _audioPES:Vector.<PES> = new Vector.<PES>();
 		/** has PMT been parsed ? **/
 		private var _pmtParsed:Boolean= false;
-		/** nb of AV packets before PMT **/
-		private var _AVpacketsBeforePMT:Number = 0;
+		/** any TS packets before PMT ? **/
+		private var _packetsBeforePMT:Boolean = false;
 		/** Packet ID of the video stream. **/
 		private var _avcId:Number = -1;
 		/** PES packet that contains the first keyframe. **/
@@ -55,6 +55,20 @@ package org.mangui.HLS.muxing {
 		private var _lastAVCCFrame:PES = null;
 		/* callback function upon read complete */
 		private var _callback:Function;
+		
+		
+		public static function probe(data:ByteArray):Boolean {
+		  var pos:Number = data.position;
+		  var len:Number = Math.min(data.bytesAvailable,188);
+		  for(var i:Number = 0; i < len ; i++) {
+		    if(data.readByte() == SYNCBYTE) {
+		      data.position = pos+i;
+		      return true;
+		    }
+		  }
+		  data.position = pos;
+		  return false;
+		}
 		
 		/** Transmux the M2TS file into an FLV file. **/
 		public function TS(data:ByteArray,callback:Function) {
@@ -221,7 +235,13 @@ package org.mangui.HLS.muxing {
 			var todo:uint = TS.PACKETSIZE;
 			// Sync byte.
 			if(_data.readByte() != TS.SYNCBYTE) {
-				throw new Error("Could not parse TS file: sync byte not found @ offset/len " + _data.position + "/"+ _data.length);
+			  var pos:Number = _data.position;
+			  if(probe(_data) == true) {
+			    Log.txt("lost sync in TS, between offsets:" + pos + "/" + _data.position);
+			    _data.position++;
+			  } else {
+				  throw new Error("Could not parse TS file: sync byte not found @ offset/len " + _data.position + "/"+ _data.length);
+				}
 			}
 			todo--;
 			// Payload unit start indicator.
@@ -258,6 +278,17 @@ package org.mangui.HLS.muxing {
 					break;
 				case _pmtId:
 					todo -= _readPMT();
+			    if(_pmtParsed == false) {
+			      _pmtParsed = true;
+			    // if PMT was not parsed before, and some unknown packets have been skipped in between, 
+			    // rewind to beginning of the stream, it helps recovering bad segmented content
+			    // in theory there should be no A/V packets before PAT/PMT)
+			      if (_packetsBeforePMT) {
+			        Log.txt("late PMT found, rewinding at beginning of TS");
+			        _data.position = 0;
+			        return;
+			      }
+		      }
 					break;
 				case _aacId:
 				case _mp3Id:
@@ -283,7 +314,7 @@ package org.mangui.HLS.muxing {
 				case _sdtId:
 						break;
 				default:
-				_AVpacketsBeforePMT++;
+				_packetsBeforePMT=true;
 					break;
 			}
 			// Jump to the next packet.
@@ -332,15 +363,6 @@ package org.mangui.HLS.muxing {
 				_data.position += sel;
 				read += sel + 5;
 			}
-			if(_pmtParsed == false) {
-			  _pmtParsed = true;
-			// if PMT was not parsed before, and some unknown packets have been skipped in between, rewind to beginning of the stream
-			// it helps with fragment not segmented properly (in theory there should be no A/V packets before PAT/PMT)
-			  if (_AVpacketsBeforePMT > 1) {
-			    Log.txt("late PMT found, rewinding at beginning of TS");
-			    return (-_data.position);
-			  }
-		  }
 			return len;
 		};
 	}

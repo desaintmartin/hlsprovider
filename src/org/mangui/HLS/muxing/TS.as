@@ -59,7 +59,7 @@ package org.mangui.HLS.muxing {
 		
 		public static function probe(data:ByteArray):Boolean {
 		  var pos:Number = data.position;
-		  var len:Number = Math.min(data.bytesAvailable,188);
+		  var len:Number = Math.min(data.bytesAvailable,188*2);
 		  for(var i:Number = 0; i < len ; i++) {
 		    if(data.readByte() == SYNCBYTE) {
 		      data.position = pos+i;

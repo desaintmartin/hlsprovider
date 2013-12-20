@@ -77,9 +77,8 @@ import flash.net.NetConnection;
 
 
         /** Start playing an new HLS stream. **/
-        public function play(url:String,start:Number=0):void {
+        public function load(url:String):void {
             _hlsNetStream.close();
-            //_playbackStartPosition = start;
             _manifestLoader.load(url);
         };  
 

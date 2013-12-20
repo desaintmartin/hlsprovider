@@ -70,7 +70,7 @@ package org.mangui.osmf.plugins
         _hls.addEventListener(HLSEvent.MANIFEST_LOADED,_manifestHandler);        
       }
       /* load playlist */
-      _hls.play(URLResource(loadTrait.resource).url,0);
+      _hls.load(URLResource(loadTrait.resource).url);
 		}
 		
 		override protected function executeUnload(loadTrait:LoadTrait):void

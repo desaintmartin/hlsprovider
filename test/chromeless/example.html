@@ -31,15 +31,23 @@
 
 function onHLSReady(message) {
     document.getElementById("videoStatus").innerHTML += "onHLSReady()<br />";
-    play("http://www.streambox.fr/playlists/test_001/stream.m3u8");
+    load("http://www.streambox.fr/playlists/test_001/stream.m3u8");
 }
 
 
-function play(url) {
+function load(url) {
   var obj = getFlashMovieObject("mymoviename");
   if(obj != null) {
-    obj.play(url);
+    obj.load(url);
     document.getElementById("videoStatus").innerHTML += "start playback for " + url + "<br />";
+  }
+}
+
+function play() {
+  var obj = getFlashMovieObject("mymoviename");
+  if(obj != null) {
+    obj.play();
+    document.getElementById("videoStatus").innerHTML += "start playback<br />";
   }
 }
 
@@ -104,6 +112,7 @@ function onFragment(bandwidth,level,width) {
 
 function onManifest(message) {
   document.getElementById("videoStatus").innerHTML += "manifest loaded<br />";
+  play();
 }
 
 function onPosition(position,duration) {

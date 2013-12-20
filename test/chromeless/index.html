@@ -81,7 +81,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   
 <script type="text/javascript">
 function userSubmit() {
-   play(document.getElementById('userInput').value);
+   load(document.getElementById('userInput').value);
 }
 </script>
 
@@ -93,7 +93,7 @@ var current_url;
 
 function loadStream(url) {
   current_url = url;
-  play(url);
+  load(url);
 }
 
 function listStreams(list, container) {
@@ -104,17 +104,24 @@ document.getElementById(container).appendChild(entry);
 current_url=list[0].file;
 }
 
-function onHLSReady(message) {
-    listStreams(teststreams,"streamlist");
-    document.getElementById("videoStatus").innerHTML += "onHLSReady()<br />";
-}
-
-
-function play(url) {
+function load(url) {
   var obj = getFlashMovieObject("mymoviename");
   if(obj != null) {
-    obj.play(url);
-    document.getElementById("videoStatus").innerHTML += "start playback for " + url + "<br />";
+    obj.load(url);
+    document.getElementById("videoStatus").innerHTML += "load URL " + url + "<br />";
+  document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[2].cells[3].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[2].cells[4].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  0;
+  }
+}
+
+function play() {
+  var obj = getFlashMovieObject("mymoviename");
+  if(obj != null) {
+    obj.play();
+    document.getElementById("videoStatus").innerHTML += "start playback<br />";
   }
 }
 
@@ -188,6 +195,11 @@ function setmaxBufferLength(new_len) {
   }
 }
 
+function onHLSReady(message) {
+    listStreams(teststreams,"streamlist");
+    document.getElementById("videoStatus").innerHTML += "onHLSReady()<br />";
+}
+
 function onComplete(message) {
   document.getElementById("videoStatus").innerHTML += "onComplete(), playback completed<br />";
 }
@@ -198,9 +210,9 @@ function onError(message) {
 function onFragment(bandwidth,level,width) {
   document.getElementById("videoStatus").innerHTML += "onFragment(): bandwidth:" + bandwidth + " level:" + level + " width:" + width + "<br />";
 }
-
-function onManifest(message) {
-  document.getElementById("videoStatus").innerHTML += "manifest loaded<br />";
+function onManifest(duration) {
+  document.getElementById("videoStatus").innerHTML += "manifest loaded, playlist duration:"+ duration.toFixed(2) + " <br />";
+  document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
 }
 
 function onPosition(position,duration) {

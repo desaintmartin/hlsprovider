@@ -1,6 +1,7 @@
 package org.mangui.HLS.streaming {
 
 
+    import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
     import org.mangui.HLS.utils.Log;
 
@@ -28,7 +29,7 @@ package org.mangui.HLS.streaming {
 
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event:HLSEvent):void {
-            var levels:Array= event.levels;
+            var levels:Vector.<Level>= event.levels;
             var maxswitchup:Number=0;
             var minswitchdwown:Number=Number.MAX_VALUE;
             _nbLevel = levels.length;
@@ -70,7 +71,6 @@ package org.mangui.HLS.streaming {
 
         /** Update the quality level for the next fragment load. **/
         public function getnextlevel(current_level:Number, buffer:Number, last_segment_duration:Number, last_fetch_duration:Number, last_bandwidth:Number):Number {
-            var i:Number;
             var level:Number = _lowestNonAudioLevel;
             if(level == -1) {
                 Log.txt("No other quality levels are available");

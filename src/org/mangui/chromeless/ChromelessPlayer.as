@@ -1,10 +1,10 @@
 package org.mangui.chromeless { 
 
 
+    import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
     import flash.display.*;
     import flash.events.*;
-    import flash.net.*;
     import flash.external.ExternalInterface;
     import flash.geom.Rectangle;
     import flash.media.Video;
@@ -23,8 +23,6 @@ package org.mangui.chromeless {
         private var _sheet:Sprite;
         /** Reference to the video element. **/
         private var _video:StageVideo;
-        /** Javascript callbacks. **/
-        private var _callbacks:Object = {};
         /** current media position */
         private var _media_position:Number;
 
@@ -111,7 +109,7 @@ package org.mangui.chromeless {
 
         /** Javascript getters. **/
         private function _getLevel():Number { return _hls.getLevel(); };
-        private function _getLevels():Array { return _hls.getLevels(); };
+        private function _getLevels():Vector.<Level> { return _hls.getLevels(); };
         private function _getMetrics():Object { return _hls.getMetrics(); };
         private function _getPosition():Number { return _hls.getPosition(); };
         private function _getState():String { return _hls.getState(); };

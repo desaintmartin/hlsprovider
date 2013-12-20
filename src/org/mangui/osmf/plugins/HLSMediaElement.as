@@ -1,40 +1,29 @@
 package org.mangui.osmf.plugins
 {
-  import flash.net.NetStream;
-  import flash.net.NetConnection;
-  import flash.media.Video;
-  import flash.events.NetStatusEvent;
   
-
+  import flash.net.NetStream;
+  import flash.media.Video;
+ 
+  import org.mangui.HLS.parsing.Level;
   import org.mangui.HLS.HLS;
-  import org.mangui.HLS.utils.*;
-
-
-  import org.osmf.events.MediaError;
-  import org.osmf.events.MediaErrorEvent;
-  import org.osmf.events.MediaErrorCodes;
+ 
   import org.osmf.media.LoadableElementBase;
-  import org.osmf.traits.MediaTraitType;
   import org.osmf.media.videoClasses.VideoSurface;
   import org.osmf.media.MediaResourceBase;
   import org.osmf.media.URLResource;
   import org.osmf.traits.AudioTrait;
   import org.osmf.traits.BufferTrait;
-  import org.osmf.traits.DynamicStreamTrait;
-  import org.osmf.traits.LoadState;
   import org.osmf.traits.LoadTrait;
   import org.osmf.traits.LoaderBase;
-  import org.osmf.traits.MediaTraitBase;
   import org.osmf.traits.MediaTraitType;
   import org.osmf.traits.PlayTrait;
   import org.osmf.traits.SeekTrait;
   import org.osmf.traits.TimeTrait;
   import org.osmf.utils.OSMFSettings;
-  import org.osmf.net.NetLoader;
   import org.osmf.net.DynamicStreamingResource;
   import org.osmf.net.DynamicStreamingItem;
   import org.osmf.net.NetStreamAudioTrait;
-  import org.osmf.net.NetStreamLoadTrait;
+  
 
   public class HLSMediaElement extends LoadableElementBase
   {
@@ -43,8 +32,6 @@ package org.mangui.osmf.plugins
     private var _defaultduration:Number;
     private var videoSurface:VideoSurface;
     private var _smoothing:Boolean;
-    private var _deblocking:int;
-    private var _loader:LoaderBase;
     private var _loadTrait:HLSNetStreamLoadTrait;
 
       public function HLSMediaElement(resource:MediaResourceBase, hls:HLS, duration:Number) {
@@ -134,7 +121,7 @@ package org.mangui.osmf.plugins
       addTrait(MediaTraitType.SEEK, seekTrait);
 
       
-      var levels:Array = _hls.getLevels();
+      var levels:Vector.<Level> = _hls.getLevels();
       var nbLevel:Number = levels.length;
       if(nbLevel > 1) {
         var urlRes:URLResource = resource as URLResource;

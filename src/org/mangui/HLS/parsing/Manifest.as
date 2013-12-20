@@ -55,7 +55,8 @@ package org.mangui.HLS.parsing {
 
         /** The M3U8 playlist was loaded. **/
         private function _loaderHandler(event:Event):void {
-            _success(String(event.target.data),_url,_index);
+			var loader:URLLoader = URLLoader(event.target);
+            _success(String(loader.data),_url,_index);
         };
 
         private static function zeropad(str:String, length:uint):String {
@@ -66,8 +67,8 @@ package org.mangui.HLS.parsing {
         }
 
         /** Extract fragments from playlist data. **/
-        public static function getFragments(data:String,base:String=''):Array {
-            var fragments:Array = [];
+        public static function getFragments(data:String,base:String=''):Vector.<Fragment> {
+            var fragments:Vector.<Fragment> = new Vector.<Fragment>();
             var lines:Array = data.split("\n");
             //fragment seqnum
             var seqnum:Number = 0;
@@ -84,17 +85,18 @@ package org.mangui.HLS.parsing {
 
             // first look for sequence number
             while (i < lines.length) {
-                if(lines[i].indexOf(Manifest.SEQNUM) == 0) {
-                    seqnum = Number(lines[i].substr(Manifest.SEQNUM.length));
+                var line:String = lines[i++];
+                if(line.indexOf(Manifest.SEQNUM) == 0) {
+                    seqnum = Number(line.substr(Manifest.SEQNUM.length));
                     break;
                  }
-                 i++;
                }
             i = 0;
             while (i < lines.length) {
-              if(lines[i].indexOf(Manifest.KEY) == 0) {
+              line = lines[i++];
+              if(line.indexOf(Manifest.KEY) == 0) {
                 //#EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=52",IV=.....
-                var keyLine:String= lines[i].substr(Manifest.KEY.length);
+                var keyLine:String= line.substr(Manifest.KEY.length);
                 // reset previous values
                 decrypt_url = null;
                 decrypt_iv = null;
@@ -138,24 +140,23 @@ package org.mangui.HLS.parsing {
                       break;
                   }
                 }
-              } else if(lines[i].indexOf(Manifest.PROGRAMDATETIME) == 0) {
-                //Log.txt(lines[i]);
-                var year:Number    = lines[i].substr(25,4);
-                var month:Number   = lines[i].substr(30,2);
-                var day:Number     = lines[i].substr(33,2);
-                var hour:Number    = lines[i].substr(36,2);
-                var minutes:Number = lines[i].substr(39,2);
-                var seconds:Number = lines[i].substr(42,2);
+              } else if(line.indexOf(Manifest.PROGRAMDATETIME) == 0) {
+                //Log.txt(line);
+                var year:Number    = parseInt(line.substr(25,4));
+                var month:Number   = parseInt(line.substr(30,2));
+                var day:Number     = parseInt(line.substr(33,2));
+                var hour:Number    = parseInt(line.substr(36,2));
+                var minutes:Number = parseInt(line.substr(39,2));
+                var seconds:Number = parseInt(line.substr(42,2));
                 program_date = new Date(year,month,day,hour,minutes,seconds).getTime();
-              } else if(lines[i].indexOf(Manifest.FRAGMENT) == 0) {
-                var comma_position:Number = lines[i].indexOf(',');
-                var duration:Number = (comma_position == -1) ? lines[i].substr(Manifest.FRAGMENT.length) : lines[i].substr(Manifest.FRAGMENT.length,comma_position-Manifest.FRAGMENT.length);
+              } else if(line.indexOf(Manifest.FRAGMENT) == 0) {
+                var comma_position:Number = line.indexOf(',');
+                var duration:Number = (comma_position == -1) ? parseInt(line.substr(Manifest.FRAGMENT.length)) : parseInt(line.substr(Manifest.FRAGMENT.length,comma_position-Manifest.FRAGMENT.length));
                 // Look for next non-blank line, for url
-                i++;
-                while(lines[i].match(/^\s*$/)) {
-                  i++;
-                }
-                var url:String = _extractURL(lines[i],base);
+                do {
+                    line = lines[i++];
+                } while(line.match(/^\s*$/));
+                var url:String = _extractURL(line,base);
                 
                 /* as per HLS spec : 
                     if IV not defined, then use seqnum as IV :
@@ -175,11 +176,10 @@ package org.mangui.HLS.parsing {
                 fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date,decrypt_url,fragment_decrypt_iv));
                 start_time+=duration;
                 program_date = 0;
-              } else if(lines[i].indexOf(Manifest.DISCONTINUITY) == 0) {
+              } else if(line.indexOf(Manifest.DISCONTINUITY) == 0) {
                 continuity_index++;
                 Log.txt("discontinuity found at seqnum " + seqnum);
               }
-              i++;
             }
             if(fragments.length == 0) {
                 //throw new Error("No TS fragments found in " + base);
@@ -190,41 +190,46 @@ package org.mangui.HLS.parsing {
 
 
         /** Extract levels from manifest data. **/
-        public static function extractLevels(data:String,base:String=''):Array {
+        public static function extractLevels(data:String,base:String=''):Vector.<Level> {
             var levels:Array = [];
             var lines:Array = data.split("\n");
             var i:Number = 0;
             while (i<lines.length) {
-                if(lines[i].indexOf(Manifest.LEVEL) == 0) {
+                var line:String = lines[i++];
+                if(line.indexOf(Manifest.LEVEL) == 0) {
                     var level:Level = new Level();
-                    var params:Array = lines[i].substr(Manifest.LEVEL.length).split(',');
+                    var params:Array = line.substr(Manifest.LEVEL.length).split(',');
                     for(var j:Number = 0; j<params.length; j++) {
-                        if(params[j].indexOf('BANDWIDTH') > -1) {
-                            level.bitrate = params[j].split('=')[1];
-                        } else if (params[j].indexOf('RESOLUTION') > -1) {
-                            level.height  = params[j].split('=')[1].split('x')[1];
-                            level.width = params[j].split('=')[1].split('x')[0];
-                        } else if (params[j].indexOf('CODECS') > -1 && lines[i].indexOf('avc1') == -1) {
+                        var param:String = params[j];
+                        if(param.indexOf('BANDWIDTH') > -1) {
+                            level.bitrate = param.split('=')[1];
+                        } else if (param.indexOf('RESOLUTION') > -1) {
+							var res:String= param.split('=')[1] as String;
+							var dim:Array = res.split('x');
+                            level.width =  parseInt(dim[0]);
+                            level.height  = parseInt(dim[1]);
+                        } else if (param.indexOf('CODECS') > -1 && line.indexOf('avc1') == -1) {
                             level.audio = true;
                         }
                     }
-					// Look for next non-blank line, for url
-                    i++;
-					while(lines[i].match(/^\s*$/)) {
-						i++;
-					}
-                    level.url = Manifest._extractURL(lines[i],base);
+                    // Look for next non-blank line, for url
+                    do {
+                        line = lines[i++];
+                    } while(line.match(/^\s*$/));
+                    
+                    level.url = Manifest._extractURL(line,base);
                     levels.push(level);
                 }
-                i++;
             }
             if(levels.length == 0) {
                 throw new Error("No playlists found in Manifest: " + base);
             }
-            levels.start_seqnum = -1;
-            levels.end_seqnum = -1;
             levels.sortOn('bitrate',Array.NUMERIC);
-            return levels;
+            var vectorLevels:Vector.<Level> = new Vector.<Level>();
+            for each(level in levels) {
+              vectorLevels.push(level);
+            }
+            return vectorLevels;
         };
 
 
@@ -244,11 +249,11 @@ package org.mangui.HLS.parsing {
 
             // first look for target duration
             while (i < lines.length) {
-                if(lines[i].indexOf(Manifest.TARGETDURATION) == 0) {
-                    targetduration = Number(lines[i].substr(Manifest.TARGETDURATION.length));
+                var line:String = lines[i++];
+                if(line.indexOf(Manifest.TARGETDURATION) == 0) {
+                    targetduration = Number(line.substr(Manifest.TARGETDURATION.length));
                     break;
                  }
-                 i++;
             }
             return targetduration;
        }

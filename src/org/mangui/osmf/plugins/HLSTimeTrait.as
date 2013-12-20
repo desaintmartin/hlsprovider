@@ -4,7 +4,6 @@ package org.mangui.osmf.plugins
   
   import org.mangui.HLS.HLS;
   import org.mangui.HLS.HLSEvent;
-  import org.mangui.HLS.utils.*;
 	
 	public class HLSTimeTrait extends TimeTrait
 	{

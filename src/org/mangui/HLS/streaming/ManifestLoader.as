@@ -16,7 +16,7 @@ package org.mangui.HLS.streaming {
         /** Reference to the hls framework controller. **/
         private var _hls:HLS;
         /** Array with levels. **/
-        private var _levels:Array = [];
+        private var _levels:Vector.<Level>;
         /** Object that fetches the manifest. **/
         private var _urlloader:URLLoader;
         /** Link to the M3U8 file. **/
@@ -39,7 +39,7 @@ package org.mangui.HLS.streaming {
             _hls = hls;
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _hls.addEventListener(HLSEvent.QUALITY_SWITCH,_levelSwitchHandler);
-            _levels = [];
+            _levels = new Vector.<Level>();
             _urlloader = new URLLoader();
             _urlloader.addEventListener(Event.COMPLETE,_loaderHandler);
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR,_errorHandler);
@@ -51,7 +51,8 @@ package org.mangui.HLS.streaming {
         private function _errorHandler(event:ErrorEvent):void {
             var txt:String;
             if(event is SecurityErrorEvent) {
-                txt = "Cannot load M3U8: crossdomain access denied";
+               var error:SecurityErrorEvent = event as SecurityErrorEvent;
+                txt = "Cannot load M3U8: crossdomain access denied:" + error.text;
             } else if (event is IOErrorEvent) {
                 Log.txt("I/O Error while trying to load Playlist, retry in 2s");
                 _timeoutID = setTimeout(_loadPlaylist,2000);
@@ -62,7 +63,7 @@ package org.mangui.HLS.streaming {
         };
 
         /** Return the current manifest. **/
-        public function getLevels():Array {
+        public function getLevels():Vector.<Level> {
             return _levels;
         };
 
@@ -76,7 +77,7 @@ package org.mangui.HLS.streaming {
         /** Load the manifest file. **/
         public function load(url:String):void {
             _url = url;
-            _levels = [];
+            _levels = new Vector.<Level>();
             _current_level = 0;
             _canStart = false;
             _reload_playlists_timer = getTimer();
@@ -86,13 +87,14 @@ package org.mangui.HLS.streaming {
 
         /** Manifest loaded; check and parse it **/
         private function _loaderHandler(event:Event):void {
-            _parseManifest(String(event.target.data));
+         	var loader:URLLoader = URLLoader(event.target);
+            _parseManifest(String(loader.data));
         };
         
         /** parse a playlist **/
         private function _parsePlaylist(string:String,url:String,index:Number):void {
             if(string != null && string.length != 0) {
-               var frags:Array = Manifest.getFragments(string,url);
+               var frags:Vector.<Fragment> = Manifest.getFragments(string,url);
                // set fragment and update sequence number range
                _levels[index].updateFragments(frags);
                _levels[index].targetduration = Manifest.getTargetDuration(string);
@@ -108,9 +110,12 @@ package org.mangui.HLS.streaming {
                 Log.txt("Level " + index + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
                 _timeoutID = setTimeout(_loadPlaylist,timeout);
             }
-            if (!_canStart && (_canStart = (_levels[index].fragments.length >= 2  ))) {
-               Log.txt("first level filled with at least 2 fragments, notify event");
-               _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED,_levels));
+            if (!_canStart) {
+               _canStart = (_levels[index].fragments.length >=2);
+               if(_canStart) {
+               	Log.txt("first level filled with at least 2 fragments, notify event");
+               	_hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED,_levels));
+               }
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_UPDATED,index));
             _load_in_progress = false;

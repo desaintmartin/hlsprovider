@@ -1,6 +1,7 @@
 package org.mangui.jwplayer.media {
 
 
+    import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
     
     import com.longtailvideo.jwplayer.events.MediaEvent;
@@ -15,8 +16,7 @@ package org.mangui.jwplayer.media {
     import flash.media.Video;
     import flash.system.Capabilities;
     import flash.events.Event;
-    import flash.net.*;
-
+   
 
     /** JW Player provider for hls streaming. **/
     public class HLSProvider extends MediaProvider {
@@ -27,7 +27,7 @@ package org.mangui.jwplayer.media {
         /** Current quality level. **/
         protected var _level:Number;
         /** Reference to the quality levels. **/
-        protected var _levels:Array;
+        protected var _levels:Vector.<Level>;
         /** Reference to the video object. **/
         private var _video:Video;
         /** current position **/
@@ -59,8 +59,7 @@ package org.mangui.jwplayer.media {
                 droppedFrames: 0,
                 currentLevel: (_level+1) +' of ' + _levels.length + ' (' + 
                     Math.round(_levels[_level].bitrate/1024) + 'kbps, ' + _levels[_level].width + 'px)',
-                width: event.metrics.screenwidth,
-                buffer: event.metrics.buffer
+                width: event.metrics.screenwidth
             }});
         };
 

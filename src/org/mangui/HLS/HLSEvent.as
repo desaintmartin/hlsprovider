@@ -1,6 +1,7 @@
 package org.mangui.HLS {
 
 
+    import org.mangui.HLS.parsing.Level;
     import flash.events.Event;
 
 
@@ -36,13 +37,13 @@ package org.mangui.HLS {
         /** The current playlist duration. **/
         public var duration:Number;
         /** The list with quality levels. **/
-        public var levels:Array;
+        public var levels:Vector.<Level>;
         /** The error message. **/
         public var message:String;
         /** The current QOS metrics. **/
-        public var metrics:Object;
+        public var metrics:HLSMetrics;
         /** The time position. **/
-        public var mediatime:Object;
+        public var mediatime:HLSMediatime;
         /** The new playback state. **/
         public var state:String;
 
@@ -54,13 +55,13 @@ package org.mangui.HLS {
                     message = parameter as String;
                     break;
                 case HLSEvent.FRAGMENT_LOADED:
-                    metrics = parameter as Object;
+                    metrics = parameter as HLSMetrics;
                     break;
                 case HLSEvent.MANIFEST_LOADED:
-                    levels = parameter as Array;
+                    levels = parameter as Vector.<Level>;
                     break;
                 case HLSEvent.MEDIA_TIME:
-                    mediatime = parameter as Object;
+                    mediatime = parameter as HLSMediatime;
                     break;
                 case HLSEvent.STATE:
                     state = parameter as String;

@@ -9,9 +9,7 @@ package org.mangui.HLS.streaming {
 
     import flash.events.*;
     import flash.net.*;
-    import flash.text.engine.TabStop;
     import flash.utils.ByteArray;
-    import flash.utils.Timer;
 
     /** Class that fetches fragments. **/
     public class FragmentLoader {
@@ -50,7 +48,7 @@ package org.mangui.HLS.streaming {
         /* overrided quality_manual_level level */
         private var _manual_level:int = -1;
         /** Reference to the manifest levels. **/
-        private var _levels:Array;
+        private var _levels:Vector.<Level>;
         /** Util for loading the fragment. **/
         private var _fragstreamloader:URLStream;
         /** Util for loading the key. **/
@@ -62,7 +60,7 @@ package org.mangui.HLS.streaming {
         /** fragment bytearray write position **/
         private var _fragWritePosition:Number;        
         /** AES decryption instance **/
-        private var _decryptAES:AES
+        private var _decryptAES:AES;
         /** Time the loading started. **/
         private var _frag_loading_start_time:Number;
         /** Time the decryption started. **/
@@ -211,15 +209,15 @@ package org.mangui.HLS.streaming {
       data.position = 0;
       if (TS.probe(data)== true) {
         if(data.position !=0) {
-          Log.txt("TS detected, first sync byte offset:"+data.position);
+          Log.txt("first TS detected @ offset:"+data.position);
         }
-        var ts:TS = new TS(data,_fragReadHandler);
+        new TS(data,_fragReadHandler);
       } else {
         var audioTags:Vector.<Tag> = new Vector.<Tag>();
         var adif:ByteArray = new ByteArray();
         if(syncword == AAC.SYNCWORD || syncword == AAC.SYNCWORD_2 || syncword == AAC.SYNCWORD_3) {
           /* parse AAC, convert Elementary Streams to TAG */
-          var frames:Array = AAC.getFrames(data,0);
+          var frames:Vector.<AudioFrame> = AAC.getFrames(data,0);
           adif = AAC.getADIF(data,0);
           var audioTag:Tag;
           var stamp:Number;
@@ -288,8 +286,8 @@ package org.mangui.HLS.streaming {
 
 
         /** Get the current QOS metrics. **/
-        public function getMetrics():Object {
-            return { bandwidth:_last_bandwidth, level:_level, screenwidth:_width };
+        public function getMetrics():HLSMetrics {
+            return new HLSMetrics(_level, _last_bandwidth, _width);
         };
 
        private function updateLevel(buffer:Number):Number {
@@ -549,7 +547,7 @@ package org.mangui.HLS.streaming {
         if (audioTags.length > 0) {
           if(audioTags[0].type == Tag.AAC_RAW) {
             var adifTag:Tag = new Tag(Tag.AAC_HEADER,audioTags[0].pts,audioTags[0].dts,true);
-            adifTag.push(adif,0,2)
+            adifTag.push(adif,0,2);
             tags.push(adifTag);
           }
         }

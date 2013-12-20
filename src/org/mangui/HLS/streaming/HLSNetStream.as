@@ -4,10 +4,7 @@ package org.mangui.HLS.streaming {
     import org.mangui.HLS.*;
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.streaming.*;
-    import org.mangui.HLS.parsing.*;
     import org.mangui.HLS.utils.*;
-
-    import flash.media.*;
     import flash.net.*;
     import flash.utils.*;
 
@@ -84,7 +81,7 @@ package org.mangui.HLS.streaming {
                   }
                   _playback_current_position = playback_relative_position;
                   _last_buffer = buffer;
-                  _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,{ position:_playback_current_position, buffer:buffer, duration:_playlist_duration}));
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,new HLSMediatime(_playback_current_position, _playlist_duration, buffer)));
                }
             }
             //Log.txt("checkBuffer,loading,needReload,_reached_vod_end,buffer,maxBufferLength:"+ _fragment_loading + "/" + _fragmentLoader.needReload() + "/" + _reached_vod_end + "/" + buffer + "/" + _buffer_max_len);

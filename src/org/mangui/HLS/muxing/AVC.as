@@ -1,7 +1,5 @@
 package org.mangui.HLS.muxing {
 
-
-    import org.mangui.HLS.utils.*;
     import flash.utils.ByteArray;
 
 
@@ -10,7 +8,7 @@ package org.mangui.HLS.muxing {
 
 
         /** H264 NAL unit names. **/
-        public static const NAMES:Array = [
+        private static const NAMES:Array = [
             'Unspecified',                  // 0
             'NDR',                          // 1
             'Partition A',                  // 2
@@ -26,19 +24,20 @@ package org.mangui.HLS.muxing {
             'Filler Data'                   // 12
         ];
         /** H264 profiles. **/
-        public static const PROFILES:Object = {
+/*
+        private static const PROFILES:Object = {
             '66': 'H264 Baseline',
             '77': 'H264 Main',
             '100': 'H264 High'
         };
-
+*/
 
         /** Get Avcc header from AVC stream 
         See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
         **/
         public static function getAVCC(nalu:ByteArray,position:Number=0):ByteArray {
             // Find SPS and PPS units in AVC stream.
-            var units:Array = AVC.getNALU(nalu,position,false);
+            var units:Vector.<VideoFrame> = AVC.getNALU(nalu,position,false);
             var sps:Number = -1;
             var pps:Number = -1;
             for(var i:Number = 0; i< units.length; i++) {
@@ -74,19 +73,19 @@ package org.mangui.HLS.muxing {
             // data of PPS
             avcc.writeBytes(nalu,units[pps].start,units[pps].length);
             // Grab profile/level
-            avcc.position = 1;
-            var prf:Number = avcc.readByte();
-            avcc.position = 3;
-            var lvl:Number = avcc.readByte();
+            //avcc.position = 1;
+            //var prf:Number = avcc.readByte();
+            //avcc.position = 3;
+            //var lvl:Number = avcc.readByte();
+            // Log.txt("AVC: "+PROFILES[prf]+' level '+lvl);            
             avcc.position = 0;
-            // Log.txt("AVC: "+PROFILES[prf]+' level '+lvl);
             return avcc;
         };
 
 
         /** Return an array with NAL delimiter indexes. **/
-        public static function getNALU(nalu:ByteArray,position:Number=0,log:Boolean=true):Array {
-            var units:Array = [];
+        public static function getNALU(nalu:ByteArray,position:Number=0,log:Boolean=true):Vector.<VideoFrame> {
+            var units:Vector.<VideoFrame> = new Vector.<VideoFrame>();
             var unit_start:Number;
             var unit_type:Number;
             var unit_header:Number;
@@ -99,12 +98,7 @@ package org.mangui.HLS.muxing {
                 if((window & 0xFFFFFFFF) == 0x01) {
                   // push previous NAL unit if new start delimiter found, dont push unit with type = 0
                     if(unit_start && unit_type) {
-                        units.push({
-                            header: unit_header,
-                            length: nalu.position - 4 - unit_start,
-                            start: unit_start,
-                            type: unit_type
-                        });
+                        units.push(new VideoFrame(unit_header, nalu.position - 4 - unit_start, unit_start, unit_type));
                     }
                     unit_header = 4;
                     unit_start = nalu.position;
@@ -115,12 +109,7 @@ package org.mangui.HLS.muxing {
                 } else if((window & 0xFFFFFF00) == 0x100) {
                     // push previous NAL unit if new start delimiter found, dont push unit with type = 0
                     if(unit_start && unit_type) {
-                        units.push({
-                            header: unit_header,
-                            length: nalu.position - 4 - unit_start,
-                            start: unit_start,
-                            type: unit_type
-                        });
+                       units.push(new VideoFrame(unit_header, nalu.position - 4 - unit_start, unit_start, unit_type));
                     }
                     nalu.position--;
                     unit_header = 3;
@@ -134,13 +123,8 @@ package org.mangui.HLS.muxing {
             }
             // Append the last NAL to the array.
             if(unit_start) {
-                units.push({
-                    header: unit_header,
-                    length: nalu.length - unit_start,
-                    start: unit_start,
-                    type: unit_type
-                });
-            }
+               units.push(new VideoFrame(unit_header, nalu.length - unit_start, unit_start, unit_type));
+            }           
             // Reset position and return results.
             if(log) {
                 if(units.length) {

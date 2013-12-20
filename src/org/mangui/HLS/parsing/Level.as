@@ -2,8 +2,6 @@ package org.mangui.HLS.parsing {
 
 
     import org.mangui.HLS.parsing.Fragment;
-    import flash.utils.ByteArray;
-    import org.mangui.HLS.utils.*;
 
     /** HLS streaming quality level. **/
     public class Level {
@@ -14,7 +12,7 @@ package org.mangui.HLS.parsing {
         /** Bitrate of the video in this level. **/
         public var bitrate:Number;
         /** Array with fragments for this level. **/
-        public var fragments:Array;
+        public var fragments:Vector.<Fragment>;
         /** Height of the video in this level. **/
         public var height:Number;
         /** URL of this bitrate level (for M3U8). **/
@@ -37,7 +35,7 @@ package org.mangui.HLS.parsing {
             this.bitrate = bitrate;
             this.height = height;
             this.width = width;
-            this.fragments = new Array();
+            this.fragments = new Vector.<Fragment>();
         };
 
         /** Return the sequence number before a given time position. **/
@@ -163,7 +161,7 @@ package org.mangui.HLS.parsing {
 
 
         /** set Fragments **/
-        public function updateFragments(_fragments:Array):void {
+        public function updateFragments(_fragments:Vector.<Fragment>):void {
             var idx_with_pts:Number = -1;
             var len:Number = _fragments.length;
             var frag:Fragment;
@@ -191,7 +189,7 @@ package org.mangui.HLS.parsing {
             averageduration = duration/len;
         }
       
-      private function updateFragmentsProgramDate(_fragments:Array):void {
+      private function updateFragmentsProgramDate(_fragments:Vector.<Fragment>):void {
         var len:Number = _fragments.length;
         var continuity:Number;
         var program_date:Number;

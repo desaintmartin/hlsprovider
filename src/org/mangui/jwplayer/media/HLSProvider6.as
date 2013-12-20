@@ -1,19 +1,18 @@
 package org.mangui.jwplayer.media {
 
-    import flash.net.NetStream;
+    import org.mangui.HLS.parsing.Level;
     import com.longtailvideo.jwplayer.events.MediaEvent;
     import com.longtailvideo.jwplayer.model.PlayerConfig;    
     import org.mangui.HLS.HLSEvent;
     import org.mangui.jwplayer.media.HLSProvider;
-    import org.mangui.HLS.utils.Log;
 
-    /** àdditional method needed for jwplayer6 **/
+    /** ï¿½dditional method needed for jwplayer6 **/
     public class HLSProvider6 extends HLSProvider {
 
       /** Array of quality levels **/
       private var _qualityLevels:Array;
       
-      private function level2label(level:Object):String {
+      private function level2label(level:Level):String {
          return(level.height + 'p / ' + Math.round(level.bitrate/1024) + 'kb');
       }
 

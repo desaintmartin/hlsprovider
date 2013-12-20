@@ -6,7 +6,7 @@ package org.mangui.osmf.plugins
   import org.osmf.media.URLResource;
   
   import org.mangui.HLS.HLS;
-  import org.mangui.HLS.utils.*;
+
 	
 	public class HLSNetLoader extends NetLoader
 	{

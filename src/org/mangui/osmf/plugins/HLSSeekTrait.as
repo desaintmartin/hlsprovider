@@ -1,9 +1,7 @@
 package org.mangui.osmf.plugins
 {
-  import flash.events.NetStatusEvent;
   import org.osmf.traits.SeekTrait;
   import org.osmf.traits.TimeTrait;
-  import org.osmf.net.NetStreamCodes;
   
   import org.mangui.HLS.HLS;
   import org.mangui.HLS.HLSStates;

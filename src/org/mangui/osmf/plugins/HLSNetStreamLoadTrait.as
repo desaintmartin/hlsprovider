@@ -1,7 +1,5 @@
 package org.mangui.osmf.plugins
 {
-  import flash.events.NetStatusEvent;
-
   import org.osmf.net.NetStreamLoadTrait;
   import org.osmf.traits.LoaderBase;
   import org.osmf.media.MediaResourceBase;

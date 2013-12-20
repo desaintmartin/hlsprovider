@@ -1,7 +1,5 @@
 package org.mangui.HLS.muxing {
 
-
-    import org.mangui.HLS.utils.*;
     import flash.utils.ByteArray;
 
 
@@ -40,7 +38,7 @@ package org.mangui.HLS.muxing {
                 var channels:uint = (adts.readShort() & 0x01C0) >> 6;
             } else {
                 throw new Error("Stream did not start with ADTS header.");
-                return;
+                return null;
             }
             // 5 bits profile + 4 bits samplerate + 4 bits channels.
             var adif:ByteArray = new ByteArray();
@@ -55,8 +53,8 @@ package org.mangui.HLS.muxing {
 
 
         /** Get a list with AAC frames from ADTS stream. **/
-        public static function getFrames(adts:ByteArray,position:Number=0):Array {
-            var frames:Array = [];
+        public static function getFrames(adts:ByteArray,position:Number=0):Vector.<AudioFrame> {
+            var frames:Vector.<AudioFrame> = new Vector.<AudioFrame>();
             var frame_start:uint;
             var frame_length:uint;
             var id3_len:Number = ID3.length(adts);
@@ -78,11 +76,7 @@ package org.mangui.HLS.muxing {
                     }
                     // Store raw AAC preceding this header.
                     if(frame_start) {
-                        frames.push({
-                            start: frame_start,
-                            length: frame_length,
-                            rate: samplerate
-                        });
+                        frames.push(new AudioFrame(frame_start, frame_length, samplerate));
                     }
                     if(short == SYNCWORD_3) {
                        // ADTS header is 9 bytes.
@@ -101,11 +95,7 @@ package org.mangui.HLS.muxing {
             }
             // Write raw AAC after last header.
             if(frame_start) {
-                frames.push({
-                    start:frame_start,
-                    length:frame_length,
-                    rate:samplerate
-                });
+                frames.push(new AudioFrame(frame_start, frame_length, samplerate));
                 // Log.txt("AAC: "+frames.length+" ADTS frames");
             } else {
                 throw new Error("No ADTS headers found in this stream.");

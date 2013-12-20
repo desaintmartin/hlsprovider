@@ -4,7 +4,6 @@ package org.mangui.osmf.plugins
   import org.osmf.traits.PlayState;
   import org.mangui.HLS.HLS;
   import org.mangui.HLS.HLSEvent;
-  import org.mangui.HLS.HLSStates;
   import org.mangui.HLS.utils.*;
 	
 	public class HLSPlayTrait extends PlayTrait

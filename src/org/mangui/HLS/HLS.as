@@ -1,6 +1,7 @@
 package org.mangui.HLS {
 
 
+import org.mangui.HLS.parsing.Level;
 import org.mangui.HLS.streaming.*;
 import org.mangui.HLS.utils.*;
 
@@ -46,7 +47,7 @@ import flash.net.NetConnection;
 
 
         /** Return the list with bitrate levels. **/
-        public function getLevels():Array {
+        public function getLevels():Vector.<Level> {
             return _manifestLoader.getLevels();
         };
 

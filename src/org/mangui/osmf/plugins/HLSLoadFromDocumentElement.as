@@ -20,9 +20,7 @@
 *  
 *****************************************************/
 package org.mangui.osmf.plugins
-{
-	import flash.events.Event;
-	
+{	
 	import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
 	import org.osmf.events.LoadEvent;
 	import org.osmf.media.MediaResourceBase;
@@ -119,16 +117,6 @@ package org.mangui.osmf.plugins
 			return _resource;
 		}		
 		
-		// Internals
-		//
-
-		private function onLoaderStateChange(event:Event):void
-		{
-			// Remove the temporary LoadTrait.
-			removeTrait(MediaTraitType.LOAD);
-			
-			proxiedElement = loadTrait.mediaElement;
-		}		
 
 		private function onLoadStateChange(event:LoadEvent):void
 		{

@@ -3,7 +3,6 @@ package org.mangui.HLS.muxing {
 
     import flash.utils.ByteArray;
     import org.mangui.HLS.muxing.*;
-    import org.mangui.HLS.utils.*;
 
 
     /** Metadata needed to build an FLV tag. **/
@@ -27,7 +26,7 @@ package org.mangui.HLS.muxing {
         /** Is this an AVC keyframe. **/
         public var keyframe:Boolean;
         /** Array with data pointers. **/
-        private var pointers:Array = [];
+        private var pointers:Vector.<TagData> = new Vector.<TagData>();
         /** PTS of this frame. **/
         public var pts:Number;
         /** DTS of this frame. **/
@@ -109,11 +108,7 @@ package org.mangui.HLS.muxing {
 
         /** push a data pointer into the frame. **/
         public function push(array:ByteArray,start:Number,length:Number):void {
-            pointers.push({
-                array: array,
-                start: start,
-                length: length
-            });
+            pointers.push(new TagData(array, start, length));
         };
 
 

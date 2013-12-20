@@ -1,11 +1,5 @@
 package org.mangui.osmf.plugins
 {
-	import flash.events.ErrorEvent;
-	import flash.events.Event;
-  import flash.net.*;
-	
-	
-	import org.osmf.elements.VideoElement;
 	import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
 	import org.osmf.events.MediaError;
 	import org.osmf.events.MediaErrorEvent;
@@ -66,12 +60,7 @@ package org.mangui.osmf.plugins
             return canHandle(resource);
 		}
 		
-		private function onError(e:ErrorEvent):void
-		{		
-			updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);
-			_loadTrait.dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(0, 'This video is not available.')));
-		}
-	
+
 		override protected function executeLoad(loadTrait:LoadTrait):void
 		{
 			_loadTrait = loadTrait;

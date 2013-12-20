@@ -2,7 +2,6 @@ package org.mangui.HLS.muxing {
 
 
     import org.mangui.HLS.muxing.*;
-    import org.mangui.HLS.utils.*;
     import flash.utils.ByteArray;
 
 

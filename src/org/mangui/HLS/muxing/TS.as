@@ -137,7 +137,7 @@ package org.mangui.HLS.muxing {
 		
 		/** Read ADTS frames from audio PES streams. **/
 		private function _readADTS():void {
-			var frames:Array;
+			var frames:Vector.<AudioFrame>;
 			var overflow:Number = 0;
 			var tag:Tag;
 			var stamp:Number;
@@ -187,8 +187,7 @@ package org.mangui.HLS.muxing {
 		/** Read NALU frames from video PES streams. **/
 		private function _readNALU():void {
 			var overflow:Number;
-			var units:Array;
-			var last:Number;
+			var units:Vector.<VideoFrame>;
 			for(var i:Number=0; i<_videoPES.length; i++) {
 				// Parse the PES headers and NAL units.
 				try { 

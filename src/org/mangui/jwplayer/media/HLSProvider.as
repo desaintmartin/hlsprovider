@@ -169,7 +169,7 @@ package org.mangui.jwplayer.media {
                 _hls.stream.resume();
             } else {
                 setState(PlayerState.BUFFERING);
-                _hls.play(item.file,item.start);
+                _hls.load(item.file);
             }
         };
 

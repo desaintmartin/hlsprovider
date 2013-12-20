@@ -50,6 +50,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getmaxBufferLength",_getmaxBufferLength);
             ExternalInterface.addCallback("getbufferLength",_getbufferLength);
             // Connect calls to JS.
+            ExternalInterface.addCallback("load",_load);
             ExternalInterface.addCallback("play",_play);
             ExternalInterface.addCallback("pause",_pause);
             ExternalInterface.addCallback("resume",_resume);
@@ -86,9 +87,8 @@ package org.mangui.chromeless {
         
         private function _manifestHandler(event:HLSEvent):void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("onManifest");
+                ExternalInterface.call("onManifest",event.levels[0].duration);
             }
-            _seek(0);
         };
         private function _mediaTimeHandler(event:HLSEvent):void {
             if (ExternalInterface.available) {
@@ -118,7 +118,8 @@ package org.mangui.chromeless {
         private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
 
         /** Javascript calls. **/
-        private function _play(url:String,start:Number=0):void { _hls.play(url,start); };
+        private function _load(url:String):void { _hls.load(url); };
+        private function _play():void { _hls.stream.play(); };
         private function _pause():void { _hls.stream.pause(); };
         private function _resume():void { _hls.stream.resume(); };
         private function _seek(position:Number):void { _hls.stream.seek(position); };

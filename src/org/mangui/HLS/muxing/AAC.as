@@ -8,16 +8,58 @@ package org.mangui.HLS.muxing {
 
 
         /** ADTS Syncword (111111111111), ID (MPEG4), layer (00) and protection_absent (1).**/
-        public static const SYNCWORD:uint =  0xFFF1;
+        private static const SYNCWORD:uint =  0xFFF1;
         /** ADTS Syncword with MPEG2 stream ID (used by e.g. Squeeze 7). **/
-        public static const SYNCWORD_2:uint =  0xFFF9;
+        private static const SYNCWORD_2:uint =  0xFFF9;
         /** ADTS Syncword with MPEG2 stream ID (used by e.g. Envivio 4Caster). **/
-        public static const SYNCWORD_3:uint =  0xFFF8;
+        private static const SYNCWORD_3:uint =  0xFFF8;
         /** ADTS/ADIF sample rates index. **/
-        public static const RATES:Array = 
+        private static const RATES:Array = 
             [96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350];
         /** ADIF profile index (ADTS doesn't have Null). **/
-        public static const PROFILES:Array = ['Null','Main','LC','SSR','LTP','SBR'];
+        //private static const PROFILES:Array = ['Null','Main','LC','SSR','LTP','SBR'];
+
+        public function AAC(data:ByteArray,start_time:Number, callback:Function):void {
+        var audioTags:Vector.<Tag> = new Vector.<Tag>();
+        var adif:ByteArray = new ByteArray();
+          /* parse AAC, convert Elementary Streams to TAG */
+          var frames:Vector.<AudioFrame> = AAC.getFrames(data,0);
+          adif = getADIF(data,0);
+          var audioTag:Tag;
+          var stamp:Number;
+          var i:Number = 0;
+          
+          while(i < frames.length)
+          {
+             stamp = Math.round(1000*start_time+i*1024*1000 / frames[i].rate);
+             audioTag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
+             if (i != frames.length-1) {
+              audioTag.push(data,frames[i].start,frames[i].length);
+            } else {
+              audioTag.push(data,frames[i].start,data.length-frames[i].start);
+            }
+            audioTags.push(audioTag);
+            i++;
+          }
+        callback(audioTags,new Vector.<Tag>(),adif, new ByteArray());
+
+    };
+
+
+    public static function probe(data:ByteArray):Boolean {
+      var pos:Number = data.position;
+      data.position+=ID3.length(data);
+      var max_probe_pos:Number = Math.min(data.bytesAvailable,100);
+         do { 
+          // Check for ADTS header
+          var short:uint = data.readUnsignedShort();
+            if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
+                return true;
+              }
+         } while(data.position < max_probe_pos);
+      data.position = pos;
+      return false;
+    }
 
 
         /** Get ADIF header from ADTS stream. **/

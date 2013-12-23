@@ -189,66 +189,21 @@ package org.mangui.HLS.streaming {
       _fragDemux(data,_last_segment_start_time);
     }
 
-    private function _fragDemux(data:ByteArray,start_time:Number):void {
-      //_frag_parsing_start_time = new Date().valueOf();
-      /* probe file type */
-      data.position = 0;
-      var header:uint = data.readUnsignedInt();
-      data.position = 0;
-      var syncword:uint = header >>> 16;
-      var tag:uint = header >>> 8;
-      if(tag == ID3.TAG)
-      {
-         var taglen:Number = ID3.length(data);
-         if(taglen > 0)
-         {
-            data.position = taglen;
-            syncword = data.readUnsignedShort();
-         }
-      }
-      data.position = 0;
-      if (TS.probe(data)== true) {
-        if(data.position !=0) {
-          Log.txt("first TS detected @ offset:"+data.position);
-        }
-        new TS(data,_fragReadHandler);
-      } else {
-        var audioTags:Vector.<Tag> = new Vector.<Tag>();
-        var adif:ByteArray = new ByteArray();
-        if(syncword == AAC.SYNCWORD || syncword == AAC.SYNCWORD_2 || syncword == AAC.SYNCWORD_3) {
-          /* parse AAC, convert Elementary Streams to TAG */
-          var frames:Vector.<AudioFrame> = AAC.getFrames(data,0);
-          adif = AAC.getADIF(data,0);
-          var audioTag:Tag;
-          var stamp:Number;
-          var i:Number = 0;
-          
-          while(i < frames.length)
-          {
-             stamp = Math.round(1000*start_time+i*1024*1000 / frames[i].rate);
-             audioTag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
-             if (i != frames.length-1) {
-              audioTag.push(data,frames[i].start,frames[i].length);
-            } else {
-              audioTag.push(data,frames[i].start,data.length-frames[i].start);
-            }
-            audioTags.push(audioTag);
-            i++;
-          }
-        } else {
-          if (syncword == 0xFFFB) {
-          /* parse MP3, convert Elementary Streams to TAG */
-          _fraghandleIOError("detected MP3 audio elementary streams, not supported yet");
-          } else {
+      private function _fragDemux(data : ByteArray, start_time : Number) : void {
+         // _frag_parsing_start_time = new Date().valueOf();
+         /* probe file type */
+         data.position = 0;
+         if (TS.probe(data) == true) {
+            new TS(data, _fragReadHandler);
+         } else if (AAC.probe(data) == true) {
+            _last_segment_continuity_counter = -1;
+            new AAC(data, start_time, _fragReadHandler);
+         } else {
             // invalid fragment
             _fraghandleIOError("invalid content received");
             return;
-          }
-        }
-        _last_segment_continuity_counter = -1;
-        _fragReadHandler(audioTags,new Vector.<Tag>(),adif, new ByteArray());
+         }
       }
-    }
 
 		/** Kill any active load **/
 		public function clearLoader():void {
@@ -451,6 +406,10 @@ package org.mangui.HLS.streaming {
                   return -1;
                 }
                 frag = _levels[_level].getFragmentfromSeqNum(new_seqnum);
+                if (frag == null) {
+                  Log.txt("error trying to load "  + new_seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
+                  return 1;
+                }
                 // update program date
                 _last_segment_program_date = frag.program_date;
                 // update discontinuity counter

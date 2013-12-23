@@ -286,8 +286,21 @@ package org.mangui.HLS.streaming {
 
     override public function play(...args):void 
     {
-      Log.txt("HLSNetStream:play");
-      seek(0);
+      var _playStart:Number;
+      if (args.length >= 2)
+      {
+        _playStart = Number(args[1]);
+      } else {
+            _playStart = 0;
+         }         
+      Log.txt("HLSNetStream:play("+_playStart+")");
+      seek(_playStart);
+    }
+
+    override public function play2(param : NetStreamPlayOptions):void 
+    {
+      Log.txt("HLSNetStream:play2("+param.start+")");
+      seek(param.start);
     }
 
     /** Pause playback. **/

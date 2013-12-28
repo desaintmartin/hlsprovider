@@ -1,7 +1,7 @@
 FLEXPATH=../../flex_sdk_4.6
 
 echo "Compiling HLSProvider.swc"
-$FLEXPATH/bin/compc -include-sources ../src/org/mangui/HLS -output ../lib/HLSProvider.swc -library-path+=../lib -use-network=false -optimize=true -incremental=true -target-player="10.1" -static-link-runtime-shared-libraries=true -debug=false
+$FLEXPATH/bin/compc -include-sources ../src/org/mangui/HLS -output ../lib/HLSProvider.swc -library-path+=../lib -use-network=false -optimize=true -incremental=true -target-player="10.1" -static-link-runtime-shared-libraries=true
 
 echo "Compiling HLSProvider5.swf"
 $FLEXPATH/bin/mxmlc ../src/org/mangui/jwplayer/media/HLSProvider.as -source-path ../src -o ../test/jwplayer5/HLSProvider5.swf -library-path+=../lib -library-path+=../lib/jw5 -load-externs=../lib/jw5/jwplayer-5-classes.xml  -use-network=false -optimize=true -incremental=true -target-player="10.1" -static-link-runtime-shared-libraries=true

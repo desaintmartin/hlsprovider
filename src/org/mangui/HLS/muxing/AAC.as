@@ -1,6 +1,7 @@
 package org.mangui.HLS.muxing {
 
     import flash.utils.ByteArray;
+    import org.mangui.HLS.utils.Log;
 
 
     /** Constants and utilities for the AAC audio format. **/
@@ -132,7 +133,8 @@ package org.mangui.HLS.muxing {
                        adts.position += frame_length + 1;
                   }
                 } else {
-                    throw new Error("ADTS frame length incorrect.");
+                    Log.txt("ADTS frame length incorrect.");
+                    return frames;
                 }
             }
             // Write raw AAC after last header.

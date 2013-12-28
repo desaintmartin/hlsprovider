@@ -165,9 +165,10 @@ package org.mangui.HLS.muxing {
 					}
 					audioTags.push(tag);
 				}
-				// Correct for Segmenter's "optimize", which cuts frames in half.
-				overflow = frames[frames.length-1].start +
-					frames[frames.length-1].length - _audioPES[i].data.length;
+				if(frames.length) {
+				  // Correct for Segmenter's "optimize", which cuts frames in half.
+				  overflow = frames[frames.length-1].start + frames[frames.length-1].length - _audioPES[i].data.length;
+			  }
 			}
 		};
 		

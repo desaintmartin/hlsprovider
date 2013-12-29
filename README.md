@@ -28,6 +28,7 @@ the following M3U8 tags are supported:
 * #EXT-X-MEDIA-SEQUENCE
 * #EXT-X-TARGETDURATION
 * #EXT-X-DISCONTINUITY
+* #EXT-X-DISCONTINUITY-SEQUENCE
 * #EXT-X-PROGRAM-DATE-TIME (optional, used to synchronize time-stamps and sequence number when switching from one level to another)
 * #EXT-X-KEY (AES-128 method supported only, alpha stage)
 

@@ -25,6 +25,8 @@ package org.mangui.HLS.parsing {
         private static const TARGETDURATION:String = '#EXT-X-TARGETDURATION:';
         /** Tag that indicates discontinuity in the stream */
         private static const DISCONTINUITY:String = '#EXT-X-DISCONTINUITY';
+        /** Tag that indicates discontinuity sequence in the stream */
+        private static const DISCONTINUITY_SEQ:String = '#EXT-X-DISCONTINUITY-SEQUENCE:';
         /** Tag that provides date/time information */
         private static const PROGRAMDATETIME:String = '#EXT-X-PROGRAM-DATE-TIME';
         /** Tag that provides fragment decryption info */
@@ -86,17 +88,28 @@ package org.mangui.HLS.parsing {
             // first look for sequence number
             while (i < lines.length) {
                 var line:String = lines[i++];
-                if(line.indexOf(Manifest.SEQNUM) == 0) {
-                    seqnum = Number(line.substr(Manifest.SEQNUM.length));
+                if(line.indexOf(SEQNUM) == 0) {
+                    seqnum = Number(line.substr(SEQNUM.length));
                     break;
                  }
                }
             i = 0;
+
+            // look for discontinuity sequence number
+            while (i < lines.length) {
+                line = lines[i++];
+                if(line.indexOf(DISCONTINUITY_SEQ) == 0) {
+                    continuity_index = Number(line.substr(DISCONTINUITY_SEQ.length));
+                    break;
+                 }
+               }
+            i = 0;
+
             while (i < lines.length) {
               line = lines[i++];
-              if(line.indexOf(Manifest.KEY) == 0) {
+              if(line.indexOf(KEY) == 0) {
                 //#EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=52",IV=.....
-                var keyLine:String= line.substr(Manifest.KEY.length);
+                var keyLine:String= line.substr(KEY.length);
                 // reset previous values
                 decrypt_url = null;
                 decrypt_iv = null;
@@ -140,7 +153,7 @@ package org.mangui.HLS.parsing {
                       break;
                   }
                 }
-              } else if(line.indexOf(Manifest.PROGRAMDATETIME) == 0) {
+              } else if(line.indexOf(PROGRAMDATETIME) == 0) {
                 //Log.txt(line);
                 var year:Number    = parseInt(line.substr(25,4));
                 var month:Number   = parseInt(line.substr(30,2));
@@ -149,9 +162,9 @@ package org.mangui.HLS.parsing {
                 var minutes:Number = parseInt(line.substr(39,2));
                 var seconds:Number = parseInt(line.substr(42,2));
                 program_date = new Date(year,month,day,hour,minutes,seconds).getTime();
-              } else if(line.indexOf(Manifest.FRAGMENT) == 0) {
+              } else if(line.indexOf(FRAGMENT) == 0) {
                 var comma_position:Number = line.indexOf(',');
-                var duration:Number = (comma_position == -1) ? parseInt(line.substr(Manifest.FRAGMENT.length)) : parseInt(line.substr(Manifest.FRAGMENT.length,comma_position-Manifest.FRAGMENT.length));
+                var duration:Number = (comma_position == -1) ? parseInt(line.substr(FRAGMENT.length)) : parseInt(line.substr(FRAGMENT.length,comma_position-FRAGMENT.length));
                 // Look for next non-blank line, for url
                 do {
                     line = lines[i++];
@@ -176,7 +189,7 @@ package org.mangui.HLS.parsing {
                 fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date,decrypt_url,fragment_decrypt_iv));
                 start_time+=duration;
                 program_date = 0;
-              } else if(line.indexOf(Manifest.DISCONTINUITY) == 0) {
+              } else if(line.indexOf(DISCONTINUITY) == 0) {
                 continuity_index++;
                 Log.txt("discontinuity found at seqnum " + seqnum);
               }
@@ -196,9 +209,9 @@ package org.mangui.HLS.parsing {
             var i:Number = 0;
             while (i<lines.length) {
                 var line:String = lines[i++];
-                if(line.indexOf(Manifest.LEVEL) == 0) {
+                if(line.indexOf(LEVEL) == 0) {
                     var level:Level = new Level();
-                    var params:Array = line.substr(Manifest.LEVEL.length).split(',');
+                    var params:Array = line.substr(LEVEL.length).split(',');
                     for(var j:Number = 0; j<params.length; j++) {
                         var param:String = params[j];
                         if(param.indexOf('BANDWIDTH') > -1) {
@@ -235,7 +248,7 @@ package org.mangui.HLS.parsing {
 
         /** Extract whether the stream is live or ondemand. **/
         public static function hasEndlist(data:String):Boolean {
-            if(data.indexOf(Manifest.ENDLIST) > 0) {
+            if(data.indexOf(ENDLIST) > 0) {
                 return true;
             } else {
                 return false;
@@ -250,8 +263,8 @@ package org.mangui.HLS.parsing {
             // first look for target duration
             while (i < lines.length) {
                 var line:String = lines[i++];
-                if(line.indexOf(Manifest.TARGETDURATION) == 0) {
-                    targetduration = Number(line.substr(Manifest.TARGETDURATION.length));
+                if(line.indexOf(TARGETDURATION) == 0) {
+                    targetduration = Number(line.substr(TARGETDURATION.length));
                     break;
                  }
             }
@@ -284,9 +297,5 @@ package org.mangui.HLS.parsing {
             }
           }
         };
-
-
     }
-
-
 }

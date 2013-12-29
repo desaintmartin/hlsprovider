@@ -101,7 +101,10 @@ package org.mangui.HLS.muxing {
             var frames:Vector.<AudioFrame> = new Vector.<AudioFrame>();
             var frame_start:uint;
             var frame_length:uint;
-            position += ID3.length(adts);
+            var id3_len:Number = ID3.length(adts);
+            if(id3_len >0) {
+              position+=id3_len;
+            }
             // Get raw AAC frames from audio stream.
             adts.position = position;
             var samplerate:uint;

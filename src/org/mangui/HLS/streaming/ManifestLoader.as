@@ -111,9 +111,9 @@ package org.mangui.HLS.streaming {
                 _timeoutID = setTimeout(_loadPlaylist,timeout);
             }
             if (!_canStart) {
-               _canStart = (_levels[index].fragments.length >=2);
+               _canStart = (_levels[index].fragments.length > 0);
                if(_canStart) {
-               	Log.txt("first level filled with at least 2 fragments, notify event");
+               	Log.txt("first level filled with at least 1 fragment, notify event");
                	_hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED,_levels));
                }
             }

@@ -1,44 +1,44 @@
 #HLSprovider
 
-**HLSProvider** is a Flash/AS3 plugin that allows you to play HLS streams using either :
+**HLSProvider** is an open-source HLS Flash plugin/player that allows you to play HLS streams using either :
 
 * a **Chromeless** Flash Player
 * **JWPlayer** Flash free edition version **5.x**
 * **JWPlayer** Flash free edition version **6.x**
 * **OSMF** version **2.0**
  
-HLSProvider could also be used as library to build a custom flash player thanks to its simple API/SDK.
+HLSProvider could also be used as library to build a custom flash player using a simple SDK/API.
 
 **HLSProvider** supports the following features :
 
 * VOD/live/DVR playlists
-* multiple bitrate playlist / adaptive streaming
-* automatic quality switching, using serial segment fetching method described in [http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf](http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf)
-* manual quality switching
-* seeking in VoD and live playlist
+* adaptive streaming (multiple bitrate)
+	* manual or automatic quality switching, using serial segment fetching method from [http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf](http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf)
+* accurate seeking (seek to exact position,not to fragment boundary) in VoD and live
 * buffer progress report
 * error resilience (retry mechanism in case of I/O Errors)
-* accurate seeking (seek to exact position,not to fragment boundary)
-* AES-128 decryption (alpha stage, please provide streams to test it)
+* AES-128 decryption
 
 the following M3U8 tags are supported: 
 
 * #EXTM3U
 * #EXTINF
-* #EXT-X-STREAM-INF (used to support multiple bitrate)
-* #EXT-X-ENDLIST (supports live / event / VOD playlist)
-* #EXT-X-MEDIA-SEQUENCE (value is used for live playlist update)
-* #EXT-X-TARGETDURATION (value is used as live playlist reload interval)
+* #EXT-X-STREAM-INF (multiple bitrate)
+* #EXT-X-ENDLIST (live / VOD playlist)
+* #EXT-X-MEDIA-SEQUENCE
+* #EXT-X-TARGETDURATION
 * #EXT-X-DISCONTINUITY
 * #EXT-X-PROGRAM-DATE-TIME (optional, used to synchronize time-stamps and sequence number when switching from one level to another)
 * #EXT-X-KEY (AES-128 method supported only, alpha stage)
+
+MPEG2-TS and AAC elementary streams are supported.
 
 ##HLSProvider in action :
 
 * http://streambox.fr/HLSProvider/chromeless
 * http://streambox.fr/HLSProvider/jwplayer5
 * http://streambox.fr/HLSProvider/jwplayer6
-* http://streambox.fr/HLSProvider/osmf/GrindPlayer.html (support dynamic switching control)
+* http://streambox.fr/HLSProvider/osmf/GrindPlayer.html
 * http://streambox.fr/HLSProvider/osmf/StrobeMediaPlayback.html
 
 

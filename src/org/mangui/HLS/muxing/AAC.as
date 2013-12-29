@@ -67,9 +67,10 @@ package org.mangui.HLS.muxing {
         public static function getADIF(adts:ByteArray,position:Number=0):ByteArray {
             adts.position = position;
             var short:uint;
-            do {
+            // we need at least 6 bytes, 2 for sync word, 4 for frame length 
+            while((adts.bytesAvailable > 5) && (short != SYNCWORD) && (short != SYNCWORD_2) && (short != SYNCWORD_3)) {
               short = adts.readUnsignedShort();
-            } while(!(short == SYNCWORD) && !(short == SYNCWORD_2) && !(short == SYNCWORD_3) && adts.bytesAvailable > 1);
+            } 
             
             if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
                 var profile:uint = (adts.readByte() & 0xF0) >> 6;
@@ -100,10 +101,7 @@ package org.mangui.HLS.muxing {
             var frames:Vector.<AudioFrame> = new Vector.<AudioFrame>();
             var frame_start:uint;
             var frame_length:uint;
-            var id3_len:Number = ID3.length(adts);
-            if(id3_len >0) {
-              position+=id3_len;
-            }
+            position += ID3.length(adts);
             // Get raw AAC frames from audio stream.
             adts.position = position;
             var samplerate:uint;
@@ -133,8 +131,8 @@ package org.mangui.HLS.muxing {
                        adts.position += frame_length + 1;
                   }
                 } else {
-                    Log.txt("ADTS frame length incorrect.");
-                    return frames;
+                    Log.txt("no ADTS header found, probing...");
+                    adts.position--;
                 }
             }
             // Write raw AAC after last header.
@@ -142,7 +140,7 @@ package org.mangui.HLS.muxing {
                 frames.push(new AudioFrame(frame_start, frame_length, samplerate));
                 // Log.txt("AAC: "+frames.length+" ADTS frames");
             } else {
-                throw new Error("No ADTS headers found in this stream.");
+              Log.txt("No ADTS headers found in this stream.");
             }
             adts.position = position;
             return frames;

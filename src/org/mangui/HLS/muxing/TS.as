@@ -57,18 +57,26 @@ package org.mangui.HLS.muxing {
 		private var _callback:Function;
 		
 		
-		public static function probe(data:ByteArray):Boolean {
-		  var pos:Number = data.position;
-		  var len:Number = Math.min(data.bytesAvailable,188*2);
-		  for(var i:Number = 0; i < len ; i++) {
-		    if(data.readByte() == SYNCBYTE) {
-		      data.position = pos+i;
-		      return true;
-		    }
-		  }
-		  data.position = pos;
-		  return false;
-		}
+    public static function probe(data:ByteArray):Boolean {
+      var pos:Number = data.position;
+      var len:Number = Math.min(data.bytesAvailable,188*2);
+      for(var i:Number = 0; i < len ; i++) {
+        if(data.readByte() == SYNCBYTE) {
+          // ensure that at least two consecutive TS start offset are found
+          if(data.bytesAvailable > 188) {
+            data.position = pos+i+188;
+            if(data.readByte() == SYNCBYTE) {
+              data.position = pos+i;
+              return true;
+            } else {
+              data.position = pos+i+1;
+            }
+          }
+        }
+      }
+      data.position = pos;
+      return false;
+    }
 		
 		/** Transmux the M2TS file into an FLV file. **/
 		public function TS(data:ByteArray,callback:Function) {

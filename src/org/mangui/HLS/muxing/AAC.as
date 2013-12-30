@@ -21,10 +21,10 @@ package org.mangui.HLS.muxing {
         //private static const PROFILES:Array = ['Null','Main','LC','SSR','LTP','SBR'];
 
         public function AAC(data:ByteArray,start_time:Number, callback:Function):void {
-        var audioTags:Vector.<Tag> = new Vector.<Tag>();
-        var adif:ByteArray = new ByteArray();
+          var audioTags:Vector.<Tag> = new Vector.<Tag>();
+          var adif:ByteArray = new ByteArray();
           /* parse AAC, convert Elementary Streams to TAG */
-          var frames:Vector.<AudioFrame> = AAC.getFrames(data,0);
+          var frames:Vector.<AudioFrame> = AAC.getFrames(data,data.position);
           adif = getADIF(data,0);
           var audioTag:Tag;
           var stamp:Number;
@@ -51,17 +51,18 @@ package org.mangui.HLS.muxing {
       var pos:Number = data.position;
       data.position+=ID3.length(data);
       var max_probe_pos:Number = Math.min(data.bytesAvailable,100);
-         do { 
-          // Check for ADTS header
-          var short:uint = data.readUnsignedShort();
-            if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
-                return true;
-              }
-         } while(data.position < max_probe_pos);
+      do {
+        // Check for ADTS header
+        var short:uint = data.readUnsignedShort();
+        if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
+          //rewind to sync word        
+          data.position-=2;
+          return true;
+        }
+      } while(data.position < max_probe_pos);
       data.position = pos;
       return false;
     }
-
 
         /** Get ADIF header from ADTS stream. **/
         public static function getADIF(adts:ByteArray,position:Number=0):ByteArray {
@@ -101,10 +102,7 @@ package org.mangui.HLS.muxing {
             var frames:Vector.<AudioFrame> = new Vector.<AudioFrame>();
             var frame_start:uint;
             var frame_length:uint;
-            var id3_len:Number = ID3.length(adts);
-            if(id3_len >0) {
-              position+=id3_len;
-            }
+            position+= ID3.length(adts);
             // Get raw AAC frames from audio stream.
             adts.position = position;
             var samplerate:uint;

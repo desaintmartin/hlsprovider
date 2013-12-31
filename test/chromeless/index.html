@@ -15,9 +15,17 @@
   ga('send', 'pageview');
 
 </script>
+<style type="text/css">
+a:link {
+  color: blue;
+}
+a:visited {
+  color: purple;
+}
+</style>
 </head>
-<body style="color: Black; background-color: White;" link="Blue" vlink="Purple">
-  
+<body style="color: black; background-color: white;">
+
 <big style="font-weight: bold;"><big><code>HLSProvider - Chromeless HLS Flash player</code></big></big><br>
 
 </p><div style="text-align: left;">
@@ -50,21 +58,33 @@
 </object>
 
 <table border id="mediaInfo" width="640">
-<TR BGCOLOR="#0F0">
-  <TD colspan="2" style="cursor:pointer" onclick=play(current_url)>Play</TD>
-  <TD colspan="2" style="cursor:pointer" onclick=pause()>Pause</TD>
-  <TD colspan="1" style="cursor:pointer" onclick=resume()>Resume</TD>
-  <TD colspan="2" style="cursor:pointer" onclick=stop()>Stop</TD>
-</TR>
-<TR><TD>state</TD><TD>Position</TD><TD>Duration</TD><TD>Buffer Size</TD><TD>Max Buffer Size</TD><TD>Quality Level</TD></TR>
-<TR><TD>IDLE</TD><TD>0</TD><TD>0</TD><TD>0</TD><TD>0</TD><TD>0</TD></TR>
+  <tr>
+    <th colspan="2"><button onclick="play(current_url)">Play</button></th>
+    <th colspan="2"><button onclick="pause()">Pause</button></th>
+    <th colspan="1"><button onclick="resume()">Resume</button></th>
+    <th colspan="2"><button onclick="stop()">Stop</button></th>
+  </tr>
+  <tr><td>state</td><td>Position</td><td>Duration</td><td>Buffer Size</td><td>Max Buffer Size</td><td>Quality Level</td></tr>
+  <tr><td>IDLE</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
 </table>
 
 <table border id="mediaControl">
-<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)>Seek to</TD><TD><INPUT type=text name="seek_position"></TD></TR>
-<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)>Set Volume</TD>	<TD><INPUT type=text name="volume_level">	</TD></TR>
-<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=setlevel(document.getElementById('mediaControl').rows[2].cells[1].children[0].value)>Set Level</TD><TD><INPUT type=text name="quality_level">	</TD></TR>
-<TR><TD BGCOLOR="#0F0" style="cursor:pointer" onclick=setmaxBufferLength(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)>Set max Buffer Size</TD><TD><INPUT type=text name="max_buffer_size"></TD></TR>
+  <tr>
+    <th style="cursor:pointer" onclick=seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)>Seek to</th>
+    <td><input type=text name="seek_position"></td>
+  </tr>
+  <tr>
+    <th style="cursor:pointer" onclick=volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)>Set Volume</th>
+    <td><input type=text name="volume_level"></td>
+  </tr>
+  <tr>
+    <th style="cursor:pointer" onclick=setlevel(document.getElementById('mediaControl').rows[2].cells[1].children[0].value)>Set Level</th>
+    <td><input type=text name="quality_level"></td>
+  </tr>
+  <tr>
+    <th input="cursor:pointer" onclick=setmaxBufferLength(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)>Set max Buffer Size</th>
+    <td><input type=text name="max_buffer_size"></td>
+  </tr>
 </table>
 
 <h3> Test Videos </h3>
@@ -78,7 +98,7 @@ and verified after bugfixing </div>
 Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
 <input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Play</button><br>
 <p>
-  
+
 <script type="text/javascript">
 function userSubmit() {
    load(document.getElementById('userInput').value);
@@ -86,28 +106,30 @@ function userSubmit() {
 </script>
 
 </p><div style="text-align: left;">
-<script type="text/javascript" src="../../../playlists/streams.js"></script>
+<script type="text/javascript" src="../playlists/streams.js"></script>
 <script type="text/javascript">
-  
+
 var current_url;
+var player_id = "mymoviename";
 
 function loadStream(url) {
   current_url = url;
   load(url);
+  document.getElementById('userInput').value = url;
 }
 
 function listStreams(list, container) {
-for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
-entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
-document.getElementById(container).appendChild(entry);
-}
-current_url=list[0].file;
+  for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
+    entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
+    document.getElementById(container).appendChild(entry);
+  }
+  loadStream(list[0].file);
 }
 
 function load(url) {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.load(url);
+    obj.playerLoad(url);
     document.getElementById("videoStatus").innerHTML += "load URL " + url + "<br />";
   document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  0;
   document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  0;
@@ -117,80 +139,83 @@ function load(url) {
   }
 }
 
-function play() {
-  var obj = getFlashMovieObject("mymoviename");
+function play(url) {
+  if (url && current_url != url) {
+    loadStream(url);
+  }
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.play();
+    obj.playerPlay();
     document.getElementById("videoStatus").innerHTML += "start playback<br />";
   }
 }
 
 function pause() {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.pause();
+    obj.playerPause();
     document.getElementById("videoStatus").innerHTML += "pause playback<br />";
   }
 }
 
 function resume() {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.resume();
+    obj.playerResume();
     document.getElementById("videoStatus").innerHTML += "resume playback<br />";
   }
 }
 
 function stop() {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.stop();
+    obj.playerStop();
     document.getElementById("videoStatus").innerHTML += "stopping playback<br />";
   }
 }
 
 function setlevel(level) {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.setLevel(level);
+    obj.playerSetLevel(level);
     document.getElementById("videoStatus").innerHTML += "force level to :" + level + "<br />";
   }
 }
 
 function seek(position) {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.seek(position);
+    obj.playerSeek(position);
     document.getElementById("videoStatus").innerHTML += "seek to :"+ position + "<br />";
   }
 }
 
 function volume(percent) {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.volume(percent);
+    obj.playerVolume(percent);
     document.getElementById("videoStatus").innerHTML += "set volume to :"+ percent + "%<br />";
   }
 }
 
 function getbufferLength() {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
     return obj.getbufferLength();
   }
 }
 
 function getMaxBufferLength() {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
     return obj.getmaxBufferLength();
   }
 }
 
 function setmaxBufferLength(new_len) {
-  var obj = getFlashMovieObject("mymoviename");
+  var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.setmaxBufferLength(new_len);
+    obj.playerSetmaxBufferLength(new_len);
     document.getElementById("videoStatus").innerHTML += "force max buffer len to :" + new_len + "<br />";
   }
 }
@@ -198,6 +223,14 @@ function setmaxBufferLength(new_len) {
 function onHLSReady(message) {
     listStreams(teststreams,"streamlist");
     document.getElementById("videoStatus").innerHTML += "onHLSReady()<br />";
+
+    // warn about old swf file
+    var obj = getFlashMovieObject(player_id);
+    if (obj != null) {
+      if (!obj.getPlayerVersion || obj.getPlayerVersion() < 2) {
+	alert('You are using an old swf player file, or perhaps your browser is using a cached version of the swf file.');
+      }
+    }
 }
 
 function onComplete(message) {

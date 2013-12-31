@@ -49,6 +49,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getType",_getType);
             ExternalInterface.addCallback("getmaxBufferLength",_getmaxBufferLength);
             ExternalInterface.addCallback("getbufferLength",_getbufferLength);
+            ExternalInterface.addCallback("getPlayerVersion",_getPlayerVersion);
             // Connect calls to JS.
             ExternalInterface.addCallback("playerLoad",_load);
             ExternalInterface.addCallback("playerPlay",_play);
@@ -116,6 +117,7 @@ package org.mangui.chromeless {
         private function _getType():String { return _hls.getType(); };
         private function _getbufferLength():Number { return _hls.getBufferLength(); };
         private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
+        private function _getPlayerVersion():Number { return 2; };
 
         /** Javascript calls. **/
         private function _load(url:String):void { _hls.load(url); };

@@ -1,4 +1,4 @@
-package org.mangui.chromeless { 
+package org.mangui.chromeless {
 
 
     import org.mangui.HLS.parsing.Level;
@@ -11,7 +11,7 @@ package org.mangui.chromeless {
     import flash.media.SoundTransform;
     import flash.media.StageVideo;
     import flash.media.StageVideoAvailability;
-    import flash.utils.setTimeout;    
+    import flash.utils.setTimeout;
 
 
     public class ChromelessPlayer extends Sprite {
@@ -49,16 +49,17 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getType",_getType);
             ExternalInterface.addCallback("getmaxBufferLength",_getmaxBufferLength);
             ExternalInterface.addCallback("getbufferLength",_getbufferLength);
+            ExternalInterface.addCallback("getPlayerVersion",_getPlayerVersion);
             // Connect calls to JS.
-            ExternalInterface.addCallback("load",_load);
-            ExternalInterface.addCallback("play",_play);
-            ExternalInterface.addCallback("pause",_pause);
-            ExternalInterface.addCallback("resume",_resume);
-            ExternalInterface.addCallback("seek",_seek);
-            ExternalInterface.addCallback("stop",_stop);
-            ExternalInterface.addCallback("volume",_volume);
-            ExternalInterface.addCallback("setLevel",_setLevel);
-            ExternalInterface.addCallback("setmaxBufferLength",_setmaxBufferLength);
+            ExternalInterface.addCallback("playerLoad",_load);
+            ExternalInterface.addCallback("playerPlay",_play);
+            ExternalInterface.addCallback("playerPause",_pause);
+            ExternalInterface.addCallback("playerResume",_resume);
+            ExternalInterface.addCallback("playerSeek",_seek);
+            ExternalInterface.addCallback("playerStop",_stop);
+            ExternalInterface.addCallback("playerVolume",_volume);
+            ExternalInterface.addCallback("playerSetLevel",_setLevel);
+            ExternalInterface.addCallback("playerSetmaxBufferLength",_setmaxBufferLength);
             setTimeout(_pingJavascript,50);
         };
 
@@ -78,13 +79,13 @@ package org.mangui.chromeless {
                 ExternalInterface.call("onError",event.message);
             }
         };
-        
+
         private function _fragmentHandler(event:HLSEvent):void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("onFragment",event.metrics.bandwidth,event.metrics.level,event.metrics.screenwidth);
             }
         };
-        
+
         private function _manifestHandler(event:HLSEvent):void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("onManifest",event.levels[0].duration);
@@ -116,6 +117,7 @@ package org.mangui.chromeless {
         private function _getType():String { return _hls.getType(); };
         private function _getbufferLength():Number { return _hls.getBufferLength(); };
         private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
+        private function _getPlayerVersion():Number { return 2; };
 
         /** Javascript calls. **/
         private function _load(url:String):void { _hls.load(url); };

@@ -1,24 +1,22 @@
 package org.mangui.HLS.muxing {
    import flash.utils.ByteArray;
+   import org.mangui.HLS.utils.Log;
 
    public class ID3
    {
-      public static const TAG:uint = 0x494433; /*0x49=I; 0x44=D; 0x33=3 */
-      
-      // header :
-      // 0x49 0x44 0x33 0x.. | 0x.. 0x.. | 0x.. 0x.. 0x.. 0x.. |
-      //  I    D    3        |           |  tag length         | tag 
-
-      public static function length(data:ByteArray) : Number {
-         var tag:uint = 0;
+      public var len:Number;
+      public var hasTimestamp:Boolean = false;
+      public var timestamp:Number;
+    
+      /* create ID3 object by parsing ByteArray, looking for ID3 tag length, and timestamp */
+      public function ID3(data:ByteArray) {
          var tagSize:uint = 0;
          try {
             var pos:Number = data.position;
             do {
-              tag = data.readUnsignedInt() >> 8;
-              if(tag == ID3.TAG) {
-                // skip 16 bit
-                data.readUnsignedShort();
+              if(data.readUTFBytes(3) == 'ID3') {
+                // skip 24 bits
+                data.position += 3;
                 // retrieve tag length
                 var byte1:uint = data.readUnsignedByte() & 0x7f;
                 var byte2:uint = data.readUnsignedByte() & 0x7f;
@@ -26,17 +24,53 @@ package org.mangui.HLS.muxing {
                 var byte4:uint = data.readUnsignedByte() & 0x7f;
                 tagSize = (byte1 << 21) + (byte2 << 14) + (byte3 << 7) + byte4;
 
-                data.position += tagSize;
+                var end_pos:Number = data.position + tagSize;
+                // read tag
+                _parseFrame(data);
+                data.position = end_pos;
               } else {
-                data.position-=4;
+                data.position-=3;
                 //Log.txt("ID3 len:"+ (data.position-pos));
-                return (data.position-pos);
+                len = data.position-pos;
+                return;
               }
             } while (true);
          } catch(e:Error)
          {
          }
-         return 0;
+         len = 0;
+         return;
+      };
+      
+      /*  Each Elementary Audio Stream segment MUST signal the timestamp of
+          its first sample with an ID3 PRIV tag [ID3] at the beginning of
+          the segment.  The ID3 PRIV owner identifier MUST be
+          "com.apple.streaming.transportStreamTimestamp".  The ID3 payload
+          MUST be a 33-bit MPEG-2 Program Elementary Stream timestamp
+          expressed as a big-endian eight-octet number, with the upper 31
+          bits set to zero.
+       */
+
+      private function _parseFrame(data:ByteArray):void {
+        if (data.readUTFBytes(4) == "PRIV") {
+          var frame_len:uint = data.readUnsignedInt();
+          // smelling good ! 53 is the size of tag we are looking for          
+          if(frame_len == 53) {
+            // skip flags (2 bytes)
+            data.position+=2;
+            // owner should be "com.apple.streaming.transportStreamTimestamp"
+            if(data.readUTFBytes(44) == 'com.apple.streaming.transportStreamTimestamp') {
+              // smelling even better ! we found the right descriptor
+              // skip null character (string end) + 3 first bytes
+              data.position+=4;
+              // timestamp is 33 bit expressed as a big-endian eight-octet number, with the upper 31 bits set to zero.
+              var pts_33_bit:Number = data.readUnsignedByte() & 0x1;
+              hasTimestamp = true;
+              timestamp = (data.readUnsignedInt()/90) << pts_33_bit;
+              //Log.txt("timestamp found:"+timestamp);
+            }
+          }
+        }
       }
    }
 }

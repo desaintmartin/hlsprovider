@@ -1,18 +1,11 @@
 package org.mangui.HLS.muxing {
 
 
-    import org.mangui.HLS.muxing.*;
     import flash.utils.ByteArray;
 
 
     /** Representation of a Packetized Elementary Stream. **/
     public class PES {
-
-
-        /** Timescale of pts/dts is 90khz. **/
-        public static var TIMESCALE:Number = 90;
-
-
         /** Is it AAC audio or AVC video. **/
         public var audio:Boolean;
         /** The PES data (including headers). **/
@@ -75,8 +68,8 @@ package org.mangui.HLS.muxing {
                  (data.readUnsignedShort() >> 1);
                 length -= 5;
             }
-            pts = Math.round(_pts / PES.TIMESCALE);
-            dts = Math.round(_dts / PES.TIMESCALE);
+            pts = Math.round(_pts / 90);
+            dts = Math.round(_dts / 90);
             // Skip other header data and parse payload.
             data.position += length;
             payload = data.position;

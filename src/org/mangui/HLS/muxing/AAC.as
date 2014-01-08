@@ -20,10 +20,13 @@ package org.mangui.HLS.muxing {
         /** ADIF profile index (ADTS doesn't have Null). **/
         //private static const PROFILES:Array = ['Null','Main','LC','SSR','LTP','SBR'];
 
-        public function AAC(data:ByteArray,start_time:Number, callback:Function):void {
+        public function AAC(data:ByteArray,callback:Function):void {
           var audioTags:Vector.<Tag> = new Vector.<Tag>();
           var adif:ByteArray = new ByteArray();
           /* parse AAC, convert Elementary Streams to TAG */
+          data.position = 0;
+          var id3:ID3 = new ID3(data);
+      	// AAC should contain ID3 tag filled with a timestamp
           var frames:Vector.<AudioFrame> = AAC.getFrames(data,data.position);
           adif = getADIF(data,0);
           var audioTag:Tag;
@@ -32,7 +35,7 @@ package org.mangui.HLS.muxing {
           
           while(i < frames.length)
           {
-             stamp = Math.round(1000*start_time+i*1024*1000 / frames[i].rate);
+             stamp = Math.round(id3.timestamp+i*1024*1000 / frames[i].rate);
              audioTag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
              if (i != frames.length-1) {
               audioTag.push(data,frames[i].start,frames[i].length);
@@ -49,18 +52,21 @@ package org.mangui.HLS.muxing {
 
     public static function probe(data:ByteArray):Boolean {
       var pos:Number = data.position;
-      data.position+=ID3.length(data);
-      var max_probe_pos:Number = Math.min(data.bytesAvailable,100);
-      do {
-        // Check for ADTS header
-        var short:uint = data.readUnsignedShort();
-        if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
-          //rewind to sync word        
-          data.position-=2;
-          return true;
-        }
-      } while(data.position < max_probe_pos);
-      data.position = pos;
+      var id3:ID3 = new ID3(data);
+      // AAC should contain ID3 tag filled with a timestamp
+      if(id3.hasTimestamp) {
+        var max_probe_pos:Number = Math.min(data.bytesAvailable,100);
+        do {
+          // Check for ADTS header
+          var short:uint = data.readUnsignedShort();
+          if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
+            //rewind to sync word        
+            data.position-=2;
+            return true;
+          }
+        } while(data.position < max_probe_pos);
+        data.position = pos;
+      }
       return false;
     }
 
@@ -102,7 +108,8 @@ package org.mangui.HLS.muxing {
             var frames:Vector.<AudioFrame> = new Vector.<AudioFrame>();
             var frame_start:uint;
             var frame_length:uint;
-            position+= ID3.length(adts);
+            var id3:ID3 = new ID3(adts);
+            position+= id3.len;
             // Get raw AAC frames from audio stream.
             adts.position = position;
             var samplerate:uint;

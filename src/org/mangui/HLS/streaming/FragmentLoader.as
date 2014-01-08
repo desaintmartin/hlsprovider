@@ -35,8 +35,6 @@ package org.mangui.HLS.streaming {
         private var _last_segment_decrypt_key_url:String;
         /** IV of  last segment **/
         private var _last_segment_decrypt_iv:ByteArray;
-        /** start time of last segment **/
-        private var _last_segment_start_time:Number;
         /** last updated level. **/
         private var _last_updated_level:Number = 0;
         /** Callback for passing forward the fragment tags. **/
@@ -177,7 +175,7 @@ package org.mangui.HLS.streaming {
             if(_decryptAES != null) {
               _decryptAES.notifycomplete();
             } else {
-              _fragDemux(_fragByteArray,_last_segment_start_time);
+              _fragDemux(_fragByteArray);
             }
           }
         }
@@ -186,18 +184,17 @@ package org.mangui.HLS.streaming {
       var decrypt_duration:Number = (new Date().valueOf() - _frag_decrypt_start_time);
       _decryptAES = null;
       Log.txt("Decrypted     duration/length/speed:"+decrypt_duration+ "/" + data.length + "/" + ((8000*data.length/decrypt_duration)/1024).toFixed(0) + " kb/s");
-      _fragDemux(data,_last_segment_start_time);
+      _fragDemux(data);
     }
 
-      private function _fragDemux(data : ByteArray, start_time : Number) : void {
+      private function _fragDemux(data : ByteArray) : void {
          // _frag_parsing_start_time = new Date().valueOf();
          /* probe file type */
          data.position = 0;
          if (TS.probe(data) == true) {
             new TS(data, _fragReadHandler);
          } else if (AAC.probe(data) == true) {
-            _last_segment_continuity_counter = -1;
-            new AAC(data, start_time, _fragReadHandler);
+            new AAC(data,_fragReadHandler);
          } else {
             // invalid fragment
             _fraghandleIOError("invalid content received");
@@ -319,7 +316,6 @@ package org.mangui.HLS.streaming {
             
             
             _last_segment_decrypt_key_url = frag.decrypt_url;
-            _last_segment_start_time = frag.start_time;
             if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
               _last_segment_decrypt_iv = frag.decrypt_iv;
               // load key
@@ -427,7 +423,6 @@ package org.mangui.HLS.streaming {
             Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             
             _last_segment_decrypt_key_url = frag.decrypt_url;
-            _last_segment_start_time = frag.start_time;
             if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
               _last_segment_decrypt_iv = frag.decrypt_iv;
               // load key

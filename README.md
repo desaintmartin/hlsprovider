@@ -1,13 +1,15 @@
 #HLSprovider
 
-**HLSProvider** is an open-source HLS Flash plugin/player that allows you to play HLS streams using either :
+**HLSProvider** is an open-source HLS Flash plugin/player that allows you to play HLS streams and that is integrated with the following players :
 
-* a **Chromeless** Flash Player
-* **JWPlayer** Flash free edition version **5.x**
-* **JWPlayer** Flash free edition version **6.x**
+* a home made **Chromeless** Flash Player, with js controls.
+* **JWPlayer** free edition version **5.x**
+* **JWPlayer** free edition version **6.x**
 * **OSMF** version **2.0**
+* **http://mediaelementjs.com** (support being added here : https://github.com/mangui/mediaelement)
+* **http://www.videojs.com** (support being added here : https://github.com/mangui/video-js-swf)
  
-HLSProvider could also be used as library to build a custom flash player using a simple SDK/API.
+HLSProvider could be used as library to build a custom flash player using a simple SDK/API.
 
 **HLSProvider** supports the following features :
 
@@ -41,6 +43,8 @@ MPEG2-TS and AAC elementary streams are supported.
 * http://streambox.fr/HLSProvider/jwplayer6
 * http://streambox.fr/HLSProvider/osmf/GrindPlayer.html
 * http://streambox.fr/HLSProvider/osmf/StrobeMediaPlayback.html
+* http://streambox.fr/HLSProvider/mediaelement/demo/mediaelementplayer-hls.html
+* http://streambox.fr/HLSProvider/videojs/flash_demo.html (not functional yet)
 
 
 ##How to use it :

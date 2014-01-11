@@ -1,6 +1,6 @@
 package org.mangui.HLS.muxing {
    import flash.utils.ByteArray;
-   import org.mangui.HLS.utils.Log;
+   //import org.mangui.HLS.utils.Log;
 
    public class ID3
    {

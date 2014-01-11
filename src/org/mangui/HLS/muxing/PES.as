@@ -1,7 +1,9 @@
 package org.mangui.HLS.muxing {
 
 
-    import flash.utils.ByteArray;
+   import flash.utils.ByteArray;
+
+   import org.mangui.HLS.utils.Log;
 
 
     /** Representation of a Packetized Elementary Stream. **/
@@ -48,35 +50,34 @@ package org.mangui.HLS.muxing {
             data.position += 3;
             // Check for PTS
             var flags:uint = (data.readUnsignedByte() & 192) >> 6;
-            if(flags != 2 && flags != 3) {
-                throw new Error("No PTS/DTS in this PES packet");
-            }
             // Check PES header length
             var length:uint = data.readUnsignedByte();
-            // Grab the timestamp from PTS data (spread out over 5 bytes):
-            // XXXX---X -------- -------X -------- -------X
+
+            if(flags == 2 || flags == 3) {
+              // Grab the timestamp from PTS data (spread out over 5 bytes):
+              // XXXX---X -------- -------X -------- -------X
                       
-            var _pts:Number = ((data.readUnsignedByte() & 0x0e) << 29) +
-                ((data.readUnsignedShort() >> 1) << 15) +
-                 (data.readUnsignedShort() >> 1);
-            length -= 5;
-            var _dts:Number = _pts;
-            if(flags == 3) {
+              var _pts:Number = ((data.readUnsignedByte() & 0x0e) << 29) +
+                  ((data.readUnsignedShort() >> 1) << 15) +
+                   (data.readUnsignedShort() >> 1);
+              length -= 5;
+              var _dts:Number = _pts;
+              if(flags == 3) {
                 // Grab the DTS (like PTS)
                 _dts = ((data.readUnsignedByte() & 0x0e) << 29) +
                 ((data.readUnsignedShort() >> 1) << 15) +
                  (data.readUnsignedShort() >> 1);
                 length -= 5;
+              }
+              pts = Math.round(_pts / 90);
+              dts = Math.round(_dts / 90);
+              //Log.txt("pts/dts: " + pts + "/"+ dts);
+            } else {
+              Log.txt("No PTS in PES packet !");
             }
-            pts = Math.round(_pts / 90);
-            dts = Math.round(_dts / 90);
             // Skip other header data and parse payload.
             data.position += length;
             payload = data.position;
         };
-
-
     }
-
-
 }

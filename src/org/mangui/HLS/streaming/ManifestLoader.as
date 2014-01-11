@@ -81,7 +81,11 @@ package org.mangui.HLS.streaming {
             _current_level = 0;
             _canStart = false;
             _reload_playlists_timer = getTimer();
-            _urlloader.load(new URLRequest(_url));
+            /* 
+            add time parameter to force reload URL, there are some issues with browsers reloading from cache even if the URL has been updated ...
+            see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache
+            */
+            _urlloader.load(new URLRequest(_url +"?time=" + new Date().getTime()));
         };
 
 

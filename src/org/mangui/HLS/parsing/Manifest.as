@@ -84,6 +84,7 @@ package org.mangui.HLS.parsing {
             // fragment continuity index incremented at each discontinuity
             var continuity_index:Number = 0;
             var i:Number = 0;
+            var extinf_found:Boolean = false;
 
             // first look for sequence number
             while (i < lines.length) {
@@ -107,6 +108,10 @@ package org.mangui.HLS.parsing {
 
             while (i < lines.length) {
               line = lines[i++];
+              // discard blank line
+              if (line.match(/^\s*$/)) {
+               continue;
+              }
               if(line.indexOf(KEY) == 0) {
                 //#EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=52",IV=.....
                 var keyLine:String= line.substr(KEY.length);
@@ -162,21 +167,23 @@ package org.mangui.HLS.parsing {
                 var minutes:Number = parseInt(line.substr(39,2));
                 var seconds:Number = parseInt(line.substr(42,2));
                 program_date = new Date(year,month,day,hour,minutes,seconds).getTime();
+              } else if(line.indexOf(DISCONTINUITY) == 0) {
+                continuity_index++;
+                Log.txt("discontinuity found at seqnum " + seqnum);
               } else if(line.indexOf(FRAGMENT) == 0) {
                 var comma_position:Number = line.indexOf(',');
                 var duration:Number = (comma_position == -1) ? parseInt(line.substr(FRAGMENT.length)) : parseInt(line.substr(FRAGMENT.length,comma_position-FRAGMENT.length));
-                // Look for next non-blank line, for url
-                do {
-                    line = lines[i++];
-                } while(line.match(/^\s*$/));
+                extinf_found = true;
+              }else if(line.indexOf('#') == 0) {
+               // unsupported tag, skip line
+              } else if(extinf_found == true) {
                 var url:String = _extractURL(line,base);
-                
+                var fragment_decrypt_iv:ByteArray;
+                if(decrypt_url !=null) {
                 /* as per HLS spec : 
                     if IV not defined, then use seqnum as IV :
                     http://tools.ietf.org/html/draft-pantos-http-live-streaming-11#section-5.2 
-                 */
-                var fragment_decrypt_iv:ByteArray;
-                if(decrypt_url !=null) {
+                 */                  
                   if(decrypt_iv != null) {
                     fragment_decrypt_iv = decrypt_iv;
                   } else {
@@ -189,9 +196,7 @@ package org.mangui.HLS.parsing {
                 fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date,decrypt_url,fragment_decrypt_iv));
                 start_time+=duration;
                 program_date = 0;
-              } else if(line.indexOf(DISCONTINUITY) == 0) {
-                continuity_index++;
-                Log.txt("discontinuity found at seqnum " + seqnum);
+                extinf_found = false;
               }
             }
             if(fragments.length == 0) {

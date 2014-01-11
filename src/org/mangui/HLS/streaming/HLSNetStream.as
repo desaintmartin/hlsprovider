@@ -152,9 +152,9 @@ package org.mangui.HLS.streaming {
             } else if (_state == HLSStates.BUFFERING) {
 
                 if(_was_playing)
-                _setState(HLSStates.PLAYING);
+                  _setState(HLSStates.PLAYING);
                 else
-                    pause();
+                  _setState(HLSStates.PAUSED);
             }
         };
 
@@ -238,6 +238,7 @@ package org.mangui.HLS.streaming {
         /** Change playback state. **/
         private function _setState(state:String):void {
             if(state != _state) {
+                //Log.txt('[STATE] from ' + _state + ' to ' + state);
                 _state = state;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.STATE,_state));
             }
@@ -293,6 +294,7 @@ package org.mangui.HLS.streaming {
       } else {
             _playStart = 0;
          }         
+      _was_playing = true;
       Log.txt("HLSNetStream:play("+_playStart+")");
       seek(_playStart);
     }
@@ -300,6 +302,7 @@ package org.mangui.HLS.streaming {
     override public function play2(param : NetStreamPlayOptions):void 
     {
       Log.txt("HLSNetStream:play2("+param.start+")");
+      _was_playing = true;      
       seek(param.start);
     }
 
@@ -309,6 +312,7 @@ package org.mangui.HLS.streaming {
         if(_state == HLSStates.PLAYING || _state == HLSStates.BUFFERING) {
             clearInterval(_interval);
             super.pause();
+            _was_playing = false;
             _setState(HLSStates.PAUSED);
         }
     };
@@ -317,6 +321,7 @@ package org.mangui.HLS.streaming {
     override public function resume():void {
          Log.txt("HLSNetStream:resume");
         if(_state == HLSStates.PAUSED) {
+            _was_playing = true;
             clearInterval(_interval);
             super.resume();
             _interval = setInterval(_checkBuffer,100);
@@ -357,6 +362,9 @@ package org.mangui.HLS.streaming {
                _seek_position_real = Number.NEGATIVE_INFINITY;
                _last_buffer = 0;
                _was_playing = (_state == HLSStates.PLAYING) || (_state == HLSStates.IDLE);
+               if(!_was_playing) {
+                 super.pause();
+               }
                _setState(HLSStates.BUFFERING);
                clearInterval(_interval);
                _interval = setInterval(_checkBuffer,100);

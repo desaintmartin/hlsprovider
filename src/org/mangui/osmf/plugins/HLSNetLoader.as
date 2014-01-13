@@ -11,6 +11,8 @@ package org.mangui.osmf.plugins
 	public class HLSNetLoader extends NetLoader
 	{
 	  private var _hls:HLS;
+    private var _connection:NetConnection;
+    private var _resource:URLResource;
 		public function HLSNetLoader(hls:HLS)
 		{
 			_hls = hls;
@@ -19,6 +21,8 @@ package org.mangui.osmf.plugins
 
 		override protected function createNetStream(connection:NetConnection, resource:URLResource):NetStream
 		{
+      _connection = connection;
+      _resource = resource;
 			return _hls.stream;
 		}
   }

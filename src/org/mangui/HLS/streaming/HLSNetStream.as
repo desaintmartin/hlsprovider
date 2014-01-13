@@ -113,6 +113,23 @@ package org.mangui.HLS.streaming {
                   _fragment_loading = false;
                }
             }
+            
+            // Set playback state
+            if(super.bufferLength < 3) {
+                if(super.bufferLength == 0 && _reached_vod_end ==true) {
+                    clearInterval(_interval);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                    _setState(HLSStates.IDLE);
+                } else if(_state == HLSStates.PLAYING) {
+                    !_reached_vod_end && _setState(HLSStates.BUFFERING);
+                }
+            } else if (_state == HLSStates.BUFFERING) {
+                if(_was_playing)
+                  _setState(HLSStates.PLAYING);
+                else
+                  _setState(HLSStates.PAUSED);
+            }            
+            
             // try to append data into NetStream
             //if we are already in PLAYING state, OR
             if((_state == HLSStates.PLAYING) || 
@@ -139,22 +156,6 @@ package org.mangui.HLS.streaming {
                     }
                     _buffer_current_index++;
                 }
-            }
-            // Set playback state and complete.
-            if(super.bufferLength < 3) {
-                if(super.bufferLength == 0 && _reached_vod_end ==true) {
-                    clearInterval(_interval);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                    _setState(HLSStates.IDLE);
-                } else if(_state == HLSStates.PLAYING) {
-                    !_reached_vod_end && _setState(HLSStates.BUFFERING);
-                }
-            } else if (_state == HLSStates.BUFFERING) {
-
-                if(_was_playing)
-                  _setState(HLSStates.PLAYING);
-                else
-                  _setState(HLSStates.PAUSED);
             }
         };
 
@@ -204,8 +205,51 @@ package org.mangui.HLS.streaming {
             }
             
             tags.sort(_sortTagsbyDTS);
-            for each (var t:Tag in tags) {
-                _filterTag(t,seek_pts) && _buffer.push(t);
+            
+            /* accurate seeking : 
+             * analyze fragment tags and look for last keyframe before seek position.
+             * in schema below, we seek at t=17s, in a fragment starting at t=10s, ending at t=20s
+             * this fragment contains 4 keyframes.
+             *  timestamp of the last keyframe before seek position is @ t=16s
+             * 
+             * 									 seek_pts
+             *  K----------K------------K------*-----K---------|
+             *  10s       13s          16s    17s    18s      20s
+             *  
+             *  
+             */
+            var i:Number = 0;
+            var keyframe_pts:Number;            
+            for(i = 0; i < tags.length ; i++) {
+               // look for last keyframe with pts <= seek_pts
+               if(tags[i].keyframe == true && tags[i].pts <= seek_pts)
+                  keyframe_pts = tags[i].pts;
+            }
+            
+            for(i = 0; i < tags.length ; i++) {
+              if(tags[i].pts >= seek_pts) {
+                _buffer.push(tags[i]);  
+              } else {
+                switch(tags[i].type) {
+                  case Tag.AAC_HEADER:
+                  case Tag.AVC_HEADER:
+                    tags[i].pts = tags[i].dts = seek_pts;
+                    _buffer.push(tags[i]);
+                    break;
+                  case Tag.AVC_NALU:
+             		/* only append video tags starting from last keyframe before seek position to avoid playback artifacts
+             		 *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
+             		 *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
+             		 *  */                  
+                    if(tags[i].pts >= keyframe_pts) {
+                      tags[i].pts = tags[i].dts = seek_pts;
+                      _buffer.push(tags[i]);
+                    }
+                    break;
+                  default:
+                    break;                        
+                }
+              }
             }
             Log.txt("Loaded offset/duration/sliding/discontinuity:"+start_offset.toFixed(2) + "/" +((max_pts-min_pts)/1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2)+ "/" + hasDiscontinuity );
             _fragment_loading = false;
@@ -267,23 +311,6 @@ package org.mangui.HLS.streaming {
                 }
             }
         };
-
-        /**
-         *
-         * Filter tag by type and pts for accurate seeking.
-         *
-         * @param tag
-         * @param pts Destination pts
-         * @return
-         */
-        private function _filterTag(tag:Tag,pts:Number = 0):Boolean{
-            if(tag.type == Tag.AAC_HEADER || tag.type == Tag.AVC_HEADER || tag.type == Tag.AVC_NALU){
-              if(tag.pts < pts)
-               tag.pts = tag.dts = pts;
-              return true;
-            }
-            return tag.pts >= pts;
-        }
 
     override public function play(...args):void 
     {

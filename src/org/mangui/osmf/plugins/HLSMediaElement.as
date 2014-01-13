@@ -6,6 +6,7 @@ package org.mangui.osmf.plugins
  
   import org.mangui.HLS.parsing.Level;
   import org.mangui.HLS.HLS;
+  import org.mangui.HLS.HLSTypes;
  
   import org.osmf.media.LoadableElementBase;
   import org.osmf.media.videoClasses.VideoSurface;
@@ -23,8 +24,9 @@ package org.mangui.osmf.plugins
   import org.osmf.net.DynamicStreamingResource;
   import org.osmf.net.DynamicStreamingItem;
   import org.osmf.net.NetStreamAudioTrait;
+  import org.osmf.net.StreamType;
+  import org.osmf.net.StreamingURLResource;
   
-
   public class HLSMediaElement extends LoadableElementBase
   {
     private var _hls:HLS;
@@ -139,6 +141,15 @@ package org.mangui.osmf.plugins
         var dsTrait:HLSDynamicStreamTrait = new HLSDynamicStreamTrait(_hls);
         addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
       }
+
+      // set live/VOD mode
+      var streamUrlRes:StreamingURLResource = resource as StreamingURLResource;
+      if(_hls.getType() == HLSTypes.LIVE) {
+        streamUrlRes.streamType = StreamType.LIVE;
+      } else {
+        streamUrlRes.streamType = StreamType.DVR;
+      }
+
       //setup drm trait
       //addTrait(MediaTraitType.DRM, drmTrait);
 

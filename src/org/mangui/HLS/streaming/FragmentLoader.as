@@ -408,10 +408,10 @@ package org.mangui.HLS.streaming {
                 }
                 // update program date
                 _last_segment_program_date = frag.program_date;
-                // update discontinuity counter
-                _last_segment_continuity_counter = frag.continuity;
                 // check whether there is a discontinuity between last segment and new segment
-                _hasDiscontinuity = (_levels[_level].getFragmentfromSeqNum(last_seqnum).continuity != _last_segment_continuity_counter);
+                _hasDiscontinuity = (frag.continuity != _last_segment_continuity_counter);
+					 // update discontinuity counter
+                _last_segment_continuity_counter = frag.continuity;
                 log_prefix = "Loading       ";
               }
             }

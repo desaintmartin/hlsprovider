@@ -1,3 +1,4 @@
+#!/bin/bash
 FLEXPATH=../../flex_sdk_4.6
 
 echo "Compiling HLSProvider.swc"

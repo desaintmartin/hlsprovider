@@ -48,6 +48,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getState",_getState);
             ExternalInterface.addCallback("getType",_getType);
             ExternalInterface.addCallback("getmaxBufferLength",_getmaxBufferLength);
+            ExternalInterface.addCallback("getminBufferLength",_getminBufferLength);
             ExternalInterface.addCallback("getbufferLength",_getbufferLength);
             ExternalInterface.addCallback("getPlayerVersion",_getPlayerVersion);
             // Connect calls to JS.
@@ -60,6 +61,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerVolume",_volume);
             ExternalInterface.addCallback("playerSetLevel",_setLevel);
             ExternalInterface.addCallback("playerSetmaxBufferLength",_setmaxBufferLength);
+            ExternalInterface.addCallback("playerSetminBufferLength",_setminBufferLength);
+
             setTimeout(_pingJavascript,50);
         };
 
@@ -117,6 +120,7 @@ package org.mangui.chromeless {
         private function _getType():String { return _hls.getType(); };
         private function _getbufferLength():Number { return _hls.getBufferLength(); };
         private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
+        private function _getminBufferLength():Number { return _hls.minBufferLength; };
         private function _getPlayerVersion():Number { return 2; };
 
         /** Javascript calls. **/
@@ -129,7 +133,7 @@ package org.mangui.chromeless {
         private function _volume(percent:Number):void { _hls.stream.soundTransform = new SoundTransform(percent/100);};
         private function _setLevel(level:Number):void { _hls.setPlaybackQuality(level); if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
         private function _setmaxBufferLength(new_len:Number):void { _hls.maxBufferLength = new_len;};
-
+        private function _setminBufferLength(new_len:Number):void { _hls.minBufferLength = new_len;};
 
         /** Mouse click handler. **/
         private function _clickHandler(event:MouseEvent):void {

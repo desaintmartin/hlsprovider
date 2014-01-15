@@ -106,6 +106,15 @@ import flash.net.NetConnection;
       return _hlsNetStream.bufferLength;
     };
 
+    /** set min Buffer Length  **/
+    public function set minBufferLength(new_len:Number):void {
+      _hlsNetStream.minBufferLength = new_len;
+    }
+
+    /** get min Buffer Length  **/
+    public function get minBufferLength():Number {
+      return _hlsNetStream.minBufferLength;
+    };
 
     /** set max Buffer Length  **/
     public function set maxBufferLength(new_len:Number):void {

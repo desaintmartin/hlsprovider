@@ -45,12 +45,14 @@ package org.mangui.HLS.streaming {
         private var _buffer_current_index:Number;
         /** max buffer length (default 60s)**/
         private var _buffer_max_len:Number=60;
+        /** min buffer length (default 3s)**/
+        private var _buffer_min_len:Number=3;
         /** playlist duration **/
         private var _playlist_duration:Number=0;
 
         private var _was_playing:Boolean = false;
         /** Create the buffer. **/
-        
+
         public function HLSNetStream(connection:NetConnection, hls:HLS, fragmentLoader:FragmentLoader):void {
             super(connection);
             super.inBufferSeek = true;
@@ -64,7 +66,6 @@ package org.mangui.HLS.streaming {
 
         /** Check the bufferlength. **/
         private function _checkBuffer():void {
-          //Log.txt("checkBuffer");
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
@@ -73,7 +74,7 @@ package org.mangui.HLS.streaming {
                var playback_absolute_position:Number = (Math.round(super.time*100 + _seek_position_real*100)/100);
                /** Relative playback position (Absolute Position - playlist sliding, non null for Live Playlist) **/
                var playback_relative_position:Number = playback_absolute_position-_playlist_sliding_duration;
-               
+
                // only send media time event if data has changed
                if(playback_relative_position != _playback_current_position || buffer !=_last_buffer) {
                   if (playback_relative_position <0) {
@@ -85,8 +86,8 @@ package org.mangui.HLS.streaming {
                }
             }
             //Log.txt("checkBuffer,loading,needReload,_reached_vod_end,buffer,maxBufferLength:"+ _fragment_loading + "/" + _fragmentLoader.needReload() + "/" + _reached_vod_end + "/" + buffer + "/" + _buffer_max_len);
-            // Load new tags from fragment, 
-            if(_reached_vod_end == false &&                                         // if we have not reached the end of a VoD playlist AND 
+            // Load new tags from fragment,
+            if(_reached_vod_end == false &&                                         // if we have not reached the end of a VoD playlist AND
                ((_buffer_max_len == 0) || (buffer < _buffer_max_len)) &&            // if the buffer is not full AND
                ((!_fragment_loading) || _fragmentLoader.needReload() == true)) {    // ( if no fragment is being loaded currently OR if a fragment need to be reloaded
                 var loadstatus:Number;
@@ -115,30 +116,37 @@ package org.mangui.HLS.streaming {
             }
             
             // Set playback state
-            if(super.bufferLength < 3) {
-                if(super.bufferLength == 0 && _reached_vod_end ==true) {
-                    clearInterval(_interval);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                    _setState(HLSStates.IDLE);
-                } else if(_state == HLSStates.PLAYING) {
-                    !_reached_vod_end && _setState(HLSStates.BUFFERING);
+            // check low buffer condition
+            if (buffer < _buffer_min_len) {
+              if(_reached_vod_end) {
+                if(buffer ==0) {
+                  // reach end of playlist + playback complete (as buffer is empty).
+                  // stop timer, report event and switch to IDLE mode.
+                  clearInterval(_interval);
+                  _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                  _setState(HLSStates.IDLE);
                 }
+              } else if(_state == HLSStates.PLAYING) {
+                // low buffer condition and play state. switch to buffering state
+                _setState(HLSStates.BUFFERING);
+              }
             } else if (_state == HLSStates.BUFFERING) {
-                if(_was_playing)
-                  _setState(HLSStates.PLAYING);
-                else
-                  _setState(HLSStates.PAUSED);
-            }            
+              // not in low buffer condition anymore, but state is buffering
+              if(_was_playing)
+                _setState(HLSStates.PLAYING);
+              else
+                _setState(HLSStates.PAUSED);
+            }
             
             // try to append data into NetStream
             //if we are already in PLAYING state, OR
-            if((_state == HLSStates.PLAYING) || 
-            //if we are in Buffering State, with enough buffer data (at least 10s) OR at the end of a VOD playlist
-               (_state == HLSStates.BUFFERING && (buffer > 10 || _reached_vod_end)))
+            if((_state == HLSStates.PLAYING) ||
+            //if we are in Buffering State, with enough buffer data (at least _buffer_min_len seconds) OR at the end of a VOD playlist
+               (_state == HLSStates.BUFFERING && (buffer > _buffer_min_len || _reached_vod_end)))
              {
                 //Log.txt("appending data into NetStream");
                 while(_buffer_current_index < _buffer.length && // append data until we drain our _buffer[] array AND
-                      super.bufferLength < 10) { // that NetStream Buffer contains at least 10s
+                      super.bufferLength < 10) { // that NetStream Buffer contains at least 10 seconds
                     try {
                         if(_buffer[_buffer_current_index].type == Tag.DISCONTINUITY) {
                           super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
@@ -150,7 +158,7 @@ package org.mangui.HLS.streaming {
                         _errorHandler(new Error(_buffer[_buffer_current_index].type+": "+ error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_reached_vod_end ==true && _buffer_current_index == _buffer.length - 1) {
+                    if (_reached_vod_end && _buffer_current_index == _buffer.length - 1) {
                         super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         super.appendBytes(new ByteArray());
                     }
@@ -182,7 +190,7 @@ package org.mangui.HLS.streaming {
             // flush already injected Tags and restart index from 0
             _buffer = _buffer.slice(_buffer_current_index);
             _buffer_current_index = 0;
-            
+
             var seek_pts:Number = min_pts + (_seek_position_requested-start_offset)*1000;
             if (_seek_position_real == Number.NEGATIVE_INFINITY) {
                _seek_position_real = _seek_position_requested < start_offset ? start_offset : _seek_position_requested;
@@ -203,7 +211,7 @@ package org.mangui.HLS.streaming {
               // same continuity than previously, update its max PTS
               _buffer_last_pts[_buffer_last_pts.length-1] = max_pts;
             }
-            
+
             tags.sort(_sortTagsbyDTS);
             
             /* accurate seeking : 
@@ -212,7 +220,7 @@ package org.mangui.HLS.streaming {
              * this fragment contains 4 keyframes.
              *  timestamp of the last keyframe before seek position is @ t=16s
              * 
-             * 									 seek_pts
+             *                             seek_pts
              *  K----------K------------K------*-----K---------|
              *  10s       13s          16s    17s    18s      20s
              *  
@@ -237,10 +245,10 @@ package org.mangui.HLS.streaming {
                     _buffer.push(tags[i]);
                     break;
                   case Tag.AVC_NALU:
-             		/* only append video tags starting from last keyframe before seek position to avoid playback artifacts
-             		 *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
-             		 *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
-             		 *  */                  
+                /* only append video tags starting from last keyframe before seek position to avoid playback artifacts
+                 *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
+                 *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
+                 *  */                  
                     if(tags[i].pts >= keyframe_pts) {
                       tags[i].pts = tags[i].dts = seek_pts;
                       _buffer.push(tags[i]);
@@ -256,7 +264,7 @@ package org.mangui.HLS.streaming {
         };
 
 
-        /** return total buffered duration since seek() call 
+        /** return total buffered duration since seek() call
          needed to compute remaining buffer duration
         */
         private function getTotalBufferedDuration():Number {
@@ -270,7 +278,7 @@ package org.mangui.HLS.streaming {
           bufSize/=1000;
           return bufSize;
         }
-      
+
         private function _lastVODFragmentLoadedHandler(event:HLSEvent):void {
           _reached_vod_end = true;
         }
@@ -278,7 +286,7 @@ package org.mangui.HLS.streaming {
         private function _playlistDurationUpdated(event:HLSEvent):void {
           _playlist_duration = event.duration;
         }
-        
+
         /** Change playback state. **/
         private function _setState(state:String):void {
             if(state != _state) {
@@ -362,6 +370,19 @@ package org.mangui.HLS.streaming {
       return getTotalBufferedDuration() - super.time;
     };
 
+    /** get min Buffer Length  **/
+    public function get minBufferLength():Number {
+      return _buffer_min_len;
+    };
+
+    /** set min Buffer Length  **/
+    public function set minBufferLength(new_len:Number):void {
+      if (new_len < 0) {
+        new_len = 0;
+      }
+      _buffer_min_len = new_len;
+    };
+
     /** get max Buffer Length  **/
     public function get maxBufferLength():Number {
       return _buffer_max_len;
@@ -371,6 +392,7 @@ package org.mangui.HLS.streaming {
     public function set maxBufferLength(new_len:Number):void {
       _buffer_max_len = new_len;
     };
+
 
         /** Start playing data in the buffer. **/
         override public function seek(position:Number):void {

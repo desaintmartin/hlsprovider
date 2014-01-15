@@ -264,6 +264,21 @@ function onHLSReady(message) {
     }
 }
 
+function onVideoSize(width, height) {
+  appendLog("onVideoSize(), " + width + "x" + height);
+  var obj = getFlashMovieObject(player_id);
+  if (obj != null) {
+    var ratio = width / height;
+    if (height > 720) {
+      height = 720;
+      width = height * ratio;
+    }
+
+    obj.width = width;
+    obj.height = height;
+  }
+}
+
 function onComplete(message) {
   appendLog("onComplete(), playback completed");
 }

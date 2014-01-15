@@ -3,6 +3,7 @@ package org.mangui.chromeless {
 
     import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
+    import org.mangui.HLS.utils.*;
     import flash.display.*;
     import flash.events.*;
     import flash.external.ExternalInterface;
@@ -21,8 +22,15 @@ package org.mangui.chromeless {
         private var _hls:HLS;
         /** Sheet to place on top of the video. **/
         private var _sheet:Sprite;
+        /** Reference to the stage video element. **/
+        private var _stageVideo:StageVideo = null;
         /** Reference to the video element. **/
-        private var _video:StageVideo;
+        private var _video:Video = null;
+
+        /** Video size **/
+        private var _streamWidth:Number = 0;
+        private var _streamHeight:Number = 0;
+
         /** current media position */
         private var _media_position:Number;
 
@@ -33,6 +41,7 @@ package org.mangui.chromeless {
             stage.align = StageAlign.TOP_LEFT;
             stage.fullScreenSourceRect = new Rectangle(0,0,stage.stageWidth,stage.stageHeight);
             stage.addEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
+            stage.addEventListener(Event.RESIZE, _onStageResize);
             // Draw sheet for catching clicks
             _sheet = new Sprite();
             _sheet.graphics.beginFill(0x000000,0);
@@ -94,10 +103,29 @@ package org.mangui.chromeless {
                 ExternalInterface.call("onManifest",event.levels[0].duration);
             }
         };
+
         private function _mediaTimeHandler(event:HLSEvent):void {
+
             if (ExternalInterface.available) {
                 _media_position = event.mediatime.position;
                 ExternalInterface.call("onPosition",event.mediatime.position,event.mediatime.duration);
+            }
+
+            var videoWidth:Number = _video ? _video.videoWidth : _stageVideo.videoWidth;
+            var videoHeight:Number = _video ? _video.videoHeight : _stageVideo.videoHeight;
+
+            if (videoWidth && videoHeight) {
+              var changed:Boolean = _streamWidth != videoWidth || _streamHeight != videoHeight;
+              if (changed) {
+                _streamHeight = videoHeight;
+                _streamWidth = videoWidth;
+                Log.txt('new video size: ' + videoWidth + 'x' + videoHeight);
+
+                if (ExternalInterface.available) {
+                    ExternalInterface.call("onVideoSize", _streamWidth, _streamHeight);
+                }
+
+              }
             }
         };
         private function _stateHandler(event:HLSEvent):void {
@@ -145,22 +173,10 @@ package org.mangui.chromeless {
             _hls.setWidth(stage.stageWidth);
         };
 
-
         /** StageVideo detector. **/
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
             var available:Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
-            if (available && stage.stageVideos.length > 0) {
-              _video = stage.stageVideos[0];
-              _video.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
-              _hls = new HLS();
-              _video.attachNetStream(_hls.stream);
-            } else {
-              var video:Video = new Video(stage.stageWidth, stage.stageHeight);
-              addChild(video);
-              _hls = new HLS();
-              video.smoothing = true;
-              video.attachNetStream(_hls.stream);
-            }
+            _hls = new HLS();
             _hls.setWidth(stage.stageWidth);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
@@ -169,10 +185,33 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _hls.addEventListener(HLSEvent.QUALITY_SWITCH,_switchHandler);
+
+            if (available && stage.stageVideos.length > 0) {
+              _stageVideo = stage.stageVideos[0];
+              _stageVideo.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
+              _stageVideo.attachNetStream(_hls.stream);
+            } else {
+              _video = new Video(stage.stageWidth, stage.stageHeight);
+              addChild(_video);
+              _video.smoothing = true;
+              _video.attachNetStream(_hls.stream);
+            }
         };
 
+        private function _onStageResize(event:Event):void {
+          _hls.setWidth(stage.stageWidth);
+          stage.fullScreenSourceRect = new Rectangle(0,0,stage.stageWidth,stage.stageHeight);
+          _sheet.width = stage.stageWidth;
+          _sheet.height = stage.stageHeight;
+          // resize video
+          if (_video) {
+            _video.width = stage.stageWidth;
+            _video.height= stage.stageHeight;
+          } else if (_stageVideo) {
+            _stageVideo.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
+          }
+        };
 
     }
-
 
 }

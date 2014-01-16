@@ -44,7 +44,7 @@ MPEG2-TS and AAC elementary streams are supported.
 * http://streambox.fr/HLSProvider/osmf/GrindPlayer.html
 * http://streambox.fr/HLSProvider/osmf/StrobeMediaPlayback.html
 * http://streambox.fr/HLSProvider/mediaelement/demo/mediaelementplayer-hls.html
-* http://streambox.fr/HLSProvider/videojs/flash_demo.html (not functional yet)
+* http://streambox.fr/HLSProvider/videojs/flash_demo.html
 
 
 ##How to use it :
@@ -107,6 +107,13 @@ the following files (from [jwplayer.com](http://www.jwplayer.com)) are governed 
 You can use, modify, copy, and distribute them as long as it's for non-commercial use, you provide attribution, and share under a similar license.
 
 The license summary and full text can be found here: [CC BY-NC-SA 3.0](http://creativecommons.org/licenses/by-nc-sa/3.0/ "CC BY-NC-SA 3.0")
+
+the following file (from [https://github.com/timkurvers/as3-crypto]) is governed by BSD License:
+
+* lib/as3crypto.swc
+
+The license full text of as3crypto lib can be found here: [as3-crypto](https://github.com/timkurvers/as3-crypto/blob/master/LICENSE.md)
+
 
 **All other files (source code and executable) are governed by MPL 2.0** (Mozilla Public License 2.0).
 The license full text can be found here: [MPL 2.0](http://www.mozilla.org/MPL/2.0/)

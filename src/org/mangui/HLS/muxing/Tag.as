@@ -65,7 +65,7 @@ package org.mangui.HLS.muxing {
                   not required or supported) */
                 type == Tag.AVC_HEADER ?  array.writeByte(0x00): array.writeByte(0x01);
                 //CompositionTime (in ms)
-                //Log.txt("pts:"+pts+",dts:"+dts+",delta:"+compositionTime);
+                //Log.info("pts:"+pts+",dts:"+dts+",delta:"+compositionTime);
                 var compositionTime:Number = (pts-dts);
                 array.writeByte(compositionTime >> 16);
                 array.writeByte(compositionTime >> 8);

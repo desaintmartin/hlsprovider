@@ -56,7 +56,7 @@ package org.mangui.HLS.streaming {
             }
             for(i=0 ; i < _nbLevel-1; i++) {
                _switchup[i] = Math.min(maxswitchup,2*_switchup[i]);
-               //Log.txt("_switchup["+i+"]="+_switchup[i]);
+               Log.debug("_switchup["+i+"]="+_switchup[i]);
             }
 
             for(i = 1; i < _nbLevel; i++) {
@@ -65,7 +65,7 @@ package org.mangui.HLS.streaming {
             }
             for(i = 1; i < _nbLevel; i++) {
                _switchdown[i] = Math.max(2*minswitchdwown,_switchdown[i]);
-               //Log.txt("_switchdown["+i+"]="+_switchdown[i]);
+               Log.debug("_switchdown["+i+"]="+_switchdown[i]);
             }
         };
 
@@ -73,7 +73,7 @@ package org.mangui.HLS.streaming {
         public function getnextlevel(current_level:Number, buffer:Number, last_segment_duration:Number, last_fetch_duration:Number, last_bandwidth:Number):Number {
             var level:Number = _lowestNonAudioLevel;
             if(level == -1) {
-                Log.txt("No other quality levels are available");
+                Log.warn("No other quality levels are available");
                 return -1;
             }
             if(last_fetch_duration == 0 || last_segment_duration == 0) {
@@ -88,15 +88,15 @@ package org.mangui.HLS.streaming {
               TBMT is the buffer size we need to ensure (we need at least 2 segments buffered */
             var rsft:Number = Math.max(0,1000*buffer-2*last_fetch_duration);
             var sftm:Number = Math.min(last_segment_duration,rsft)/last_fetch_duration;
-            //Log.txt("rsft:" + rsft);
-            //Log.txt("sftm:" + sftm);
+            //Log.info("rsft:" + rsft);
+            //Log.info("sftm:" + sftm);
 
             /* to switch level up :
               rsft should be greater than switch up condition,
             */
             if((current_level < _nbLevel-1) && (sftm > (1+_switchup[current_level]))) {
-               //Log.txt("sftm:> 1+_switchup[_level]="+(1+_switchup[current_level]));
-               Log.txt("switch to level " + (current_level+1));
+               Log.debug("sftm:> 1+_switchup[_level]="+(1+_switchup[current_level]));
+               Log.debug("switch to level " + (current_level+1));
                   //level up
                   return (current_level+1);
             }
@@ -105,7 +105,7 @@ package org.mangui.HLS.streaming {
               rsft should be smaller than switch up condition,
             */
             else if(current_level > 0 && (sftm < 1-_switchdown[current_level])) {
-                Log.txt("sftm < 1-_switchdown[current_level]="+ _switchdown[current_level]);
+                Log.debug("sftm < 1-_switchdown[current_level]="+ _switchdown[current_level]);
                 var bufferratio:Number = 1000*buffer/last_segment_duration;
                 /* find suitable level matching current bandwidth, starting from current level
                    when switching level down, we also need to consider that we might need to load two fragments.
@@ -114,11 +114,11 @@ package org.mangui.HLS.streaming {
                 */
                 for(var j:Number = current_level-1; j > 0; j--) {
                    if( _bitrate[j] <= last_bandwidth && (bufferratio > 2*_bitrate[j]/last_bandwidth)) {
-                        Log.txt("switch to level " + j);
+                        Log.debug("switch to level " + j);
                         return j;
                     }
                 }
-                Log.txt("switch to level 0");
+                Log.debug("switch to level 0");
                 return 0;
             }
             return current_level;

@@ -39,7 +39,7 @@ package org.mangui.osmf.plugins
           videoSurface.width = newWidth;
           videoSurface.height = newHeight;
         }
-        Log.txt("HLSDisplayObjectTrait:setMediaSize("+newWidth+","+newHeight+")");
+        Log.info("HLSDisplayObjectTrait:setMediaSize("+newWidth+","+newHeight+")");
         setMediaSize(newWidth, newHeight);
       }
       //videoSurface.removeEventListener(Event.ENTER_FRAME, onFrame);

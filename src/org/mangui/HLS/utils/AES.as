@@ -49,6 +49,7 @@ package org.mangui.HLS.utils {
     }
 
     public function decrypt(data:ByteArray,callback:Function):void {
+      Log.debug("AES:async decrypt starting");
       _data = data;
       _data_complete = false;
       _callback = callback;
@@ -60,12 +61,12 @@ package org.mangui.HLS.utils {
     }
 
     public function notifyappend():void {
-      //Log.txt("notify append");
+      //Log.info("notify append");
       _timer.start();
     }
     
     public function notifycomplete():void {
-      //Log.txt("notify complete");
+      //Log.info("notify complete");
       _data_complete = true;
       _timer.start();
     }
@@ -87,18 +88,18 @@ package org.mangui.HLS.utils {
         var pad:IPad;
         if(_data.bytesAvailable <= CHUNK_SIZE) {
           if (_data_complete) {
-            //Log.txt("data complete, last chunk");
+            //Log.info("data complete, last chunk");
             pad = new PKCS5;
             _read_position+=_data.bytesAvailable;
             _data.readBytes(dumpByteArray,0,_data.bytesAvailable);
           } else {
-            //Log.txt("data not complete, stop timer");
+            //Log.info("data not complete, stop timer");
             // data not complete, and available data less than chunk size, stop timer and return
             _timer.stop();
             return;
           }
         } else { // bytesAvailable > CHUNK_SIZE
-          //Log.txt("process chunk");
+          //Log.info("process chunk");
           pad = new NullPad;
           _read_position+=CHUNK_SIZE;
           _data.readBytes(dumpByteArray,0,CHUNK_SIZE);
@@ -108,7 +109,7 @@ package org.mangui.HLS.utils {
           dumpByteArray.readBytes(newIv, 0, 16);
         }
         dumpByteArray.position = 0;
-        //Log.txt("before decrypt");
+        //Log.info("before decrypt");
         _mode = new CBCMode(_key, pad);
         pad.setBlockSize(_mode.getBlockSize());
         if (_mode is IVMode) {
@@ -116,7 +117,7 @@ package org.mangui.HLS.utils {
           ivmode.IV = _iv;
         }
         _mode.decrypt(dumpByteArray);
-        //Log.txt("after decrypt");
+        //Log.info("after decrypt");
         _decrypteddata.writeBytes(dumpByteArray);
         
         // switch IV to new one in case more bytes are available
@@ -124,10 +125,10 @@ package org.mangui.HLS.utils {
           _iv = newIv;
         }
       } else {
-        //Log.txt("no bytes available, stop timer");
+        //Log.info("no bytes available, stop timer");
         _timer.stop();
         if (_data_complete) {
-          //Log.txt("data complete + no bytes available, callback");
+          Log.debug("AES:data+decrypt completed, callback");
           _timer = null;
           // callback
           _decrypteddata.position=0;

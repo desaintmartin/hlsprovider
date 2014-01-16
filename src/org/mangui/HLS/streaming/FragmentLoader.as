@@ -7,6 +7,8 @@ package org.mangui.HLS.streaming {
     import org.mangui.HLS.streaming.*;
     import org.mangui.HLS.utils.*;
 
+    import com.hurlant.util.Hex;
+
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
@@ -102,7 +104,7 @@ package org.mangui.HLS.streaming {
 
         /** key load completed. **/
         private function _keyCompleteHandler(event:Event):void {
-            //Log.txt("key loading completed");
+            Log.debug("key loading completed");
             // Collect key data
             if( _keystreamloader.bytesAvailable > 0 ) {
               var keyData:ByteArray = new ByteArray();
@@ -131,7 +133,7 @@ package org.mangui.HLS.streaming {
                               so if the error still happens after EXT-X-TARGETDURATION, it means that there is something wrong
                               we need to report it.
             */
-            Log.txt("I/O Error while loading fragment:"+message);
+            Log.error("I/O Error while loading fragment:"+message);
             if(_bIOError == false) {
               _bIOError=true;
               _nIOErrorDate = new Date().valueOf();
@@ -165,12 +167,12 @@ package org.mangui.HLS.streaming {
           _fragByteArray.position = _fragWritePosition;
           _fragstreamloader.readBytes(_fragByteArray,_fragWritePosition,0);
           _fragWritePosition=_fragByteArray.length;
-          if(_decryptAES != null) {
+          Log.debug2("bytesLoaded/bytesTotal:"+event.bytesLoaded + "/"+ event.bytesTotal);
+          if(_decryptAES != null) {	  
             _decryptAES.notifyappend();
           }
-          //Log.txt("fragWritePosition/event.bytesLoaded/event.bytesTotal:"+_fragWritePosition+"/"+event.bytesLoaded + "/"+ event.bytesTotal);
           if(event.bytesLoaded == event.bytesTotal) {
-            //Log.txt("loading completed");
+            Log.debug("loading completed");
             _cancel_load = false;
             if(_decryptAES != null) {
               _decryptAES.notifycomplete();
@@ -183,7 +185,7 @@ package org.mangui.HLS.streaming {
     private function _fragDecryptCompleteHandler(data:ByteArray):void {
       var decrypt_duration:Number = (new Date().valueOf() - _frag_decrypt_start_time);
       _decryptAES = null;
-      Log.txt("Decrypted     duration/length/speed:"+decrypt_duration+ "/" + data.length + "/" + ((8000*data.length/decrypt_duration)/1024).toFixed(0) + " kb/s");
+      Log.debug("Decrypted     duration/length/speed:"+decrypt_duration+ "/" + data.length + "/" + ((8000*data.length/decrypt_duration)/1024).toFixed(0) + " kb/s");
       _fragDemux(data);
     }
 
@@ -191,11 +193,22 @@ package org.mangui.HLS.streaming {
          // _frag_parsing_start_time = new Date().valueOf();
          /* probe file type */
          data.position = 0;
+         Log.debug("probe fragment type");
          if (TS.probe(data) == true) {
+            Log.debug("MPEG2-TS found");
             new TS(data, _fragReadHandler);
          } else if (AAC.probe(data) == true) {
+            Log.debug("AAC ES found");
             new AAC(data,_fragReadHandler);
          } else {
+            Log.error("unknown fragment type");
+            if(Log.LOG_DEBUG2_ENABLED) {
+              data.position = 0;
+              var ba:ByteArray = new ByteArray();
+              data.readBytes(ba,0,512);
+              Log.debug2("frag dump(512 bytes)");
+              Log.debug2(Hex.fromArray(ba));
+            }
             // invalid fragment
             _fraghandleIOError("invalid content received");
             return;
@@ -268,7 +281,7 @@ package org.mangui.HLS.streaming {
        }
 
         public function loadfirstfragment(position:Number,callback:Function):Number {
-        //Log.txt("loadfirstfragment(" + position + ")");
+            Log.debug("loadfirstfragment(" + position + ")");
              if(_fragstreamloader.connected) {
                 _fragstreamloader.close();
             }
@@ -281,7 +294,7 @@ package org.mangui.HLS.streaming {
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
             if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {
               // playlist not yet received
-              //Log.txt("loadfirstfragment : playlist not received for level:"+level);
+              Log.debug("loadfirstfragment : playlist not received for level:"+_level);
               return 1;
             }
 
@@ -300,7 +313,7 @@ package org.mangui.HLS.streaming {
                } else {
                   seek_position = Math.min(position,maxLivePosition);
                }
-               Log.txt("loadfirstfragment : requested position:" + position + ",seek position:"+seek_position);
+               Log.debug("loadfirstfragment : requested position:" + position + ",seek position:"+seek_position);
                position = seek_position;
             }
             var seqnum:Number= _levels[_level].getSeqNumBeforePosition(position);
@@ -311,8 +324,7 @@ package org.mangui.HLS.streaming {
             _hasDiscontinuity = true;
             _last_segment_continuity_counter = frag.continuity;
             _last_segment_program_date = frag.program_date;
-            //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
-            Log.txt("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
+            Log.debug("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             
             
             _last_segment_decrypt_key_url = frag.decrypt_url;
@@ -333,7 +345,7 @@ package org.mangui.HLS.streaming {
 
         /** Load a fragment **/
         public function loadnextfragment(buffer:Number,callback:Function):Number {
-          //Log.txt("loadnextfragment(buffer):(" + buffer+ ")");
+          Log.debug("loadnextfragment(buffer):(" + buffer+ ")");
 
             if(_fragstreamloader.connected) {
                 _fragstreamloader.close();
@@ -348,7 +360,7 @@ package org.mangui.HLS.streaming {
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
             if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {
               // playlist not yet received
-              //Log.txt("loadnextfragment : playlist not received for level:"+level);
+              Log.debug("loadnextfragment : playlist not received for level:"+_level);
               return 1;
             }
 
@@ -363,18 +375,18 @@ package org.mangui.HLS.streaming {
               // trust program-time : if program-time defined in previous loaded fragment, try to find seqnum matching program-time in new level.
               if(_last_segment_program_date) {
                 last_seqnum = _levels[_level].getSeqNumFromProgramDate(_last_segment_program_date);
-                //Log.txt("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:"+_level+","+_last_segment_program_date+")="+last_seqnum);
+                Log.debug("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:"+_level+","+_last_segment_program_date+")="+last_seqnum);
               }
               if(last_seqnum == -1) {
                 // if we are here, it means that no program date info is available in the playlist. try to get last seqnum position from PTS + continuity counter
                 last_seqnum = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts,_last_segment_continuity_counter);
-                //Log.txt("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:"+_level+","+_last_segment_start_pts+","+_last_segment_continuity_counter+")="+last_seqnum);
+                Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:"+_level+","+_last_segment_start_pts+","+_last_segment_continuity_counter+")="+last_seqnum);
                 if (last_seqnum == -1) {
                 // if we are here, it means that we have no PTS info for this continuity index, we need to do some PTS probing to find the right seqnum
                   /* we need to perform PTS analysis on fragments from same continuity range
                   get first fragment from playlist matching with criteria and load pts */
                   last_seqnum = _levels[_level].getFirstSeqNumfromContinuity(_last_segment_continuity_counter);
-                  //Log.txt("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:"+_level+","+_last_segment_continuity_counter+")="+last_seqnum);
+                  Log.debug("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:"+_level+","+_last_segment_continuity_counter+")="+last_seqnum);
                   if (last_seqnum == Number.NEGATIVE_INFINITY) {
                     // playlist not yet received
                     return 1;
@@ -403,7 +415,7 @@ package org.mangui.HLS.streaming {
                 }
                 frag = _levels[_level].getFragmentfromSeqNum(new_seqnum);
                 if (frag == null) {
-                  Log.txt("error trying to load "  + new_seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
+                  Log.warn("error trying to load "  + new_seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
                   return 1;
                 }
                 // update program date
@@ -419,8 +431,7 @@ package org.mangui.HLS.streaming {
             _callback = callback;
             _frag_loading_start_time = new Date().valueOf();
             frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
-            //Log.txt("Loading SN "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + ",URL=" + frag.url);
-            Log.txt(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
+            Log.debug(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
             
             _last_segment_decrypt_key_url = frag.decrypt_url;
             if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
@@ -474,13 +485,13 @@ package org.mangui.HLS.streaming {
       /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
       if(_pts_loading_in_progress == true) {
         _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
-        Log.txt("analyzed  PTS " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
+        Log.debug("analyzed  PTS " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
         /* check if fragment loaded for PTS analysis is the next one
             if this is the expected one, then continue and notify Buffer Manager with parsed content
             if not, then exit from here, this will force Buffer Manager to call loadnextfragment() and load the right seqnum
          */
         var next_seqnum:Number = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts,_last_segment_continuity_counter)+1;
-        //Log.txt("seq/next:"+ _seqnum+"/"+ next_seqnum);
+        //Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
         if (next_seqnum != _seqnum) {
           _pts_loading_in_progress = false;
           _pts_just_loaded = true;
@@ -531,7 +542,7 @@ package org.mangui.HLS.streaming {
          _last_segment_duration = max_pts-min_pts;
          _last_segment_start_pts = min_pts;
 
-         Log.txt("Loaded        " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
+         Log.debug("Loaded        " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
          var start_offset:Number = _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED,_levels[_level].duration));
          _callback(tags,min_pts,max_pts,_hasDiscontinuity,start_offset);

@@ -18,7 +18,7 @@ package org.mangui.osmf.plugins
 		}
 
     override protected function playStateChangeStart(newPlayState:String):void {
-      Log.txt("HLSPlayTrait:playStateChangeStart:"+newPlayState);
+      Log.info("HLSPlayTrait:playStateChangeStart:"+newPlayState);
       switch(newPlayState) {
         case PlayState.PLAYING:
           if(streamStarted == false) {

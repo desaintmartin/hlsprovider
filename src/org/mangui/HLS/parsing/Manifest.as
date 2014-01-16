@@ -159,7 +159,7 @@ package org.mangui.HLS.parsing {
                   }
                 }
               } else if(line.indexOf(PROGRAMDATETIME) == 0) {
-                //Log.txt(line);
+                //Log.info(line);
                 var year:Number    = parseInt(line.substr(25,4));
                 var month:Number   = parseInt(line.substr(30,2));
                 var day:Number     = parseInt(line.substr(33,2));
@@ -169,7 +169,6 @@ package org.mangui.HLS.parsing {
                 program_date = new Date(year,month,day,hour,minutes,seconds).getTime();
               } else if(line.indexOf(DISCONTINUITY) == 0) {
                 continuity_index++;
-                Log.txt("discontinuity found at seqnum " + seqnum);
               } else if(line.indexOf(FRAGMENT) == 0) {
                 var comma_position:Number = line.indexOf(',');
                 var duration:Number = (comma_position == -1) ? parseInt(line.substr(FRAGMENT.length)) : parseInt(line.substr(FRAGMENT.length,comma_position-FRAGMENT.length));
@@ -189,7 +188,7 @@ package org.mangui.HLS.parsing {
                   } else {
                     fragment_decrypt_iv = Hex.toArray(zeropad(seqnum.toString(16),32));
                   }
-                  //Log.txt("seqnum/decrypt_url/decrypt_iv:" +seqnum+"/"+decrypt_url+"/"+Hex.fromArray(fragment_decrypt_iv));
+                  Log.debug("sn/key/iv:" +seqnum+"/"+decrypt_url+"/"+Hex.fromArray(fragment_decrypt_iv));
                 } else {
                   fragment_decrypt_iv = null;
                 }
@@ -201,7 +200,7 @@ package org.mangui.HLS.parsing {
             }
             if(fragments.length == 0) {
                 //throw new Error("No TS fragments found in " + base);
-                Log.txt("No TS fragments found in " + base);
+                Log.warn("No TS fragments found in " + base);
             }
             return fragments;
         };

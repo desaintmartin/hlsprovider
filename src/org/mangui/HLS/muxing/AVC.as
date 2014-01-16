@@ -1,6 +1,7 @@
 package org.mangui.HLS.muxing {
 
     import flash.utils.ByteArray;
+    import org.mangui.HLS.utils.Log;
 
 
     /** Constants and utilities for the H264 video format. **/
@@ -24,20 +25,19 @@ package org.mangui.HLS.muxing {
             'Filler Data'                   // 12
         ];
         /** H264 profiles. **/
-/*
+
         private static const PROFILES:Object = {
             '66': 'H264 Baseline',
             '77': 'H264 Main',
             '100': 'H264 High'
         };
-*/
 
         /** Get Avcc header from AVC stream 
         See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
         **/
         public static function getAVCC(nalu:ByteArray,position:Number=0):ByteArray {
             // Find SPS and PPS units in AVC stream.
-            var units:Vector.<VideoFrame> = AVC.getNALU(nalu,position,false);
+            var units:Vector.<VideoFrame> = AVC.getNALU(nalu,position);
             var sps:Number = -1;
             var pps:Number = -1;
             for(var i:Number = 0; i< units.length; i++) {
@@ -73,18 +73,18 @@ package org.mangui.HLS.muxing {
             // data of PPS
             avcc.writeBytes(nalu,units[pps].start,units[pps].length);
             // Grab profile/level
-            //avcc.position = 1;
-            //var prf:Number = avcc.readByte();
-            //avcc.position = 3;
-            //var lvl:Number = avcc.readByte();
-            // Log.txt("AVC: "+PROFILES[prf]+' level '+lvl);            
+            avcc.position = 1;
+            var prf:Number = avcc.readByte();
+            avcc.position = 3;
+            var lvl:Number = avcc.readByte();
+            Log.debug("AVC: "+PROFILES[prf]+' level '+lvl);
             avcc.position = 0;
             return avcc;
         };
 
 
         /** Return an array with NAL delimiter indexes. **/
-        public static function getNALU(nalu:ByteArray,position:Number=0,log:Boolean=true):Vector.<VideoFrame> {
+        public static function getNALU(nalu:ByteArray,position:Number=0):Vector.<VideoFrame> {
             var units:Vector.<VideoFrame> = new Vector.<VideoFrame>();
             var unit_start:Number;
             var unit_type:Number;
@@ -126,15 +126,15 @@ package org.mangui.HLS.muxing {
                units.push(new VideoFrame(unit_header, nalu.length - unit_start, unit_start, unit_type));
             }           
             // Reset position and return results.
-            if(log) {
+            if(Log.LOG_DEBUG2_ENABLED) {
                 if(units.length) {
                     var txt:String = "AVC: ";
                     for(var i:Number=0; i<units.length; i++) { 
                         txt += NAMES[units[i].type] + ", ";
                     }
-                    // Log.txt(txt.substr(0,txt.length-2) + " slices");
+                    Log.debug(txt.substr(0,txt.length-2) + " slices");
                 } else {
-                   // Log.txt('AVC: no NALU slices found');
+                    Log.debug('AVC: no NALU slices found');
                 }
             }
             nalu.position = position;

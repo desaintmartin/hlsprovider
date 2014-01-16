@@ -1,6 +1,6 @@
 package org.mangui.HLS.muxing {
    import flash.utils.ByteArray;
-   //import org.mangui.HLS.utils.Log;
+   import org.mangui.HLS.utils.Log;
 
    public class ID3
    {
@@ -30,7 +30,7 @@ package org.mangui.HLS.muxing {
                 data.position = end_pos;
               } else {
                 data.position-=3;
-                //Log.txt("ID3 len:"+ (data.position-pos));
+                Log.debug2("ID3 len:"+ (data.position-pos));
                 len = data.position-pos;
                 return;
               }
@@ -67,7 +67,7 @@ package org.mangui.HLS.muxing {
               var pts_33_bit:Number = data.readUnsignedByte() & 0x1;
               hasTimestamp = true;
               timestamp = (data.readUnsignedInt()/90) << pts_33_bit;
-              //Log.txt("timestamp found:"+timestamp);
+              Log.debug("ID3 timestamp found:"+timestamp);
             }
           }
         }

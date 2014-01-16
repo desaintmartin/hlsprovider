@@ -40,7 +40,7 @@ package org.mangui.HLS.parsing {
             this.decrypt_iv = decrypt_iv;
             this.start_pts = Number.NEGATIVE_INFINITY;
             this.start_pts_computed = Number.NEGATIVE_INFINITY;
-            //Log.txt("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
+            //Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
         };
     }
 

@@ -209,7 +209,7 @@ package org.mangui.HLS.parsing {
       }
       
       private function updateFragmentPTS(from_index:Number, to_index:Number):void {
-        //Log.txt("updateFragmentPTS from/to:" + from_index + "/" + to_index);
+        //Log.info("updateFragmentPTS from/to:" + from_index + "/" + to_index);
         var frag_from:Fragment = fragments[from_index];
         var frag_to:Fragment = fragments[to_index];
         
@@ -231,7 +231,7 @@ package org.mangui.HLS.parsing {
       }
       
       public function updatePTS(seqnum:Number, min_pts:Number,max_pts:Number) : Number {
-        //Log.txt("updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
+        //Log.info("updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
         // get fragment from seqnum
         var fragIdx:Number = getIndexfromSeqNum(seqnum);
         if (fragIdx!=-1) {
@@ -240,18 +240,18 @@ package org.mangui.HLS.parsing {
           frag.start_pts = min_pts;
           frag.start_pts_computed = min_pts;
           frag.duration = (max_pts-min_pts)/1000;
-          //Log.txt("SN["+fragments[fragIdx].seqnum+"]:pts/duration:" + fragments[fragIdx].start_pts_computed + "/" + fragments[fragIdx].duration);
+          //Log.info("SN["+fragments[fragIdx].seqnum+"]:pts/duration:" + fragments[fragIdx].start_pts_computed + "/" + fragments[fragIdx].duration);
 
           // adjust fragment PTS/duration from seqnum-1 to frag 0
           for(var i:Number = fragIdx ; i > 0 && fragments[i-1].continuity == frag.continuity; i--) {
             updateFragmentPTS(i,i-1);
-            //Log.txt("SN["+fragments[i-1].seqnum+"]:pts/duration:" + fragments[i-1].start_pts_computed + "/" + fragments[i-1].duration);
+            //Log.info("SN["+fragments[i-1].seqnum+"]:pts/duration:" + fragments[i-1].start_pts_computed + "/" + fragments[i-1].duration);
           }
          
          // adjust fragment PTS/duration from seqnum to last frag
           for(i = fragIdx ; i < fragments.length-1 && fragments[i+1].continuity == frag.continuity; i++) {
             updateFragmentPTS(i,i+1);
-            //Log.txt("SN["+fragments[i+1].seqnum+"]:pts/duration:" + fragments[i+1].start_pts_computed + "/" + fragments[i+1].duration);
+            //Log.info("SN["+fragments[i+1].seqnum+"]:pts/duration:" + fragments[i+1].start_pts_computed + "/" + fragments[i+1].duration);
           }
 
           // second, adjust fragment offset
@@ -259,7 +259,7 @@ package org.mangui.HLS.parsing {
            for(i= 0; i < fragments.length; i++) {
               fragments[i].start_time = start_time_offset;
               start_time_offset+=fragments[i].duration;
-              //Log.txt("SN["+fragments[i].seqnum+"]:start_time/continuity/pts/duration:" + fragments[i].start_time + "/" + fragments[i].continuity + "/"+ fragments[i].start_pts_computed + "/" + fragments[i].duration);
+              //Log.info("SN["+fragments[i].seqnum+"]:start_time/continuity/pts/duration:" + fragments[i].start_time + "/" + fragments[i].continuity + "/"+ fragments[i].start_pts_computed + "/" + fragments[i].duration);
            }
            duration = start_time_offset;
            return frag.start_time;

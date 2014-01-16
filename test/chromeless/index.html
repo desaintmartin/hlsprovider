@@ -64,10 +64,12 @@ a:visited {
     <th colspan="2"><button onclick="play()">Play</button></th>
     <th colspan="2"><button onclick="pause()">Pause</button></th>
     <th colspan="2"><button onclick="resume()">Resume</button></th>
-    <th colspan="2"><button onclick="stop()">Stop</button></th>
+    <th colspan="1"><button onclick="stop()">Stop</button></th>
+    <th colspan="1"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></th>
+    <th colspan="1"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></th>
   </tr>
-  <tr><td>state</td><td>Position</td><td>Duration</td><td>Min Buffer Size</td><td>Buffer Size</td><td>Max Buffer Size</td><td>Quality Level</td></tr>
-  <tr><td>IDLE</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+  <tr><td>state</td><td>Position</td><td>Duration</td><td>Min Buffer Size</td><td>Buffer Size</td><td>Max Buffer Size</td><td>Quality Level</td><td>Log debug</td><td>Log debug2</td></tr>
+  <tr><td>IDLE</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>false</td><td>false</td></tr>
 </table>
 
 <table border id="mediaControl">
@@ -251,6 +253,29 @@ function setmaxBufferLength(new_len) {
   }
 }
 
+function toggleDebugLogs() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getLogDebug();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  state;
+    obj.playerSetLogDebug(state);
+    appendLog("toggle debug logs to:" + state);
+  }
+}
+
+function toggleDebug2Logs() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getLogDebug2();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[8].innerHTML =  state;
+    obj.playerSetLogDebug2(state);
+    appendLog("toggle debug2 logs to:" + state);
+  }
+}
+
+
 function onHLSReady(message) {
     listStreams(teststreams,"streamlist");
     appendLog("onHLSReady()");
@@ -292,7 +317,6 @@ function onFragment(bandwidth,level,width) {
 function onManifest(duration) {
   appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
   document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
-  play();
 }
 
 function onPosition(position,duration) {

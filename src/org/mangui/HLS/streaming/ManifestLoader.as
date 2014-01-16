@@ -54,7 +54,7 @@ package org.mangui.HLS.streaming {
                var error:SecurityErrorEvent = event as SecurityErrorEvent;
                 txt = "Cannot load M3U8: crossdomain access denied:" + error.text;
             } else if (event is IOErrorEvent) {
-                Log.txt("I/O Error while trying to load Playlist, retry in 2s");
+                Log.warn("I/O Error while trying to load Playlist, retry in 2s");
                 _timeoutID = setTimeout(_loadPlaylist,2000);
             } else {
                txt = "Cannot load M3U8: "+event.text;
@@ -98,6 +98,7 @@ package org.mangui.HLS.streaming {
         /** parse a playlist **/
         private function _parsePlaylist(string:String,url:String,index:Number):void {
             if(string != null && string.length != 0) {
+               Log.debug("level "+ index + " playlist:\n" + string);
                var frags:Vector.<Fragment> = Manifest.getFragments(string,url);
                // set fragment and update sequence number range
                _levels[index].updateFragments(frags);
@@ -111,13 +112,13 @@ package org.mangui.HLS.streaming {
             } else {
                 _type = HLSTypes.LIVE;
                 var timeout:Number = Math.max(100,_reload_playlists_timer + 1000*_levels[index].averageduration - getTimer());
-                Log.txt("Level " + index + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
+                Log.debug("Level " + index + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
                 _timeoutID = setTimeout(_loadPlaylist,timeout);
             }
             if (!_canStart) {
                _canStart = (_levels[index].fragments.length > 0);
                if(_canStart) {
-               	Log.txt("first level filled with at least 1 fragment, notify event");
+               	Log.debug("first level filled with at least 1 fragment, notify event");
                	_hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED,_levels));
                }
             }
@@ -134,9 +135,10 @@ package org.mangui.HLS.streaming {
                     var level:Level = new Level();
                     level.url = _url;
                     _levels.push(level);
-                    Log.txt("1 Level Playlist, load it");
+                    Log.debug("1 Level Playlist, load it");
                     _parsePlaylist(string,_url,0);
                 } else if(string.indexOf(Manifest.LEVEL) > 0) {
+                  Log.debug("adaptive playlist:\n" + string);
                   //adaptative playlist, extract levels from playlist, get them and parse them
                   _levels = Manifest.extractLevels(string,_url);
                   _loadPlaylist();
@@ -159,7 +161,7 @@ package org.mangui.HLS.streaming {
         public function _levelSwitchHandler(event:HLSEvent):void {
             _current_level = event.level;
             if(_load_in_progress == false && (_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0)) {
-              Log.txt("switch to level "+ _current_level + ", load Playlist");
+              Log.debug("switch to level "+ _current_level + ", load Playlist");
               clearTimeout(_timeoutID);
               _timeoutID = setTimeout(_loadPlaylist,0);
             }

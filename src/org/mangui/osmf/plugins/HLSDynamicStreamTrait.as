@@ -24,14 +24,14 @@ package org.mangui.osmf.plugins
         throw new RangeError(OSMFStrings.getString(OSMFStrings.STREAMSWITCH_INVALID_INDEX));
       }
       var bitrate:Number = _hls.getLevels()[index].bitrate/1024;
-      //Log.txt("HLSDynamicStreamTrait:getBitrateForIndex("+index+")="+bitrate);
+      Log.debug("HLSDynamicStreamTrait:getBitrateForIndex("+index+")="+bitrate);
       return bitrate;
     }
 
 
     override public function switchTo(index:int):void
     {
-      Log.txt("HLSDynamicStreamTrait:switchTo("+index+")/max:"+maxAllowedIndex);
+      Log.debug("HLSDynamicStreamTrait:switchTo("+index+")/max:"+maxAllowedIndex);
       if (index < 0 || index > maxAllowedIndex)
       {
         throw new RangeError(OSMFStrings.getString(OSMFStrings.STREAMSWITCH_INVALID_INDEX));
@@ -45,7 +45,7 @@ package org.mangui.osmf.plugins
 
     override protected function autoSwitchChangeStart(value:Boolean):void
     {
-      Log.txt("HLSDynamicStreamTrait:autoSwitchChangeStart:"+value);
+      Log.debug("HLSDynamicStreamTrait:autoSwitchChangeStart:"+value);
       if(value == true) {
         _hls.setPlaybackQuality(-1);
       }
@@ -53,7 +53,7 @@ package org.mangui.osmf.plugins
 
     override protected function switchingChangeStart(newSwitching:Boolean, index:int):void
     {
-      Log.txt("HLSDynamicStreamTrait:switchingChangeStart(newSwitching/index):"+newSwitching + "/" + index);
+      Log.debug("HLSDynamicStreamTrait:switchingChangeStart(newSwitching/index):"+newSwitching + "/" + index);
       if(newSwitching) {
         _hls.setPlaybackQuality(index);
       }
@@ -62,7 +62,7 @@ package org.mangui.osmf.plugins
     /** Update playback position/duration **/
     private function _qualitySwitchHandler(event:HLSEvent):void {
       var newLevel:Number = event.level;
-      Log.txt("HLSDynamicStreamTrait:_qualitySwitchHandler:"+newLevel);
+      Log.debug("HLSDynamicStreamTrait:_qualitySwitchHandler:"+newLevel);
       setCurrentIndex(newLevel);
       setSwitching(false, newLevel);
     };

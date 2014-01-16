@@ -6,6 +6,7 @@ package org.mangui.osmf.plugins
  
   import org.mangui.HLS.parsing.Level;
   import org.mangui.HLS.HLS;
+  import org.mangui.HLS.utils.Log;  
   import org.mangui.HLS.HLSTypes;
  
   import org.osmf.media.LoadableElementBase;
@@ -97,28 +98,28 @@ package org.mangui.osmf.plugins
       videoSurface.width = videoSurface.height = 0;
       videoSurface.attachNetStream(_stream);
       
-      //Log.txt("HLSMediaElement:audioTrait");
+      Log.debug("HLSMediaElement:audioTrait");
       var audioTrait:AudioTrait = new NetStreamAudioTrait(_stream);
       addTrait(MediaTraitType.AUDIO, audioTrait);
 
-      //Log.txt("HLSMediaElement:BufferTrait");
+      Log.debug("HLSMediaElement:BufferTrait");
       var bufferTrait:BufferTrait = new HLSBufferTrait(_hls);
       addTrait(MediaTraitType.BUFFER, bufferTrait);
 
-      //Log.txt("HLSMediaElement:TimeTrait");
+      Log.debug("HLSMediaElement:TimeTrait");
       var timeTrait:TimeTrait = new HLSTimeTrait(_hls,_defaultduration);
       addTrait(MediaTraitType.TIME, timeTrait);
 
-      //Log.txt("HLSMediaElement:DisplayObjectTrait");
+      Log.debug("HLSMediaElement:DisplayObjectTrait");
       var displayObjectTrait:HLSDisplayObjectTrait = new HLSDisplayObjectTrait(videoSurface, NaN, NaN);
       addTrait(MediaTraitType.DISPLAY_OBJECT, displayObjectTrait);
 
-      //Log.txt("HLSMediaElement:PlayTrait");
+      Log.debug("HLSMediaElement:PlayTrait");
       var playTrait:PlayTrait = new HLSPlayTrait(_hls);
       addTrait(MediaTraitType.PLAY, playTrait);
 
       // setup seek trait
-      //Log.txt("HLSMediaElement:SeekTrait");
+      Log.debug("HLSMediaElement:SeekTrait");
       var seekTrait:SeekTrait = new HLSSeekTrait(_hls, timeTrait);
       addTrait(MediaTraitType.SEEK, seekTrait);
 

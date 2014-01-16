@@ -59,6 +59,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getmaxBufferLength",_getmaxBufferLength);
             ExternalInterface.addCallback("getminBufferLength",_getminBufferLength);
             ExternalInterface.addCallback("getbufferLength",_getbufferLength);
+            ExternalInterface.addCallback("getLogDebug",_getLogDebug);
+            ExternalInterface.addCallback("getLogDebug2",_getLogDebug2);
             ExternalInterface.addCallback("getPlayerVersion",_getPlayerVersion);
             // Connect calls to JS.
             ExternalInterface.addCallback("playerLoad",_load);
@@ -71,6 +73,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetLevel",_setLevel);
             ExternalInterface.addCallback("playerSetmaxBufferLength",_setmaxBufferLength);
             ExternalInterface.addCallback("playerSetminBufferLength",_setminBufferLength);
+            ExternalInterface.addCallback("playerSetLogDebug",_setLogDebug);
+            ExternalInterface.addCallback("playerSetLogDebug2",_setLogDebug2);
 
             setTimeout(_pingJavascript,50);
         };
@@ -119,12 +123,9 @@ package org.mangui.chromeless {
               if (changed) {
                 _streamHeight = videoHeight;
                 _streamWidth = videoWidth;
-                Log.txt('new video size: ' + videoWidth + 'x' + videoHeight);
-
                 if (ExternalInterface.available) {
                     ExternalInterface.call("onVideoSize", _streamWidth, _streamHeight);
                 }
-
               }
             }
         };
@@ -149,6 +150,8 @@ package org.mangui.chromeless {
         private function _getbufferLength():Number { return _hls.getBufferLength(); };
         private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
         private function _getminBufferLength():Number { return _hls.minBufferLength; };
+        private function _getLogDebug():Boolean { return Log.LOG_DEBUG_ENABLED; };
+        private function _getLogDebug2():Boolean { return Log.LOG_DEBUG2_ENABLED; };
         private function _getPlayerVersion():Number { return 2; };
 
         /** Javascript calls. **/
@@ -162,6 +165,8 @@ package org.mangui.chromeless {
         private function _setLevel(level:Number):void { _hls.setPlaybackQuality(level); if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
         private function _setmaxBufferLength(new_len:Number):void { _hls.maxBufferLength = new_len;};
         private function _setminBufferLength(new_len:Number):void { _hls.minBufferLength = new_len;};
+        private function _setLogDebug(debug:Boolean):void{ Log.LOG_DEBUG_ENABLED=debug; };
+        private function _setLogDebug2(debug2:Boolean):void{ Log.LOG_DEBUG2_ENABLED=debug2; };
 
         /** Mouse click handler. **/
         private function _clickHandler(event:MouseEvent):void {

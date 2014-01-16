@@ -33,7 +33,7 @@ import flash.net.NetConnection;
         /** Forward internal errors. **/
         override public function dispatchEvent(event:Event):Boolean {
             if(event.type == HLSEvent.ERROR) {
-                Log.txt(HLSEvent(event).message);
+                Log.error(HLSEvent(event).message);
                 _hlsNetStream.close();
             }
             return super.dispatchEvent(event);

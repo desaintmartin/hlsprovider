@@ -85,7 +85,7 @@ package org.mangui.HLS.streaming {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,new HLSMediatime(_playback_current_position, _playlist_duration, buffer)));
                }
             }
-            //Log.txt("checkBuffer,loading,needReload,_reached_vod_end,buffer,maxBufferLength:"+ _fragment_loading + "/" + _fragmentLoader.needReload() + "/" + _reached_vod_end + "/" + buffer + "/" + _buffer_max_len);
+            //Log.info("checkBuffer,loading,needReload,_reached_vod_end,buffer,maxBufferLength:"+ _fragment_loading + "/" + _fragmentLoader.needReload() + "/" + _reached_vod_end + "/" + buffer + "/" + _buffer_max_len);
             // Load new tags from fragment,
             if(_reached_vod_end == false &&                                         // if we have not reached the end of a VoD playlist AND
                ((_buffer_max_len == 0) || (buffer < _buffer_max_len)) &&            // if the buffer is not full AND
@@ -106,7 +106,7 @@ package org.mangui.HLS.streaming {
                      - if bandwidth available is lower than lowest quality needed bandwidth
                      - after long pause
                      seek to offset 0 to force a restart of the playback session  */
-                  Log.txt("long pause on live stream or bad network quality");
+                  Log.warn("long pause on live stream or bad network quality");
                   seek(0);
                   return;
                } else if(loadstatus > 0) {
@@ -144,7 +144,7 @@ package org.mangui.HLS.streaming {
             //if we are in Buffering State, with enough buffer data (at least _buffer_min_len seconds) OR at the end of a VOD playlist
                (_state == HLSStates.BUFFERING && (buffer > _buffer_min_len || _reached_vod_end)))
              {
-                //Log.txt("appending data into NetStream");
+                //Log.debug("appending data into NetStream");
                 while(_buffer_current_index < _buffer.length && // append data until we drain our _buffer[] array AND
                       super.bufferLength < 10) { // that NetStream Buffer contains at least 10 seconds
                     try {
@@ -259,7 +259,7 @@ package org.mangui.HLS.streaming {
                 }
               }
             }
-            Log.txt("Loaded offset/duration/sliding/discontinuity:"+start_offset.toFixed(2) + "/" +((max_pts-min_pts)/1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2)+ "/" + hasDiscontinuity );
+            Log.debug("Loaded offset/duration/sliding/discontinuity:"+start_offset.toFixed(2) + "/" +((max_pts-min_pts)/1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2)+ "/" + hasDiscontinuity );
             _fragment_loading = false;
         };
 
@@ -290,7 +290,7 @@ package org.mangui.HLS.streaming {
         /** Change playback state. **/
         private function _setState(state:String):void {
             if(state != _state) {
-                //Log.txt('[STATE] from ' + _state + ' to ' + state);
+                Log.debug('[STATE] from ' + _state + ' to ' + state);
                 _state = state;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.STATE,_state));
             }
@@ -330,20 +330,20 @@ package org.mangui.HLS.streaming {
             _playStart = 0;
          }         
       _was_playing = true;
-      Log.txt("HLSNetStream:play("+_playStart+")");
+      Log.info("HLSNetStream:play("+_playStart+")");
       seek(_playStart);
     }
 
     override public function play2(param : NetStreamPlayOptions):void 
     {
-      Log.txt("HLSNetStream:play2("+param.start+")");
+      Log.info("HLSNetStream:play2("+param.start+")");
       _was_playing = true;      
       seek(param.start);
     }
 
     /** Pause playback. **/
     override public function pause():void {
-        Log.txt("HLSNetStream:pause");
+        Log.info("HLSNetStream:pause");
         if(_state == HLSStates.PLAYING || _state == HLSStates.BUFFERING) {
             clearInterval(_interval);
             super.pause();
@@ -354,7 +354,7 @@ package org.mangui.HLS.streaming {
     
     /** Resume playback. **/
     override public function resume():void {
-         Log.txt("HLSNetStream:resume");
+         Log.info("HLSNetStream:resume");
         if(_state == HLSStates.PAUSED) {
             _was_playing = true;
             clearInterval(_interval);
@@ -396,7 +396,7 @@ package org.mangui.HLS.streaming {
 
         /** Start playing data in the buffer. **/
         override public function seek(position:Number):void {
-               Log.txt("HLSNetStream:seek("+position+")");
+               Log.info("HLSNetStream:seek("+position+")");
                _buffer = new Vector.<Tag>();
                _fragmentLoader.clearLoader();
                _fragment_loading = false;
@@ -422,7 +422,7 @@ package org.mangui.HLS.streaming {
 
         /** Stop playback. **/
         override public function close():void {
-            Log.txt("HLSNetStream:close");
+            Log.info("HLSNetStream:close");
             super.close();
             _fragment_loading = false;
             clearInterval(_interval);

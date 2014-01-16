@@ -71,9 +71,9 @@ package org.mangui.HLS.muxing {
               }
               pts = Math.round(_pts / 90);
               dts = Math.round(_dts / 90);
-              //Log.txt("pts/dts: " + pts + "/"+ dts);
+              //Log.info("pts/dts: " + pts + "/"+ dts);
             } else {
-              Log.txt("No PTS in PES packet !");
+              Log.warn("No PTS in PES packet !");
             }
             // Skip other header data and parse payload.
             data.position += length;

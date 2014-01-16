@@ -18,9 +18,10 @@ package org.mangui.HLS.muxing {
         private static const RATES:Array = 
             [96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350];
         /** ADIF profile index (ADTS doesn't have Null). **/
-        //private static const PROFILES:Array = ['Null','Main','LC','SSR','LTP','SBR'];
+        private static const PROFILES:Array = ['Null','Main','LC','SSR','LTP','SBR'];
 
         public function AAC(data:ByteArray,callback:Function):void {
+          Log.debug("AAC: extracting AAC tags");
           var audioTags:Vector.<Tag> = new Vector.<Tag>();
           var adif:ByteArray = new ByteArray();
           /* parse AAC, convert Elementary Streams to TAG */
@@ -45,6 +46,7 @@ package org.mangui.HLS.muxing {
             audioTags.push(audioTag);
             i++;
           }
+        Log.debug("AAC: all tags extracted, callback demux");
         callback(audioTags,new Vector.<Tag>(),adif, new ByteArray());
 
     };
@@ -95,7 +97,9 @@ package org.mangui.HLS.muxing {
             var adif:ByteArray = new ByteArray();
             adif.writeByte((profile << 3) + (srate >> 1));
             adif.writeByte((srate << 7) + (channels << 3));
-            // Log.txt('AAC: '+PROFILES[profile] + ', '+RATES[srate]+' Hz '+ channels +' channel(s)');
+            if(Log.LOG_DEBUG_ENABLED) {
+              Log.debug('AAC: '+PROFILES[profile] + ', '+RATES[srate]+' Hz '+ channels +' channel(s)');
+            }
             // Reset position and return adif.
             adts.position -= 4;
             adif.position = 0;
@@ -139,16 +143,16 @@ package org.mangui.HLS.muxing {
                        adts.position += frame_length + 1;
                   }
                 } else {
-                    Log.txt("no ADTS header found, probing...");
+                    Log.debug("no ADTS header found, probing...");
                     adts.position--;
                 }
             }
             // Write raw AAC after last header.
             if(frame_start) {
                 frames.push(new AudioFrame(frame_start, frame_length, samplerate));
-                // Log.txt("AAC: "+frames.length+" ADTS frames");
+                Log.debug2("AAC: "+frames.length+" ADTS frames");
             } else {
-              Log.txt("No ADTS headers found in this stream.");
+              Log.warn("No ADTS headers found in this stream.");
             }
             adts.position = position;
             return frames;

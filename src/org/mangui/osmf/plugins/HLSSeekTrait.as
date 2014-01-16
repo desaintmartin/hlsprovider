@@ -34,7 +34,7 @@ package org.mangui.osmf.plugins
    /** state changed handler **/
     private function _stateChangedHandler(event:HLSEvent):void {
       if (seeking && event.state != HLSStates.BUFFERING) {
-        Log.txt("HLSSeekTrait:setSeeking(false);");
+        Log.debug("HLSSeekTrait:setSeeking(false);");
         setSeeking(false,timeTrait.currentTime);
       }
     }

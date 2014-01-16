@@ -26,7 +26,7 @@ package org.mangui.osmf.plugins
 		
 		override public function get currentTime():Number
 		{
-      //Log.txt("HLSTimeTrait:get currentTime:" + _position);
+      //Log.info("HLSTimeTrait:get currentTime:" + _position);
 			return _position;
 		}
 		

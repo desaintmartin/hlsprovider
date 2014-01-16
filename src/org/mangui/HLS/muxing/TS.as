@@ -113,14 +113,22 @@ package org.mangui.HLS.muxing {
 			if (_videoPES.length == 0 && _audioPES.length == 0 ) {
 				throw new Error("No AAC audio and no AVC video stream found.");
 			}
+			Log.debug("TS: all TS packets parsed, extracting tags");
 			// Extract the ADTS or MP3 audio frames (transform PES packets into audio tags)
 			if(_aacId > 0) {
+				Log.debug("TS: extracting AAC tags");
 				_readADTS();
 			} else {
+			  Log.debug("TS: extracting MP3 tags");
 				_readMPEG();
 			}
+			Log.debug("TS: " + audioTags.length + " audio tags extracted");
+			
 			// Extract the NALU video frames (transform PES packets into video tags)
+			Log.debug("TS: extracting AVC tags");
 			_readNALU();
+			Log.debug("TS: " + videoTags.length + " video tags extracted");
+			Log.debug("TS: all tags extracted, callback demux");
 			_callback(audioTags,videoTags,_getADIF(),_getAVCC());
 		}
 		
@@ -202,7 +210,7 @@ package org.mangui.HLS.muxing {
 				try { 
 					_videoPES[i].parse();
 				} catch (error:Error) {
-					Log.txt(error.message);
+					Log.error(error.message);
 					continue;
 				}
 				units = AVC.getNALU(_videoPES[i].data,_videoPES[i].payload);
@@ -245,7 +253,7 @@ package org.mangui.HLS.muxing {
 			if(_data.readByte() != TS.SYNCBYTE) {
 			  var pos:Number = _data.position;
 			  if(probe(_data) == true) {
-			    Log.txt("lost sync in TS, between offsets:" + pos + "/" + _data.position);
+			    Log.warn("lost sync in TS, between offsets:" + pos + "/" + _data.position);
 			    _data.position++;
 			  } else {
 				  throw new Error("Could not parse TS file: sync byte not found @ offset/len " + _data.position + "/"+ _data.length);
@@ -288,11 +296,12 @@ package org.mangui.HLS.muxing {
 					todo -= _readPMT();
 			    if(_pmtParsed == false) {
 			      _pmtParsed = true;
+			      Log.debug("TS: PMT found.AVC,AAC,MP3 PIDs:" + _avcId + "," + _aacId + "," + _mp3Id);
 			    // if PMT was not parsed before, and some unknown packets have been skipped in between, 
 			    // rewind to beginning of the stream, it helps recovering bad segmented content
 			    // in theory there should be no A/V packets before PAT/PMT)
 			      if (_packetsBeforePMT) {
-			        Log.txt("late PMT found, rewinding at beginning of TS");
+			        Log.warn("late PMT found, rewinding at beginning of TS");
 			        _data.position = 0;
 			        return;
 			      }
@@ -306,7 +315,7 @@ package org.mangui.HLS.muxing {
 					} else if (_audioPES.length) {
 						_audioPES[_audioPES.length-1].data.writeBytes(_data,_data.position,todo);
 					} else {
-						Log.txt("Discarding TS audio packet with id "+pid);
+						Log.warn("Discarding TS audio packet with id "+pid);
 					}
 					break;
 				case _avcId:
@@ -316,12 +325,13 @@ package org.mangui.HLS.muxing {
 					} else if (_videoPES.length) {
 						_videoPES[_videoPES.length-1].data.writeBytes(_data,_data.position,todo);
 					} else {
-						Log.txt("Discarding TS video packet with id "+pid + " bad TS segmentation ?");
+						Log.warn("Discarding TS video packet with id "+pid + " bad TS segmentation ?");
 					}
 					break;
 				case _sdtId:
 						break;
 				default:
+				Log.debug("TS: unknown PID:" + pid);
 				_packetsBeforePMT=true;
 					break;
 			}

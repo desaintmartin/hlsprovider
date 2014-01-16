@@ -27,6 +27,8 @@ package org.mangui.HLS.muxing {
 		private var audioTags:Vector.<Tag> = new Vector.<Tag>();
 		/** List of packetized elementary streams with AAC. **/
 		private var _audioPES:Vector.<PES> = new Vector.<PES>();
+		/** has PAT been parsed ? **/
+		private var _patParsed:Boolean= false;
 		/** has PMT been parsed ? **/
 		private var _pmtParsed:Boolean= false;
 		/** any TS packets before PMT ? **/
@@ -110,9 +112,27 @@ package org.mangui.HLS.muxing {
 		
 		/** setup the video and audio tag vectors from the read data **/
 		private function _extractFrames():void {
+      var parsing_error:Boolean = false;
+      
+      if(_patParsed == false) {
+         Log.error("TS: no PAT found in fragment");
+         parsing_error = true;
+      }
+      
+      if(_pmtParsed == false) {
+         Log.error("TS: no PMT found in fragment");
+         parsing_error = true;
+      }
+
 			if (_videoPES.length == 0 && _audioPES.length == 0 ) {
-				throw new Error("No AAC audio and no AVC video stream found.");
+				Log.error("No AAC audio and no AVC video stream found.");
+            parsing_error = true;
 			}
+         
+         if (parsing_error) {
+            _callback(null,null,null,null);
+         }
+         
 			Log.debug("TS: all TS packets parsed, extracting tags");
 			// Extract the ADTS or MP3 audio frames (transform PES packets into audio tags)
 			if(_aacId > 0) {
@@ -291,6 +311,10 @@ package org.mangui.HLS.muxing {
 			switch (pid) {
 				case _patId:
 					todo -= _readPAT();
+          if (_patParsed == false) {
+             _patParsed = true;
+             Log.debug("TS: PAT found.PMT PID:" + _pmtId);
+          }
 					break;
 				case _pmtId:
 					todo -= _readPMT();

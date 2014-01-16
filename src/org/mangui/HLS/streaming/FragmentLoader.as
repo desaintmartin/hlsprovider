@@ -469,6 +469,12 @@ package org.mangui.HLS.streaming {
 
       // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed
       _bIOError = false;
+      
+      if(audioTags == null || videoTags == null) {
+         var error_txt:String = "error parsing content";
+         Log.error(error_txt);
+         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error_txt));
+      }
 
        if (audioTags.length > 0) {
         ptsTags = audioTags;

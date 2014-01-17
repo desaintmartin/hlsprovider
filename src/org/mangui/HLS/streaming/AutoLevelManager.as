@@ -18,8 +18,8 @@ package org.mangui.HLS.streaming {
         private var _bitrate:Array = null;
         /** nb level **/
         private var _nbLevel:Number = 0;
-        /** lowest non audio level **/
-        private var _lowestNonAudioLevel:Number = -1;
+        /** start level **/
+        private var _startLevel:Number = -1;
 
         /** Create the loader. **/
         public function AutoLevelManager(hls:HLS):void {
@@ -42,12 +42,18 @@ package org.mangui.HLS.streaming {
               _bitrate[i] = levels[i].bitrate;
             }
 
-            // Select the lowest non-audio level.
+            // set up start level as being the lowest non-audio level.
             for(i = 0; i < _nbLevel; i++) {
                 if(!levels[i].audio) {
-                    _lowestNonAudioLevel = i;
+                    _startLevel = i;
                     break;
                 }
+            }
+            
+            // in case of audio only playlist, force startLevel to 0 
+            if(_startLevel == -1) {
+               Log.info("playlist is audio-only");
+               _startLevel = 0;
             }
 
             for(i=0 ; i < _nbLevel-1; i++) {
@@ -71,9 +77,9 @@ package org.mangui.HLS.streaming {
 
         /** Update the quality level for the next fragment load. **/
         public function getnextlevel(current_level:Number, buffer:Number, last_segment_duration:Number, last_fetch_duration:Number, last_bandwidth:Number):Number {
-            var level:Number = _lowestNonAudioLevel;
+            var level:Number = _startLevel;
             if(level == -1) {
-                Log.warn("No other quality levels are available");
+                Log.warn("No quality level available");
                 return -1;
             }
             if(last_fetch_duration == 0 || last_segment_duration == 0) {

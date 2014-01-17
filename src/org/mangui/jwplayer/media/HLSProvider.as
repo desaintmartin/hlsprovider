@@ -67,7 +67,12 @@ package org.mangui.jwplayer.media {
         /** Update video A/R on manifest load. **/
         private function _manifestHandler(event:HLSEvent):void {
             _levels = event.levels;
-            item.duration = _levels[0].duration;
+            // only report position/duration/buffer for VOD playlist and live playlist with duration > 60s
+            if(_hls.getType() == HLSTypes.VOD || _levels[0].duration > 60) {
+               item.duration = _levels[0].duration;
+            } else {
+               item.duration=-1;
+            }
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {position: 0,duration: item.duration});
             _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
             /* start seeking on manifest load */
@@ -77,6 +82,8 @@ package org.mangui.jwplayer.media {
 
         /** Update playback position. **/
         private function _mediaTimeHandler(event:HLSEvent):void {
+         // only report position/duration/buffer for VOD playlist and live playlist with duration > 60s
+         if(_hls.getType() == HLSTypes.VOD || event.mediatime.duration > 60) {
             item.duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
             var _bufferPercent:Number = 100*(_media_position+event.mediatime.buffer)/event.mediatime.duration;
@@ -86,6 +93,7 @@ package org.mangui.jwplayer.media {
                 position: _media_position,
                 duration: event.mediatime.duration
             });
+         }
         };
 
         /** Forward state changes from the framework. **/

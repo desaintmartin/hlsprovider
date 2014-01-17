@@ -171,7 +171,7 @@ package org.mangui.HLS.parsing {
                 continuity_index++;
               } else if(line.indexOf(FRAGMENT) == 0) {
                 var comma_position:Number = line.indexOf(',');
-                var duration:Number = (comma_position == -1) ? parseInt(line.substr(FRAGMENT.length)) : parseInt(line.substr(FRAGMENT.length,comma_position-FRAGMENT.length));
+                var duration:Number = (comma_position == -1) ? parseFloat(line.substr(FRAGMENT.length)) : parseFloat(line.substr(FRAGMENT.length,comma_position-FRAGMENT.length));
                 extinf_found = true;
               }else if(line.indexOf('#') == 0) {
                // unsupported tag, skip line

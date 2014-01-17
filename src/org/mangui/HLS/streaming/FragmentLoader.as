@@ -94,10 +94,12 @@ package org.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
             _fragstreamloader = new URLStream();
             _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
+            _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragErrorHandler);
             _fragstreamloader.addEventListener(ProgressEvent.PROGRESS,_fragProgressHandler);
             _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS,_fragHTTPStatusHandler);
             _keystreamloader = new URLStream();
             _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
+            _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyErrorHandler);
             _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
         };
 
@@ -236,7 +238,7 @@ package org.mangui.HLS.streaming {
 
         /** Catch IO and security errors. **/
         private function _keyErrorHandler(event:ErrorEvent):void {
-          _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "cannot load key"));
+          _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "cannot load key:" + event.text));
         };
 
         /** Catch IO and security errors. **/

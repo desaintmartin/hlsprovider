@@ -33,6 +33,9 @@ package org.mangui.HLS.muxing {
                 len = data.position-pos;
                 if (len) { 
                   Log.debug2("ID3 len:"+ len);
+                  if(!hasTimestamp) {
+                     Log.warn("ID3 tag found, but no timestamp");
+                  }
                 }
                 return;
               }
@@ -56,7 +59,7 @@ package org.mangui.HLS.muxing {
       private function _parseFrame(data:ByteArray):void {
         if (data.readUTFBytes(4) == "PRIV") {
           var frame_len:uint = data.readUnsignedInt();
-          // smelling good ! 53 is the size of tag we are looking for          
+          // smelling good ! 53 is the size of tag we are looking for
           if(frame_len == 53) {
             // skip flags (2 bytes)
             data.position+=2;

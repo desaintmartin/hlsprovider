@@ -15,48 +15,54 @@ package org.mangui.HLS.muxing {
 	public class TS extends EventDispatcher {
 		
 		
-		/** TS Sync byte. **/
-		private static const SYNCBYTE:uint = 0x47;
-		/** TS Packet size in byte. **/
-		private static const PACKETSIZE:uint = 188;
-		/** loop counter to avoid blocking **/
-		private static const COUNT:uint = 5000;
-		/** Packet ID of the AAC audio stream. **/
-		private var _aacId:Number = -1;
-		/** List with audio frames. **/
-		private var audioTags:Vector.<Tag> = new Vector.<Tag>();
-		/** List of packetized elementary streams with AAC. **/
-		private var _audioPES:Vector.<PES> = new Vector.<PES>();
-		/** has PAT been parsed ? **/
-		private var _patParsed:Boolean= false;
-		/** has PMT been parsed ? **/
-		private var _pmtParsed:Boolean= false;
-		/** any TS packets before PMT ? **/
-		private var _packetsBeforePMT:Boolean = false;
-		/** Packet ID of the video stream. **/
-		private var _avcId:Number = -1;
-		/** PES packet that contains the first keyframe. **/
-		private var _firstKey:Number = -1;
-		/** Packet ID of the MP3 audio stream. **/
-		private var _mp3Id:Number = -1;
-		/** Packet ID of the PAT (is always 0). **/
-		private var _patId:Number = 0;
-		/** Packet ID of the Program Map Table. **/
-		private var _pmtId:Number = -1;
-		/** List with video frames. **/
-		/** Packet ID of the SDT (is always 17). **/
-		private var _sdtId:Number = 17;
-		private var videoTags:Vector.<Tag> = new Vector.<Tag>();
-		/** List of packetized elementary streams with AVC. **/
-		private var _videoPES:Vector.<PES> = new Vector.<PES>();
-		/** Timer for reading packets **/ 
-		private var _timer:Timer;
-		/** Byte data to be read **/
-		private var _data:ByteArray;
-		/* last PES packet containing AVCC Frame (SPS/PPS) */
-		private var _lastAVCCFrame:PES = null;
-		/* callback function upon read complete */
-		private var _callback:Function;
+    /** TS Sync byte. **/
+    private static const SYNCBYTE:uint = 0x47;
+    /** TS Packet size in byte. **/
+    private static const PACKETSIZE:uint = 188;
+    /** loop counter to avoid blocking **/
+    private static const COUNT:uint = 5000;
+    /** Packet ID of the PAT (is always 0). **/
+    private static const _patId:Number = 0;
+    /** Packet ID of the SDT (is always 17). **/
+    private static const _sdtId:Number = 17;
+    /** has PAT been parsed ? **/
+    private var _patParsed:Boolean= false;
+    /** has PMT been parsed ? **/
+    private var _pmtParsed:Boolean= false;
+    /** any TS packets before PMT ? **/
+    private var _packetsBeforePMT:Boolean = false;
+    /** are we in fallback PID parsing mode ? **/
+    private var _fallbackMode:Boolean= false;
+    /** Packet ID of the Program Map Table. **/
+    private var _pmtId:Number = -1;
+    /** Packet ID of the video stream. **/
+    private var _avcId:Number = -1;
+    /** Packet ID of the AAC audio stream. **/
+    private var _aacId:Number = -1;
+    /** Packet ID of the MP3 audio stream. **/
+    private var _mp3Id:Number = -1;
+    /** fallback Packet ID of the video stream. **/
+    private static var _avcFallbackId:Number = -1;
+    /** fallback Packet ID of the AAC audio stream. **/
+    private static var _aacFallbackId:Number = -1;
+    /** fallback Packet ID of the MP3 audio stream. **/
+    private static var _mp3FallbackId:Number = -1;
+    /** List of packetized elementary streams with AAC. **/
+    private var _audioPES:Vector.<PES> = new Vector.<PES>();
+    /** List of packetized elementary streams with AVC. **/
+    private var _videoPES:Vector.<PES> = new Vector.<PES>();
+    /** List with audio frames. **/
+    private var _audioTags:Vector.<Tag> = new Vector.<Tag>();
+    /** List with video frames. **/
+    private var _videoTags:Vector.<Tag> = new Vector.<Tag>();
+    /** Timer for reading packets **/ 
+    private var _timer:Timer;
+    /** Byte data to be read **/
+    private var _data:ByteArray;
+    /* last PES packet containing AVCC Frame (SPS/PPS) */
+    private var _lastAVCCFrame:PES = null;
+    /* callback function upon read complete */
+    private var _callback:Function;
 		
 		
     public static function probe(data:ByteArray):Boolean {
@@ -96,65 +102,68 @@ package org.mangui.HLS.muxing {
 		//  _timer.start();
 		//}
 		
-		/** Read a small chunk of packets each time to avoid blocking **/
-		private function _readData(e:Event):void {
-			var i:uint = 0;
-			while(_data.bytesAvailable && i < COUNT) {
-				_readPacket();
-				i++;
-				
-			}
-			if (!_data.bytesAvailable) {
-				_timer.stop();
-				_extractFrames();
-			}
-		}
-		
+    /** Read a small chunk of packets each time to avoid blocking **/
+    private function _readData(e:Event):void {
+      var i:uint = 0;
+      while(_data.bytesAvailable && i < COUNT) {
+        _readPacket();
+        i++;
+        
+      }
+      // finish reading TS fragment
+      if (!_data.bytesAvailable) {
+        // first check if TS parsing was successful
+        if(_pmtParsed == false && _fallbackMode == false) {
+          // if parsing not successful, try to reparse segment will fallback A/V PIDs if any
+          Log.error("TS: no PMT found, trying to reparse using fallback PIDs");
+          if(_aacFallbackId != -1 || _avcFallbackId != -1 || _mp3FallbackId != -1)  {
+             _data.position = 0;
+             _aacId = _aacFallbackId;
+             _avcId = _avcFallbackId;
+             _mp3Id = _mp3FallbackId;
+             _fallbackMode = true;
+          } else {
+            Log.error("TS: no fallback PIDs available, report parsing error");
+            _callback(null,null,null,null);
+          }
+        } else {
+          _timer.stop();
+           if (_videoPES.length == 0 && _audioPES.length == 0 ) {
+            Log.error("No audio or video streams found.");
+            _callback(null,null,null,null);
+           } else {
+            _extractFrames();
+          }
+        }
+      }
+    }
+
 		/** setup the video and audio tag vectors from the read data **/
 		private function _extractFrames():void {
-      var parsing_error:Boolean = false;
-      
-      if(_patParsed == false) {
-         Log.error("TS: no PAT found in fragment");
-         parsing_error = true;
-      }
-      
-      if(_pmtParsed == false) {
-         Log.error("TS: no PMT found in fragment");
-         parsing_error = true;
-      }
-
-			if (_videoPES.length == 0 && _audioPES.length == 0 ) {
-				Log.error("No AAC audio and no AVC video stream found.");
-            parsing_error = true;
-			}
-         
-         if (parsing_error) {
-            _callback(null,null,null,null);
-         }
-         
-			Log.debug("TS: all TS packets parsed, extracting tags");
+			Log.debug("TS: successfully parsed");
 			// Extract the ADTS or MP3 audio frames (transform PES packets into audio tags)
 			if(_aacId > 0) {
 				Log.debug("TS: extracting AAC tags");
 				_readADTS();
-			} else {
+			} else if (_mp3Id > 0) {
 			  Log.debug("TS: extracting MP3 tags");
 				_readMPEG();
 			}
-			Log.debug("TS: " + audioTags.length + " audio tags extracted");
+			Log.debug("TS: " + _audioTags.length + " audio tags extracted");
 			
 			// Extract the NALU video frames (transform PES packets into video tags)
-			Log.debug("TS: extracting AVC tags");
-			_readNALU();
-			Log.debug("TS: " + videoTags.length + " video tags extracted");
+			if (_avcId > 0) {
+			  Log.debug("TS: extracting AVC tags");
+			  _readNALU();
+			  Log.debug("TS: " + _videoTags.length + " video tags extracted");
+			}
 			Log.debug("TS: all tags extracted, callback demux");
-			_callback(audioTags,videoTags,_getADIF(),_getAVCC());
+			_callback(_audioTags,_videoTags,_getADIF(),_getAVCC());
 		}
 		
 		/** Get audio configuration data. **/
 		private function _getADIF():ByteArray {
-			if(_aacId > 0 && audioTags.length > 0) {
+			if(_aacId > 0 && _audioTags.length > 0) {
 				return AAC.getADIF(_audioPES[0].data,_audioPES[0].payload);
 			} else { 
 				return new ByteArray();
@@ -164,7 +173,7 @@ package org.mangui.HLS.muxing {
 		
 		/** Get video configuration data. **/
 		private function _getAVCC():ByteArray {
-			if(_firstKey == -1) {
+			if(_lastAVCCFrame == null) {
 				return new ByteArray();
 			}
 			return AVC.getAVCC(_lastAVCCFrame.data,_lastAVCCFrame.payload);
@@ -199,7 +208,7 @@ package org.mangui.HLS.muxing {
 					} else { 
 						tag.push(_audioPES[i].data, frames[j].start, frames[j].length);
 					}
-					audioTags.push(tag);
+					_audioTags.push(tag);
 				}
 				if(frames.length) {
 				  // Correct for Segmenter's "optimize", which cuts frames in half.
@@ -216,7 +225,7 @@ package org.mangui.HLS.muxing {
 				_audioPES[i].parse();
 				tag = new Tag(Tag.MP3_RAW, _audioPES[i].pts,_audioPES[i].dts, false);
 				tag.push(_audioPES[i].data, _audioPES[i].payload, _audioPES[i].data.length-_audioPES[i].payload);
-				audioTags.push(tag);
+				_audioTags.push(tag);
 			}
 		};
 		
@@ -236,27 +245,26 @@ package org.mangui.HLS.muxing {
 				units = AVC.getNALU(_videoPES[i].data,_videoPES[i].payload);
 				// If there's no NAL unit, push all data in the previous tag.
 				if(!units.length) {
-					videoTags[videoTags.length-1].push(_videoPES[i].data, _videoPES[i].payload,
+					_videoTags[_videoTags.length-1].push(_videoPES[i].data, _videoPES[i].payload,
 						_videoPES[i].data.length - _videoPES[i].payload);
 					continue;
 				}
 				// If NAL units are offset, push preceding data into the previous tag.
 				overflow = units[0].start - units[0].header - _videoPES[i].payload;
 				if(overflow) {
-					videoTags[videoTags.length-1].push(_videoPES[i].data,_videoPES[i].payload,overflow);
+					_videoTags[_videoTags.length-1].push(_videoPES[i].data,_videoPES[i].payload,overflow);
 				}
-				videoTags.push(new Tag(Tag.AVC_NALU,_videoPES[i].pts,_videoPES[i].dts,false));
+				_videoTags.push(new Tag(Tag.AVC_NALU,_videoPES[i].pts,_videoPES[i].dts,false));
 				// Only push NAL units 1 to 5 into tag.
 				for(var j:Number = 0; j < units.length; j++) {
 					if (units[j].type < 6) {
-						videoTags[videoTags.length-1].push(_videoPES[i].data,units[j].start,units[j].length);
+						_videoTags[_videoTags.length-1].push(_videoPES[i].data,units[j].start,units[j].length);
 						// Unit type 5 indicates a keyframe.
 						if(units[j].type == 5) {
-							videoTags[videoTags.length-1].keyframe = true;
+							_videoTags[_videoTags.length-1].keyframe = true;
 						}
 					} else if (units[j].type == 7 || units[j].type == 8) {
-							if(_firstKey == -1) {
-								_firstKey = i;
+							if(_lastAVCCFrame == null) {
 								_lastAVCCFrame=_videoPES[i];
 							}
 					}
@@ -388,16 +396,18 @@ package org.mangui.HLS.muxing {
 			var pil:Number = _data.readByte();
 			_data.position += pil;
 			read += pil;
+			// reset fallback PIDs before parsing PMT
+			_aacFallbackId = _avcFallbackId = _mp3FallbackId = -1;
 			// Loop through the streams in the PMT.
 			while(read < len) {
 				var typ:uint = _data.readByte();
 				var sid:uint = _data.readUnsignedShort() & 8191;
 				if(typ == 0x0F) {
-					_aacId = sid;
+          _aacId = _aacFallbackId = sid;
 				} else if (typ == 0x1B) {
-					_avcId = sid;
+          _avcId = _avcFallbackId = sid;
 				} else if (typ == 0x03 || typ == 0x04) {
-					_mp3Id = sid;
+          _mp3Id = _mp3FallbackId = sid;
 				}
 				//  descriptor loop length
 				_data.position++;

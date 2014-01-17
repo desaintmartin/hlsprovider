@@ -30,8 +30,10 @@ package org.mangui.HLS.muxing {
                 data.position = end_pos;
               } else {
                 data.position-=3;
-                Log.debug2("ID3 len:"+ (data.position-pos));
                 len = data.position-pos;
+                if (len) { 
+                  Log.debug2("ID3 len:"+ len);
+                }
                 return;
               }
             } while (true);

@@ -113,6 +113,7 @@ package org.mangui.HLS.streaming {
               _keymap[frag.decrypt_url] = keyData;
               // now load fragment
               try {
+                 Log.debug("loading fragment:" + frag.url);
                  _fragstreamloader.load(new URLRequest(frag.url));
               } catch (error:Error) {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
@@ -328,21 +329,7 @@ package org.mangui.HLS.streaming {
             _last_segment_continuity_counter = frag.continuity;
             _last_segment_program_date = frag.program_date;
             Log.debug("Loading       "+ _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
-            
-            
-            _last_segment_decrypt_key_url = frag.decrypt_url;
-            if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
-              _last_segment_decrypt_iv = frag.decrypt_iv;
-              // load key
-              _keystreamloader.load(new URLRequest(_last_segment_decrypt_key_url));
-            } else {
-              try {
-                 _fragByteArray = null;
-                 _fragstreamloader.load(new URLRequest(frag.url));
-              } catch (error:Error) {
-                  _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
-              }
-            }
+            _loadfragment(frag);
             return 0;
         }
 
@@ -425,7 +412,7 @@ package org.mangui.HLS.streaming {
                 _last_segment_program_date = frag.program_date;
                 // check whether there is a discontinuity between last segment and new segment
                 _hasDiscontinuity = (frag.continuity != _last_segment_continuity_counter);
-					 // update discontinuity counter
+                // update discontinuity counter
                 _last_segment_continuity_counter = frag.continuity;
                 log_prefix = "Loading       ";
               }
@@ -435,22 +422,27 @@ package org.mangui.HLS.streaming {
             _frag_loading_start_time = new Date().valueOf();
             frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
             Log.debug(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
-            
+            _loadfragment(frag);
+            return 0;
+        };
+        
+        private function _loadfragment(frag:Fragment):void {
             _last_segment_decrypt_key_url = frag.decrypt_url;
             if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
               _last_segment_decrypt_iv = frag.decrypt_iv;
               // load key
-              _keystreamloader.load(new URLRequest(frag.decrypt_url));
+              Log.debug("loading key:" + _last_segment_decrypt_key_url);
+              _keystreamloader.load(new URLRequest(_last_segment_decrypt_key_url));
             } else {
               try {
                  _fragByteArray = null;
+		 Log.debug("loading fragment:" + frag.url);
                  _fragstreamloader.load(new URLRequest(frag.url));
               } catch (error:Error) {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
               }
             }
-            return 0;
-        };
+        }
 
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event:HLSEvent):void {

@@ -200,6 +200,9 @@ package org.mangui.HLS.streaming {
          } else if (AAC.probe(data) == true) {
             Log.debug("AAC ES found");
             new AAC(data,_fragReadHandler);
+         }else if (MP3.probe(data) == true) {
+            Log.debug("MP3 ES found");
+            new MP3(data,_fragReadHandler);
          } else {
             Log.error("unknown fragment type");
             if(Log.LOG_DEBUG2_ENABLED) {

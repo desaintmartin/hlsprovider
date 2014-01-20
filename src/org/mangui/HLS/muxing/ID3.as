@@ -13,8 +13,10 @@ package org.mangui.HLS.muxing {
          var tagSize:uint = 0;
          try {
             var pos:Number = data.position;
+            var header:String;
             do {
-              if(data.readUTFBytes(3) == 'ID3') {
+              header = data.readUTFBytes(3);
+              if(header == 'ID3') {
                 // skip 24 bits
                 data.position += 3;
                 // retrieve tag length
@@ -23,11 +25,19 @@ package org.mangui.HLS.muxing {
                 var byte3:uint = data.readUnsignedByte() & 0x7f;
                 var byte4:uint = data.readUnsignedByte() & 0x7f;
                 tagSize = (byte1 << 21) + (byte2 << 14) + (byte3 << 7) + byte4;
-
                 var end_pos:Number = data.position + tagSize;
+                if(Log.LOG_DEBUG2_ENABLED) {
+                  Log.debug2("ID3 tag found, size/end pos:" + tagSize + "/" + end_pos);
+                }
                 // read tag
                 _parseFrame(data);
                 data.position = end_pos;
+              } else if(header == '3DI') {
+                //http://id3.org/id3v2.4.0-structure chapter 3.4.   ID3v2 footer
+                data.position+=7;
+                if(Log.LOG_DEBUG2_ENABLED) {
+                  Log.debug2("3DI footer found, end pos:" + data.position);
+                }
               } else {
                 data.position-=3;
                 len = data.position-pos;

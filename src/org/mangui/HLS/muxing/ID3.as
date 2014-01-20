@@ -30,7 +30,7 @@ package org.mangui.HLS.muxing {
                   Log.debug2("ID3 tag found, size/end pos:" + tagSize + "/" + end_pos);
                 }
                 // read tag
-                _parseFrame(data);
+                _parseFrame(data,end_pos);
                 data.position = end_pos;
               } else if(header == '3DI') {
                 //http://id3.org/id3v2.4.0-structure chapter 3.4.   ID3v2 footer
@@ -66,13 +66,9 @@ package org.mangui.HLS.muxing {
           bits set to zero.
        */
 
-      private function _parseFrame(data:ByteArray):void {
+      private function _parseFrame(data:ByteArray,end_pos:Number):void {
         if (data.readUTFBytes(4) == "PRIV") {
-          var frame_len:uint = data.readUnsignedInt();
-          // smelling good ! 53 is the size of tag we are looking for
-          if(frame_len == 53) {
-            // skip flags (2 bytes)
-            data.position+=2;
+          while(data.position + 53 <= end_pos) {
             // owner should be "com.apple.streaming.transportStreamTimestamp"
             if(data.readUTFBytes(44) == 'com.apple.streaming.transportStreamTimestamp') {
               // smelling even better ! we found the right descriptor
@@ -83,6 +79,10 @@ package org.mangui.HLS.muxing {
               hasTimestamp = true;
               timestamp = (data.readUnsignedInt()/90) << pts_33_bit;
               Log.debug("ID3 timestamp found:"+timestamp);
+              return;
+            } else {
+              // rewind 44 read bytes + move to next byte
+              data.position -=43;
             }
           }
         }

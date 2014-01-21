@@ -81,11 +81,7 @@ package org.mangui.HLS.streaming {
             _current_level = 0;
             _canStart = false;
             _reload_playlists_timer = getTimer();
-            /* 
-            add time parameter to force reload URL, there are some issues with browsers reloading from cache even if the URL has been updated ...
-            see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache
-            */
-            _urlloader.load(new URLRequest(_url +"?time=" + new Date().getTime()));
+            _urlloader.load(new URLRequest(url));
         };
 
 
@@ -154,7 +150,7 @@ package org.mangui.HLS.streaming {
             _load_in_progress = true;
             _reload_playlists_timer = getTimer();
             // load active M3U8 playlist only
-            new Manifest().loadPlaylist(_levels[_current_level].url,_parsePlaylist,_errorHandler,_current_level);
+            new Manifest().loadPlaylist(_levels[_current_level].url,_parsePlaylist,_errorHandler,_current_level,_type);
         };
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/

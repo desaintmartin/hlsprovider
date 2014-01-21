@@ -120,11 +120,26 @@ import flash.net.NetConnection;
     public function set maxBufferLength(new_len:Number):void {
       _hlsNetStream.maxBufferLength = new_len;
     }
-    
+
     /** get max Buffer Length  **/
     public function get maxBufferLength():Number {
       return _hlsNetStream.maxBufferLength;
     };
+
+    /** get the list of audio tracks **/
+    public function getAudioTrackList():Vector.<HLSAudioTrack> {
+        return _fragmentLoader.getAudioTrackList();
+    };
+
+    /** get the id of the selected audio track **/
+    public function getAudioTrackId():Number {
+        return _fragmentLoader.getAudioTrackId();
+    };
+
+    /** select an audio track **/
+    public function setAudioTrack(val:Number):void {
+        _fragmentLoader.setAudioTrack(val);
+    }
 }
 ;
 }

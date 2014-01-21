@@ -86,6 +86,11 @@ package org.mangui.HLS.streaming {
         /** boolean to indicate whether Buffer could request new fragment load **/
         private var _need_reload:Boolean=true;
 
+        /** current audio track id **/
+        private var _curAudioTrack:Number = -1;
+        /** list of audio tracks in fragment **/
+        private var _audioList:Vector.<HLSAudioTrack> = null;
+
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
             _hls = hls;
@@ -103,6 +108,23 @@ package org.mangui.HLS.streaming {
             _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
         };
 
+        public function setAudioTrack(num:Number):void {
+            if (_curAudioTrack != num) {
+                _curAudioTrack = num;
+                var ev:HLSEvent = new HLSEvent(HLSEvent.AUDIO_TRACK_CHANGE);
+                ev.audioTrack = _curAudioTrack;
+                _hls.dispatchEvent(ev);
+                Log.info('Setting audio track to ' + num);
+            }
+        }
+
+        public function getAudioTrackId():Number {
+            return _curAudioTrack;
+        }
+
+        public function getAudioTrackList():Vector.<HLSAudioTrack> {
+            return _audioList;
+        }
 
         /** key load completed. **/
         private function _keyCompleteHandler(event:Event):void {
@@ -199,7 +221,7 @@ package org.mangui.HLS.streaming {
          Log.debug("probe fragment type");
          if (TS.probe(data) == true) {
             Log.debug("MPEG2-TS found");
-            new TS(data, _fragReadHandler);
+            new TS(data, _fragReadHandler,_curAudioTrack);
          } else if (AAC.probe(data) == true) {
             Log.debug("AAC ES found");
             new AAC(data,_fragReadHandler);
@@ -458,9 +480,31 @@ package org.mangui.HLS.streaming {
         };
 
     /** Handles the actual reading of the TS fragment **/
-    private function _fragReadHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray):void {
+    private function _fragReadHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray,audioTrack:Number=-1,audioList:Vector.<HLSAudioTrack>=null):void {
        var min_pts:Number = Number.POSITIVE_INFINITY;
        var max_pts:Number = Number.NEGATIVE_INFINITY;
+       // update current audio track
+        setAudioTrack(audioTrack);
+        var changed:Boolean = false;
+         audioList = audioList.sort(function(a:HLSAudioTrack,b:HLSAudioTrack):Number { return a.id - b.id; });
+        if (!_audioList) {
+            changed = true;
+        } else if (_audioList.length != audioList.length) {
+            changed = true;
+        } else {
+            for (var idx:int=0; idx<_audioList.length; ++idx) {
+                if (_audioList[idx].id != audioList[idx].id) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        // update audio list
+        if (changed) {
+            _audioList = audioList;
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_TRACKS_LIST_CHANGE));
+        }
+
        // Tags used for PTS analysis
        var ptsTags:Vector.<Tag>;
 

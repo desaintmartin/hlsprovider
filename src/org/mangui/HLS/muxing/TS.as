@@ -2,7 +2,8 @@ package org.mangui.HLS.muxing {
 	
 	
 	import org.mangui.HLS.muxing.*;
-	import org.mangui.HLS.utils.Log;
+   import org.mangui.HLS.utils.Log;
+   import org.mangui.HLS.HLSAudioTrack;
 	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -37,16 +38,18 @@ package org.mangui.HLS.muxing {
     private var _pmtId:Number = -1;
     /** Packet ID of the video stream. **/
     private var _avcId:Number = -1;
-    /** Packet ID of the AAC audio stream. **/
-    private var _aacId:Number = -1;
-    /** Packet ID of the MP3 audio stream. **/
-    private var _mp3Id:Number = -1;
+    /** Packet ID of selected audio stream. **/
+    private var _audioId:Number = -1;
+    private var _audioIsAAC:Boolean = false;
+    /** List of AAC and MP3 audio PIDs */
+    private var _aacIds:Vector.<uint> = new Vector.<uint>();
+    private var _mp3Ids:Vector.<uint> = new Vector.<uint>();
     /** fallback Packet ID of the video stream. **/
     private static var _avcFallbackId:Number = -1;
-    /** fallback Packet ID of the AAC audio stream. **/
-    private static var _aacFallbackId:Number = -1;
+    /** fallback Packet ID of audio stream. **/
+    private static var _audioFallbackId:Number = -1;
     /** fallback Packet ID of the MP3 audio stream. **/
-    private static var _mp3FallbackId:Number = -1;
+    private static var _audioFallbackIsAAC:Boolean= false;
     /** List of packetized elementary streams with AAC. **/
     private var _audioPES:Vector.<PES> = new Vector.<PES>();
     /** List of packetized elementary streams with AVC. **/
@@ -87,13 +90,14 @@ package org.mangui.HLS.muxing {
     }
 		
 		/** Transmux the M2TS file into an FLV file. **/
-		public function TS(data:ByteArray,callback:Function) {
+		public function TS(data:ByteArray,callback:Function,audioTrack:Number) {
 			// Extract the elementary streams.
 			_data = data;
 			_callback = callback;
 			_timer = new Timer(0,0);
 			_timer.addEventListener(TimerEvent.TIMER, _readData);
 			_timer.start();
+      _audioId = audioTrack;
 		};
 		
 		/** append new TS data */
@@ -116,11 +120,11 @@ package org.mangui.HLS.muxing {
         if(_pmtParsed == false && _fallbackMode == false) {
           // if parsing not successful, try to reparse segment will fallback A/V PIDs if any
           Log.error("TS: no PMT found, trying to reparse using fallback PIDs");
-          if(_aacFallbackId != -1 || _avcFallbackId != -1 || _mp3FallbackId != -1)  {
+          if(_audioFallbackId !=-1 || _avcFallbackId != -1)  {
              _data.position = 0;
-             _aacId = _aacFallbackId;
+             _audioId = _audioFallbackId;
+             _audioIsAAC = _audioFallbackIsAAC;
              _avcId = _avcFallbackId;
-             _mp3Id = _mp3FallbackId;
              _fallbackMode = true;
           } else {
             Log.error("TS: no fallback PIDs available, report parsing error");
@@ -138,32 +142,42 @@ package org.mangui.HLS.muxing {
       }
     }
 
-		/** setup the video and audio tag vectors from the read data **/
-		private function _extractFrames():void {
-			Log.debug("TS: successfully parsed");
-			// Extract the ADTS or MP3 audio frames (transform PES packets into audio tags)
-			if(_aacId > 0) {
-				Log.debug("TS: extracting AAC tags");
-				_readADTS();
-			} else if (_mp3Id > 0) {
-			  Log.debug("TS: extracting MP3 tags");
-				_readMPEG();
-			}
-			Log.debug("TS: " + _audioTags.length + " audio tags extracted");
-			
-			// Extract the NALU video frames (transform PES packets into video tags)
-			if (_avcId > 0) {
-			  Log.debug("TS: extracting AVC tags");
-			  _readNALU();
-			  Log.debug("TS: " + _videoTags.length + " video tags extracted");
-			}
-			Log.debug("TS: all tags extracted, callback demux");
-			_callback(_audioTags,_videoTags,_getADIF(),_getAVCC());
-		}
+    /** setup the video and audio tag vectors from the read data **/
+    private function _extractFrames():void {
+      Log.debug("TS: successfully parsed");
+      // report current audio track and audio track list
+      var audioList:Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
+      // Extract the ADTS or MP3 audio frames (transform PES packets into audio tags)
+      if(_audioId > 0) {
+        if(_audioIsAAC) {
+          Log.debug("TS: extracting AAC tags");
+          _readADTS();
+        } else {
+          Log.debug("TS: extracting MP3 tags");
+          _readMPEG();
+        }
+        for (var i:Number=0; i<_aacIds.length; ++i) {
+          audioList.push(new HLSAudioTrack('TS/AAC ' + i, _aacIds[i]));
+        }
+        for (i=0; i<_mp3Ids.length; ++i) {
+          audioList.push(new HLSAudioTrack('TS/MP3 ' + i, _mp3Ids[i]));
+        }
+      }
+      Log.debug("TS: " + _audioTags.length + " audio tags extracted");
+      
+      // Extract the NALU video frames (transform PES packets into video tags)
+      if (_avcId > 0) {
+        Log.debug("TS: extracting AVC tags");
+        _readNALU();
+        Log.debug("TS: " + _videoTags.length + " video tags extracted");
+      }
+      Log.debug("TS: all tags extracted, callback demux");
+      _callback(_audioTags,_videoTags,_getADIF(),_getAVCC(),_audioId,audioList);
+    }
 		
 		/** Get audio configuration data. **/
 		private function _getADIF():ByteArray {
-			if(_aacId > 0 && _audioTags.length > 0) {
+			if(_audioId > 0 && _audioIsAAC && _audioTags.length > 0) {
 				return AAC.getADIF(_audioPES[0].data,_audioPES[0].payload);
 			} else { 
 				return new ByteArray();
@@ -328,7 +342,7 @@ package org.mangui.HLS.muxing {
 					todo -= _readPMT(stt);
 			    if(_pmtParsed == false) {
 			      _pmtParsed = true;
-			      Log.debug("TS: PMT found.AVC,AAC,MP3 PIDs:" + _avcId + "," + _aacId + "," + _mp3Id);
+			      Log.debug("TS: PMT found.AVC,Audio PIDs:" + _avcId + "," + _audioId);
 			    // if PMT was not parsed before, and some unknown packets have been skipped in between, 
 			    // rewind to beginning of the stream, it helps recovering bad segmented content
 			    // in theory there should be no A/V packets before PAT/PMT)
@@ -339,8 +353,7 @@ package org.mangui.HLS.muxing {
 			      }
 		      }
 					break;
-				case _aacId:
-				case _mp3Id:
+				case _audioId:
 					if(stt) {
 						pes.writeBytes(_data,_data.position,todo);
 						_audioPES.push(new PES(pes,true));
@@ -363,7 +376,6 @@ package org.mangui.HLS.muxing {
 				case _sdtId:
 						break;
 				default:
-				Log.debug("TS: unknown PID:" + pid);
 				_packetsBeforePMT=true;
 					break;
 			}
@@ -396,50 +408,74 @@ package org.mangui.HLS.muxing {
 		
 		
 		/** Read the Program Map Table. **/
-		private function _readPMT(stt:uint):Number {
-			var pointerField:uint = 0;
-			if (stt) {
-				pointerField = _data.readUnsignedByte();
-				// skip alignment padding
-				_data.position += pointerField;
-			}
-			// skip table id
-			_data.position += 1;
-			// Check the section length for a single PMT.
-			var len:uint = _data.readUnsignedShort() & 0x3FF;
-			var read:uint = 13;
-			_data.position += 7;
-			// skip program info
-			var pil:uint = _data.readUnsignedShort() & 0x3FF;
-			_data.position += pil;
-			read += pil;
-			// reset fallback PIDs before parsing PMT
-			_aacFallbackId = _avcFallbackId = _mp3FallbackId = -1;
-			// Loop through the streams in the PMT.
-			while(read < len) {
-				// stream type
-				var typ:uint = _data.readByte();
-				// stream pid
-				var sid:uint = _data.readUnsignedShort() & 0x1fff;
-				//Log.debug("type/pid:" + typ + "/" + sid);
-				if(typ == 0x0F) {
-				// ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
-          _aacId = _aacFallbackId = sid;
-				} else if (typ == 0x1B) {
-					// ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
+    private function _readPMT(stt:uint):Number {
+      var pointerField:uint = 0;
+
+      // reset audio tracks
+      var audioFound:Boolean = false;
+      _aacIds = new Vector.<uint>();
+      _mp3Ids = new Vector.<uint>();
+
+      if (stt) {
+        pointerField = _data.readUnsignedByte();
+        // skip alignment padding
+        _data.position += pointerField;
+      }
+      // skip table id
+      _data.position += 1;
+      // Check the section length for a single PMT.
+      var len:uint = _data.readUnsignedShort() & 0x3FF;
+      var read:uint = 13;
+      _data.position += 7;
+      // skip program info
+      var pil:uint = _data.readUnsignedShort() & 0x3FF;
+      _data.position += pil;
+      read += pil;
+      // reset AVC fallback PIDs before parsing PMT
+      _avcFallbackId = -1;
+      // Loop through the streams in the PMT.
+      while(read < len) {
+        // stream type
+        var typ:uint = _data.readByte();
+        // stream pid
+        var sid:uint = _data.readUnsignedShort() & 0x1fff;
+        if(typ == 0x0F) {
+        // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
+        _aacIds.push(sid);
+        } else if (typ == 0x1B) {
+          // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
           _avcId = _avcFallbackId = sid;
-				} else if (typ == 0x03 || typ == 0x04) {
-					//    ISO/IEC 11172-3 (MPEG-1 audio)
-					// or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)				
-          _mp3Id = _mp3FallbackId = sid;
-				}
-				//  es_info_length
-				var sel:uint = _data.readUnsignedShort() & 0xFFF;
-				_data.position += sel;
-				// loop to next stream
-				read += sel + 5;
-			}
-			return len + pointerField;
-		};
-	}
+        } else if (typ == 0x03 || typ == 0x04) {
+          //    ISO/IEC 11172-3 (MPEG-1 audio)
+          // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
+          _mp3Ids.push(sid);
+        }
+        if (sid == _audioId) {
+          audioFound = true;
+          if (typ == 0x0F) { // AAC
+            _audioIsAAC = true;
+          }
+        }
+        //  es_info_length
+        var sel:uint = _data.readUnsignedShort() & 0xFFF;
+        _data.position += sel;
+        // loop to next stream
+        read += sel + 5;
+      }
+      if (_audioId <= 0 || !audioFound) {
+        Log.debug("Found " + _aacIds.length + " AAC tracks");
+        Log.debug("Found " + _mp3Ids.length + " MP3 tracks");
+        // automatically select audio track
+        if (_aacIds.length > 0) {
+          _audioId = _audioFallbackId = _aacIds[0];
+          _audioIsAAC = _audioFallbackIsAAC = true;
+        } else if (_mp3Ids.length > 0) {
+          _audioId = _audioFallbackId = _mp3Ids[0];
+          _audioIsAAC = _audioFallbackIsAAC = false;
+        }
+        Log.debug("Selected audio track: " + _audioId);
+      }
+      return len + pointerField;
+    };
+  }
 }

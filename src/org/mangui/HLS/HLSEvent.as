@@ -31,6 +31,10 @@ package org.mangui.HLS {
         public static const PLAYLIST_DURATION_UPDATED:String = "hlsPlayListDurationUpdated";
         /** Identifier for a audio only fragment **/        
         public static const AUDIO_ONLY:String = "audioOnly";
+        /** Identifier for a audio tracks list change **/
+        public static const AUDIO_TRACKS_LIST_CHANGE:String = "audioTracksListChange";
+        /** Identifier for a audio track change **/
+        public static const AUDIO_TRACK_CHANGE:String = "audioTrackChange";
 
         /** The current quality level. **/
         public var level:Number;
@@ -46,7 +50,8 @@ package org.mangui.HLS {
         public var mediatime:HLSMediatime;
         /** The new playback state. **/
         public var state:String;
-
+        /** The current audio track **/
+        public var audioTrack:Number;
 
         /** Assign event parameter and dispatch. **/
         public function HLSEvent(type:String, parameter:*=null) {

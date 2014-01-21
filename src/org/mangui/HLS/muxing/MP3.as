@@ -1,6 +1,7 @@
 package org.mangui.HLS.muxing {
 
    import flash.utils.ByteArray;
+   import org.mangui.HLS.HLSAudioTrack;
    import org.mangui.HLS.utils.Log;
 
    public class MP3 {
@@ -35,7 +36,9 @@ package org.mangui.HLS.muxing {
           i++;
         }
         Log.debug("MP3: all tags extracted, callback demux");
-        callback(audioTags,new Vector.<Tag>(),new ByteArray(), new ByteArray());
+        var audiotracks:Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
+        audiotracks.push(new HLSAudioTrack('MP3 ES', 0));
+        callback(audioTags,new Vector.<Tag>(),new ByteArray(), new ByteArray(),0,audiotracks);
       };
 
       public static function probe(data:ByteArray):Boolean {

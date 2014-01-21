@@ -1,5 +1,6 @@
 package org.mangui.HLS.muxing {
 
+    import org.mangui.HLS.HLSAudioTrack;
     import flash.utils.ByteArray;
     import org.mangui.HLS.utils.Log;
 
@@ -46,8 +47,10 @@ package org.mangui.HLS.muxing {
             audioTags.push(audioTag);
             i++;
           }
+        var audiotracks:Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
+        audiotracks.push(new HLSAudioTrack('AAC ES', 0));
         Log.debug("AAC: all tags extracted, callback demux");
-        callback(audioTags,new Vector.<Tag>(),adif, new ByteArray());
+        callback(audioTags,new Vector.<Tag>(),adif, new ByteArray(),0,audiotracks);
 
     };
 
@@ -62,7 +65,7 @@ package org.mangui.HLS.muxing {
           // Check for ADTS header
           var short:uint = data.readUnsignedShort();
           if(short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
-            //rewind to sync word        
+            //rewind to sync word
             data.position-=2;
             return true;
           }

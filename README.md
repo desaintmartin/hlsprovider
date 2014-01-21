@@ -21,7 +21,7 @@ HLSProvider could be used as library to build a custom flash player using a simp
 * error resilience
 	* retry mechanism in case of I/O Errors
 	* fallback parsing mechanism in case of badly segmented TS streams
-* AES-128 decryption
+* AES-128 decryption (progressive decryption performed in parallel of segment download)
 
 the following M3U8 tags are supported: 
 
@@ -38,9 +38,11 @@ the following M3U8 tags are supported:
 
 the following containers are supported:
 
-* MPEG2-Transport Stream
+* MPEG2-Transport Stream. each TS can contain :
+	* from 0 to multiple audio streams (dynamic audio switch available)
+	* 0 or 1 video stream
 * AAC and MPEG1-Layer 3 Audio Elementary streams
-	* as per HLS spec, Each Elementary Audio Stream segment MUST signal the timestamp of       its first sample with an ID3 PRIV tag at the beginning of the segment.  The ID3 PRIV owner identifier MUST be      "com.apple.streaming.transportStreamTimestamp".
+	* as per HLS spec, Each Elementary Audio Stream segment MUST signal the timestamp of its first sample with an ID3 PRIV tag at the beginning of the segment.  The ID3 PRIV owner identifier MUST be      "com.apple.streaming.transportStreamTimestamp".
 
 
 ##HLSProvider in action :

@@ -59,6 +59,14 @@ a:visited {
 </embed>
 </object>
 
+<br />
+
+<div>
+  selectable audio tracks:
+  <div id="audioControl" style="display: inline;">
+  </div>
+</div>
+
 <table border id="mediaInfo" width="640">
   <tr>
     <th colspan="2"><button onclick="play()">Play</button></th>
@@ -75,23 +83,23 @@ a:visited {
 <table border id="mediaControl">
   <tr>
     <th><button onclick="seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)">Seek to</button></th>
-    <td><input type=text name="seek_position"></td>
+    <td><input type="text" name="seek_position"></td>
   </tr>
   <tr>
     <th><button onclick="volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)">Set Volume</button></th>
-    <td><input type=text name="volume_level"></td>
+    <td><input type="text" name="volume_level"></td>
   </tr>
   <tr>
     <th><button onclick="setlevel(document.getElementById('mediaControl').rows[2].cells[1].children[0].value)">Set Level</button></th>
-    <td><input type=text name="quality_level"></td>
+    <td><input type="text" name="quality_level"></td>
   </tr>
   <tr>
   <th><button onclick="setminBufferLength(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)">Set min Buffer Size</button></th>
-    <td><input type=text name="min_buffer_size"></td>
+    <td><input type="text" name="min_buffer_size"></td>
   </tr>
   <tr>
     <th><button onclick="setmaxBufferLength(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set max Buffer Size</button></th>
-    <td><input type=text name="max_buffer_size"></td>
+    <td><input type="text" name="max_buffer_size"></td>
   </tr>
 </table>
 
@@ -275,6 +283,20 @@ function toggleDebug2Logs() {
   }
 }
 
+function getAudioTrackList() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var ret = obj.getAudioTrackList();
+    return ret;
+  }
+}
+
+function setAudioTrack(val) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetAudioTrack(val);
+  }
+}
 
 function onHLSReady(message) {
     listStreams(teststreams,"streamlist");
@@ -335,6 +357,23 @@ function onState(newState) {
 function onSwitch(newLevel) {
   appendLog("switching level to "+ newLevel);
   document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  newLevel;
+}
+
+function onAudioTracksListChange(trackList) {
+  // update audio switcher
+  var d = document.getElementById('audioControl');
+  var html = '';
+  appendLog("new track list");
+  for (var t in trackList) {
+    appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
+    html += '<button onclick="setAudioTrack(' + trackList[t].id + ')">' + trackList[t].title + '</button>';
+  }
+  d.innerHTML = html;
+}
+
+function onAudioTrackChange(trackId) {
+  appendLog("switching audio track to "+ trackId);
+  document.getElementById('mediaInfo').rows[2].cells[7].innerHTML = trackId;
 }
 
 function getFlashMovieObject(movieName)

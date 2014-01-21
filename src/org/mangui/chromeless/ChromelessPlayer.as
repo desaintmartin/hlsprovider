@@ -62,6 +62,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getLogDebug",_getLogDebug);
             ExternalInterface.addCallback("getLogDebug2",_getLogDebug2);
             ExternalInterface.addCallback("getPlayerVersion",_getPlayerVersion);
+            ExternalInterface.addCallback("getAudioTrackList",_getAudioTrackList);
+            ExternalInterface.addCallback("getAudioTrackId",_getAudioTrackId);
             // Connect calls to JS.
             ExternalInterface.addCallback("playerLoad",_load);
             ExternalInterface.addCallback("playerPlay",_play);
@@ -75,6 +77,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetminBufferLength",_setminBufferLength);
             ExternalInterface.addCallback("playerSetLogDebug",_setLogDebug);
             ExternalInterface.addCallback("playerSetLogDebug2",_setLogDebug2);
+            ExternalInterface.addCallback("playerSetAudioTrack",_setAudioTrack);
 
             setTimeout(_pingJavascript,50);
         };
@@ -139,6 +142,16 @@ package org.mangui.chromeless {
                 ExternalInterface.call("onSwitch",event.level);
             }
         };
+        private function _audioTracksListChange(event:HLSEvent):void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("onAudioTracksListChange", _getAudioTrackList());
+            }
+        }
+        private function _audioTrackChange(event:HLSEvent):void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("onAudioTrackChange", event.audioTrack);
+            }
+        }
 
         /** Javascript getters. **/
         private function _getLevel():Number { return _hls.getLevel(); };
@@ -153,6 +166,15 @@ package org.mangui.chromeless {
         private function _getLogDebug():Boolean { return Log.LOG_DEBUG_ENABLED; };
         private function _getLogDebug2():Boolean { return Log.LOG_DEBUG2_ENABLED; };
         private function _getPlayerVersion():Number { return 2; };
+        private function _getAudioTrackList():Array {
+            var list:Array = [];
+            var vec:Vector.<HLSAudioTrack> = _hls.getAudioTrackList();
+            for (var i:Object in vec) {
+                list.push(vec[i]);
+            }
+            return list;
+        };
+        private function _getAudioTrackId():Number{ return _hls.getAudioTrackId();};
 
         /** Javascript calls. **/
         private function _load(url:String):void { _hls.load(url); };
@@ -167,6 +189,7 @@ package org.mangui.chromeless {
         private function _setminBufferLength(new_len:Number):void { _hls.minBufferLength = new_len;};
         private function _setLogDebug(debug:Boolean):void{ Log.LOG_DEBUG_ENABLED=debug; };
         private function _setLogDebug2(debug2:Boolean):void{ Log.LOG_DEBUG2_ENABLED=debug2; };
+        private function _setAudioTrack(val:Number):void { if (val == _hls.getAudioTrackId()) return; _hls.setAudioTrack(val);if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
 
         /** Mouse click handler. **/
         private function _clickHandler(event:MouseEvent):void {
@@ -190,6 +213,8 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _hls.addEventListener(HLSEvent.QUALITY_SWITCH,_switchHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE,_audioTracksListChange);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_CHANGE,_audioTrackChange);
 
             if (available && stage.stageVideos.length > 0) {
               _stageVideo = stage.stageVideos[0];

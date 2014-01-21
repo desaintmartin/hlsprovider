@@ -132,9 +132,9 @@ package org.mangui.HLS.muxing {
                     for(var i:Number=0; i<units.length; i++) { 
                         txt += NAMES[units[i].type] + ", ";
                     }
-                    Log.debug(txt.substr(0,txt.length-2) + " slices");
+                    Log.debug2(txt.substr(0,txt.length-2) + " slices");
                 } else {
-                    Log.debug('AVC: no NALU slices found');
+                    Log.debug2('AVC: no NALU slices found');
                 }
             }
             nalu.position = position;

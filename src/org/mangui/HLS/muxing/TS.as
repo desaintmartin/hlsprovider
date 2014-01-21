@@ -318,14 +318,14 @@ package org.mangui.HLS.muxing {
 			// Parse the PES, split by Packet ID.
 			switch (pid) {
 				case _patId:
-					todo -= _readPAT();
+					todo -= _readPAT(stt);
           if (_patParsed == false) {
              _patParsed = true;
              Log.debug("TS: PAT found.PMT PID:" + _pmtId);
           }
 					break;
 				case _pmtId:
-					todo -= _readPMT();
+					todo -= _readPMT(stt);
 			    if(_pmtParsed == false) {
 			      _pmtParsed = true;
 			      Log.debug("TS: PMT found.AVC,AAC,MP3 PIDs:" + _avcId + "," + _aacId + "," + _mp3Id);
@@ -373,49 +373,73 @@ package org.mangui.HLS.muxing {
 		
 		
 		/** Read the Program Association Table. **/
-		private function _readPAT():Number {
+		private function _readPAT(stt:uint):Number {
+			var pointerField:uint = 0;
+			if (stt) {
+				pointerField = _data.readUnsignedByte();
+				// skip alignment padding
+				_data.position += pointerField;
+			}
+			// skip table id
+			_data.position += 1;
+			// get section length
+			var sectionLen:uint = _data.readUnsignedShort() & 0x3FF;
 			// Check the section length for a single PMT.
-			_data.position += 3;
-			if(_data.readUnsignedByte() > 13) {
+			if (sectionLen > 13) {
 				throw new Error("Multiple PMT entries are not supported.");
 			}
 			// Grab the PMT ID.
 			_data.position += 7;
 			_pmtId = _data.readUnsignedShort() & 8191;
-			return 13;
+			return 13 + pointerField;
 		};
 		
 		
 		/** Read the Program Map Table. **/
-		private function _readPMT():Number {
+		private function _readPMT(stt:uint):Number {
+			var pointerField:uint = 0;
+			if (stt) {
+				pointerField = _data.readUnsignedByte();
+				// skip alignment padding
+				_data.position += pointerField;
+			}
+			// skip table id
+			_data.position += 1;
 			// Check the section length for a single PMT.
-			_data.position += 3;
-			var len:uint = _data.readByte();
+			var len:uint = _data.readUnsignedShort() & 0x3FF;
 			var read:uint = 13;
-			_data.position += 8;
-			var pil:Number = _data.readByte();
+			_data.position += 7;
+			// skip program info
+			var pil:uint = _data.readUnsignedShort() & 0x3FF;
 			_data.position += pil;
 			read += pil;
 			// reset fallback PIDs before parsing PMT
 			_aacFallbackId = _avcFallbackId = _mp3FallbackId = -1;
 			// Loop through the streams in the PMT.
 			while(read < len) {
+				// stream type
 				var typ:uint = _data.readByte();
-				var sid:uint = _data.readUnsignedShort() & 8191;
+				// stream pid
+				var sid:uint = _data.readUnsignedShort() & 0x1fff;
+				//Log.debug("type/pid:" + typ + "/" + sid);
 				if(typ == 0x0F) {
+				// ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
           _aacId = _aacFallbackId = sid;
 				} else if (typ == 0x1B) {
+					// ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
           _avcId = _avcFallbackId = sid;
 				} else if (typ == 0x03 || typ == 0x04) {
+					//    ISO/IEC 11172-3 (MPEG-1 audio)
+					// or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)				
           _mp3Id = _mp3FallbackId = sid;
 				}
-				//  descriptor loop length
-				_data.position++;
-				var sel:uint = _data.readByte() & 0x3F;
+				//  es_info_length
+				var sel:uint = _data.readUnsignedShort() & 0xFFF;
 				_data.position += sel;
+				// loop to next stream
 				read += sel + 5;
 			}
-			return len;
+			return len + pointerField;
 		};
 	}
 }

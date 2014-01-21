@@ -158,7 +158,9 @@ package org.mangui.osmf.plugins
       //addTrait(MediaTraitType.DVR, dvrTrait);
 
       //setup alternative audio trait
-      //addTrait(MediaTraitType.ALTERNATIVE_AUDIO, altAudioTrait);
+      Log.debug("HLSMediaElement:AlternativeAudioTrait");
+      var alternateAudioTrait:HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls);
+      addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
     }
   }
 }

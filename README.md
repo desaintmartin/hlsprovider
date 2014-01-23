@@ -34,7 +34,8 @@ the following M3U8 tags are supported:
 * #EXT-X-DISCONTINUITY
 * #EXT-X-DISCONTINUITY-SEQUENCE
 * #EXT-X-PROGRAM-DATE-TIME (optional, used to synchronize time-stamps and sequence number when switching from one level to another)
-* #EXT-X-KEY (AES-128 method supported only, alpha stage)
+* #EXT-X-KEY (AES-128 method supported only)
+* #EXT-X-BYTERANGE (because of Flash limitation, whole fragment will be downloaded. However the byte-range will be extracted correctly)
 
 the following containers are supported:
 

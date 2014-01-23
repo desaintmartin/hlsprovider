@@ -9,6 +9,15 @@ package org.mangui.HLS.streaming {
 
     import com.hurlant.util.Hex;
 
+//CONFIG::AS3HTTPCLIENT {
+//    import com.adobe.net.URI;
+//    import org.httpclient.HttpClient;
+//    import org.httpclient.HttpRequest;
+//    import org.httpclient.http.Get;
+//    import org.httpclient.events.HttpListener;
+//    import org.httpclient.events.HttpDataEvent;
+//    import org.httpclient.events.HttpStatusEvent;
+//}
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
@@ -62,7 +71,11 @@ package org.mangui.HLS.streaming {
         /** fragment bytearray **/
         private var _fragByteArray:ByteArray;
         /** fragment bytearray write position **/
-        private var _fragWritePosition:Number;        
+        private var _fragWritePosition:Number;
+        /** fragment byte range start offset **/
+        private var _frag_byterange_start_offset:Number;
+        /** fragment byte range end offset **/
+        private var _frag_byterange_end_offset:Number;
         /** AES decryption instance **/
         private var _decryptAES:AES;
         /** Time the loading started. **/
@@ -220,6 +233,15 @@ package org.mangui.HLS.streaming {
 
       private function _fragDemux(data : ByteArray) : void {
          // _frag_parsing_start_time = new Date().valueOf();
+         
+         /* deal with byte range if any specified */
+         if (_frag_byterange_start_offset !=-1) {
+            Log.debug("trim byte range, start/end offset:" + _frag_byterange_start_offset + "/" + _frag_byterange_end_offset);
+            var ba:ByteArray = new ByteArray();
+            data.position = _frag_byterange_start_offset;
+            data.readBytes(ba,0,_frag_byterange_end_offset-_frag_byterange_start_offset);
+            data = ba;
+         }
          /* probe file type */
          data.position = 0;
          Log.debug("probe fragment type");
@@ -236,10 +258,10 @@ package org.mangui.HLS.streaming {
             Log.error("unknown fragment type");
             if(Log.LOG_DEBUG2_ENABLED) {
               data.position = 0;
-              var ba:ByteArray = new ByteArray();
-              data.readBytes(ba,0,512);
+              var ba2:ByteArray = new ByteArray();
+              data.readBytes(ba2,0,512);
               Log.debug2("frag dump(512 bytes)");
-              Log.debug2(Hex.fromArray(ba));
+              Log.debug2(Hex.fromArray(ba2));
             }
             // invalid fragment
             _fraghandleIOError("invalid content received");
@@ -459,6 +481,8 @@ package org.mangui.HLS.streaming {
         
         private function _loadfragment(frag:Fragment):void {
             _last_segment_decrypt_key_url = frag.decrypt_url;
+            _frag_byterange_start_offset = frag.byterange_start_offset;
+            _frag_byterange_end_offset = frag.byterange_end_offset;
             if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
               _last_segment_decrypt_iv = frag.decrypt_iv;
               // load key
@@ -467,8 +491,23 @@ package org.mangui.HLS.streaming {
             } else {
               try {
                  _fragByteArray = null;
-		 Log.debug("loading fragment:" + frag.url);
+                  Log.debug("loading fragment:" + frag.url);
                  _fragstreamloader.load(new URLRequest(frag.url));
+                  //if (frag.byterange_start_offset ==-1) {
+                  //  _fragstreamloader.load(new URLRequest(frag.url));
+                  //} else {
+                  //   // use as3httpclientlib for Range Request
+                  //   var client:HttpClient = new HttpClient();
+                  //   client.listener.onData = function(event:HttpDataEvent):void { 
+                  //      _fragDemux(event.bytes);
+                  //    };
+                  //   client.listener.onError = _fragErrorHandler;
+                  //   client.listener.onStatus = function(event:HttpStatusEvent):void {
+                  //   };
+                  //   var request:HttpRequest = new Get();
+                  //   request.addHeader("Range", "bytes=" + frag.byterange_start_offset + "-" + frag.byterange_end_offset);
+                  //   client.request(new URI(frag.url),request);
+                  //}
               } catch (error:Error) {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
               }

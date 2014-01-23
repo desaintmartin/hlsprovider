@@ -32,6 +32,8 @@ package org.mangui.HLS.parsing {
         private static const PROGRAMDATETIME:String = '#EXT-X-PROGRAM-DATE-TIME';
         /** Tag that provides fragment decryption info */
         private static const KEY:String = '#EXT-X-KEY:';
+        /** Tag that provides byte range info */
+        private static const BYTERANGE:String = '#EXT-X-BYTERANGE:';
 
         /** Index in the array with levels. **/
         private var _index:Number;
@@ -93,6 +95,8 @@ package org.mangui.HLS.parsing {
             var continuity_index:Number = 0;
             var i:Number = 0;
             var extinf_found:Boolean = false;
+            var byterange_start_offset:Number = -1;
+            var byterange_end_offset:Number = -1;
 
             // first look for sequence number
             while (i < lines.length) {
@@ -120,7 +124,15 @@ package org.mangui.HLS.parsing {
               if (line.match(/^\s*$/)) {
                continue;
               }
-              if(line.indexOf(KEY) == 0) {
+              if(line.indexOf(BYTERANGE) == 0) {
+                  var params:Array = line.substr(BYTERANGE.length).split('@');
+                  if (params.length==1) {
+                     byterange_start_offset =  byterange_end_offset;
+                  } else {
+                     byterange_start_offset =  parseInt(params[1]);
+                  }
+                  byterange_end_offset= parseInt(params[0]) + byterange_start_offset;
+              } else if(line.indexOf(KEY) == 0) {
                 //#EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=52",IV=.....
                 var keyLine:String= line.substr(KEY.length);
                 // reset previous values
@@ -200,10 +212,11 @@ package org.mangui.HLS.parsing {
                 } else {
                   fragment_decrypt_iv = null;
                 }
-                fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date,decrypt_url,fragment_decrypt_iv));
+                fragments.push(new Fragment(url,duration,seqnum++,start_time,continuity_index,program_date,decrypt_url,fragment_decrypt_iv,byterange_start_offset,byterange_end_offset));
                 start_time+=duration;
                 program_date = 0;
                 extinf_found = false;
+                byterange_start_offset =-1;
               }
             }
             if(fragments.length == 0) {

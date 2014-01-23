@@ -15,7 +15,7 @@ package org.mangui.HLS.streaming {
 
         /** Reference to the hls framework controller. **/
         private var _hls:HLS;
-        /** Array with levels. **/
+        /** levels vector. **/
         private var _levels:Vector.<Level>;
         /** Object that fetches the manifest. **/
         private var _urlloader:URLLoader;
@@ -55,7 +55,7 @@ package org.mangui.HLS.streaming {
                 txt = "Cannot load M3U8: crossdomain access denied:" + error.text;
             } else if (event is IOErrorEvent && _levels.length) {
                 Log.warn("I/O Error while trying to load Playlist, retry in 2s");
-                _timeoutID = setTimeout(_loadPlaylist,2000);
+                _timeoutID = setTimeout(_loadActiveLevelPlaylist,2000);
             } else {
                txt = "Cannot load M3U8: "+event.text;
             }
@@ -92,7 +92,7 @@ package org.mangui.HLS.streaming {
         };
         
         /** parse a playlist **/
-        private function _parsePlaylist(string:String,url:String,index:Number):void {
+        private function _parseLevelPlaylist(string:String,url:String,index:Number):void {
             if(string != null && string.length != 0) {
                Log.debug("level "+ index + " playlist:\n" + string);
                var frags:Vector.<Fragment> = Manifest.getFragments(string,url);
@@ -109,7 +109,7 @@ package org.mangui.HLS.streaming {
                 _type = HLSTypes.LIVE;
                 var timeout:Number = Math.max(100,_reload_playlists_timer + 1000*_levels[index].averageduration - getTimer());
                 Log.debug("Level " + index + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
-                _timeoutID = setTimeout(_loadPlaylist,timeout);
+                _timeoutID = setTimeout(_loadActiveLevelPlaylist,timeout);
             }
             if (!_canStart) {
                _canStart = (_levels[index].fragments.length > 0);
@@ -132,12 +132,12 @@ package org.mangui.HLS.streaming {
                     level.url = _url;
                     _levels.push(level);
                     Log.debug("1 Level Playlist, load it");
-                    _parsePlaylist(string,_url,0);
+                    _parseLevelPlaylist(string,_url,0);
                 } else if(string.indexOf(Manifest.LEVEL) > 0) {
                   Log.debug("adaptive playlist:\n" + string);
                   //adaptative playlist, extract levels from playlist, get them and parse them
                   _levels = Manifest.extractLevels(string,_url);
-                  _loadPlaylist();
+                  _loadActiveLevelPlaylist();
                 }
             } else {
                 var message:String = "Manifest is not a valid M3U8 file" + _url;
@@ -146,11 +146,11 @@ package org.mangui.HLS.streaming {
         };
 
         /** load/reload active M3U8 playlist **/
-        private function _loadPlaylist():void {
+        private function _loadActiveLevelPlaylist():void {
             _load_in_progress = true;
             _reload_playlists_timer = getTimer();
             // load active M3U8 playlist only
-            new Manifest().loadPlaylist(_levels[_current_level].url,_parsePlaylist,_errorHandler,_current_level,_type);
+            new Manifest().loadPlaylist(_levels[_current_level].url,_parseLevelPlaylist,_errorHandler,_current_level,_type);
         };
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
@@ -159,7 +159,7 @@ package org.mangui.HLS.streaming {
             if(_load_in_progress == false && (_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0)) {
               Log.debug("switch to level "+ _current_level + ", load Playlist");
               clearTimeout(_timeoutID);
-              _timeoutID = setTimeout(_loadPlaylist,0);
+              _timeoutID = setTimeout(_loadActiveLevelPlaylist,0);
             }
         };
 

@@ -1,6 +1,7 @@
 package org.mangui.HLS {
 
 
+    import org.mangui.HLS.parsing.AltAudioTrack;
     import org.mangui.HLS.parsing.Level;
     import flash.events.Event;
 
@@ -35,6 +36,8 @@ package org.mangui.HLS {
         public static const AUDIO_TRACKS_LIST_CHANGE:String = "audioTracksListChange";
         /** Identifier for a audio track change **/
         public static const AUDIO_TRACK_CHANGE:String = "audioTrackChange";
+        /** Identifier for alt audio tracks list change **/
+        public static const ALT_AUDIO_TRACKS_LIST_CHANGE:String = "AltAudioTracksListChange";
 
         /** The current quality level. **/
         public var level:Number;
@@ -42,6 +45,8 @@ package org.mangui.HLS {
         public var duration:Number;
         /** The list with quality levels. **/
         public var levels:Vector.<Level>;
+        /** The list with alternate audio Tracks. **/
+        public var altAudioTracks:Vector.<AltAudioTrack>;
         /** The error message. **/
         public var message:String;
         /** The current QOS metrics. **/
@@ -79,6 +84,9 @@ package org.mangui.HLS {
                     break;
                 case HLSEvent.PLAYLIST_DURATION_UPDATED:
                     duration = parameter as Number;
+                    break;
+                case HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE:
+                    altAudioTracks = parameter as Vector.<AltAudioTrack>;
                     break;
             }
             super(type, false, false);

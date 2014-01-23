@@ -138,6 +138,12 @@ package org.mangui.HLS.streaming {
                   //adaptative playlist, extract levels from playlist, get them and parse them
                   _levels = Manifest.extractLevels(string,_url);
                   _loadActiveLevelPlaylist();
+                  if(string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {
+                     Log.debug("alternate audio level found");
+                     //parse alternate audio tracks
+                     var altAudiolevels:Vector.<AltAudioTrack> = Manifest.extractAltAudioTracks(string,_url);
+                     _hls.dispatchEvent(new HLSEvent(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE,altAudiolevels));
+                  }
                 }
             } else {
                 var message:String = "Manifest is not a valid M3U8 file" + _url;

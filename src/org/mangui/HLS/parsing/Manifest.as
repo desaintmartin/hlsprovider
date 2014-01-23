@@ -20,6 +20,8 @@ package org.mangui.HLS.parsing {
         public static const LEVEL:String = '#EXT-X-STREAM-INF:';
         /** Tag that delimits the end of a playlist. **/
         public static const ENDLIST:String = '#EXT-X-ENDLIST';
+        /** Tag that provides info related to alternative audio tracks */
+        public static const ALTERNATE_AUDIO:String = '#EXT-X-MEDIA:TYPE=AUDIO,';
         /** Tag that provides the sequence number. **/
         private static const SEQNUM:String = '#EXT-X-MEDIA-SEQUENCE:';
         /** Tag that provides the target duration for each segment. **/
@@ -270,6 +272,56 @@ package org.mangui.HLS.parsing {
             return vectorLevels;
         };
 
+        /** Extract Alternate Audio Tracks from manifest data. **/
+        public static function extractAltAudioTracks(data:String,base:String=''):Vector.<AltAudioTrack> {
+            var altAudioTracks:Vector.<AltAudioTrack> = new Vector.<AltAudioTrack>();
+            var lines:Array = data.split("\n");
+            var i:Number = 0;
+            var replacedoublequote:RegExp = new RegExp("\\\"","g");
+            while (i<lines.length) {
+                var line:String = lines[i++];
+              if(line.indexOf(ALTERNATE_AUDIO) == 0) {
+                  line=line.replace(replacedoublequote,"");
+                  Log.debug("parsing alternate audio level info:\n" + line);
+                  //#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 1",AUTOSELECT=YES,DEFAULT=YES
+                  //#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 2",AUTOSELECT=NO,DEFAULT=NO,URI="alternate_audio_aac_sinewave/prog_index.m3u8"
+                  var params:Array = line.substr(ALTERNATE_AUDIO.length).split(',');
+                  var alt_group_id:String;
+                  var alt_lang:String;
+                  var alt_name:String;
+                  var alt_autoselect:Boolean;
+                  var alt_default:Boolean;
+                  var alt_url:String;
+                  for(var j:Number = 0; j<params.length; j++) {
+                      var param:String = params[j];
+                      if(param.indexOf('GROUP-ID') > -1) {
+                          alt_group_id = param.split('=')[1];
+                      } else if (param.indexOf('LANGUAGE') > -1) {
+                         alt_lang = param.split('=')[1];
+                      } else if (param.indexOf('NAME') > -1) {
+                          alt_name = param.split('=')[1];
+                      } else if (param.indexOf('AUTOSELECT') > -1) {
+                          if (param.split('=')[1] == "NO") {
+                            alt_autoselect = false;
+                          } else {
+                            alt_autoselect = true;
+                          }
+                      } else if (param.indexOf('DEFAULT') > -1) {
+                          if (param.split('=')[1] == "NO") {
+                            alt_default = false;
+                          } else {
+                            alt_default = true;
+                          }
+                      } else if (param.indexOf('URI') > -1) {
+                         alt_url = Manifest._extractURL(param.split('=')[1],base);
+                      }
+                  }
+                  var alternate_audio:AltAudioTrack = new AltAudioTrack(alt_group_id,alt_lang,alt_name,alt_autoselect,alt_default,alt_url);
+                  altAudioTracks.push(alternate_audio);
+               }
+            }
+            return altAudioTracks;
+        };
 
         /** Extract whether the stream is live or ondemand. **/
         public static function hasEndlist(data:String):Boolean {

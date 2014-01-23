@@ -107,6 +107,8 @@ package org.mangui.HLS.streaming {
         private var _curAudioTrack:Number = -1;
         /** list of audio tracks in fragment **/
         private var _audioList:Vector.<HLSAudioTrack> = null;
+        /** Reference to the alternate audio track list. **/
+        private var _altAudioTrackLists:Vector.<AltAudioTrack>;
 
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
@@ -114,6 +116,7 @@ package org.mangui.HLS.streaming {
             _autoLevelManager = new AutoLevelManager(hls);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
+            _hls.addEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE,_altAudioTracksListChangedHandler);
             _fragstreamloader = new URLStream();
             _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
             _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragErrorHandler);
@@ -512,6 +515,13 @@ package org.mangui.HLS.streaming {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
               }
             }
+        }
+
+
+         /** Store the alternate audio track lists. **/
+        private function _altAudioTracksListChangedHandler(event:HLSEvent):void {
+         _altAudioTrackLists = event.altAudioTracks;
+         Log.info(_altAudioTrackLists.length +  " alternate audio tracks found");
         }
 
         /** Store the manifest data. **/

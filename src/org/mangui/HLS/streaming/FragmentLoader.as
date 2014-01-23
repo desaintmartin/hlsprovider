@@ -19,6 +19,8 @@ package org.mangui.HLS.streaming {
         private var _hls:HLS;
         /** reference to auto level manager */
         private var _autoLevelManager:AutoLevelManager;
+        /** has manifest just being reloaded **/
+        private var _manifest_just_loaded:Boolean = false;
         /** overall processing bandwidth of last loaded fragment (fragment size divided by processing duration) **/
         private var _last_bandwidth:int = 0;
         /** overall processing time of the last loaded fragment (loading+decrypting+parsing) **/
@@ -43,6 +45,8 @@ package org.mangui.HLS.streaming {
         private var _callback:Function;
         /** sequence number that's currently loading. **/
         private var _seqnum:Number;
+        /** start level **/
+        private var _start_level:int = 0;
         /** Quality level of the last fragment load. **/
         private var _level:int = 0;
         /* overrided quality_manual_level level */
@@ -285,8 +289,10 @@ package org.mangui.HLS.streaming {
 
        private function updateLevel(buffer:Number):Number {
           var level:Number;
-          /* in case IO Error has been raised, stick to same level */
-          if(_bIOError == true) {
+          if(_manifest_just_loaded) {
+            level = _start_level;
+          } else if(_bIOError == true) {
+            /* in case IO Error has been raised, stick to same level */
             level = _level;
           /* in case fragment was loaded for PTS analysis, stick to same level */
           } else if(_pts_just_loaded == true) {
@@ -300,8 +306,9 @@ package org.mangui.HLS.streaming {
           } else {
             level = _manual_level;
           }
-          if(level != _level) {
+          if(level != _level || _manifest_just_loaded) {
             _level = level;
+            _manifest_just_loaded = false;
             _switchlevel = true;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
           }
@@ -471,7 +478,21 @@ package org.mangui.HLS.streaming {
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event:HLSEvent):void {
             _levels = event.levels;
-            _level = 0;
+            _start_level = -1;
+            _manifest_just_loaded = true;
+            
+            // set up start level as being the lowest non-audio level.
+            for(var i:Number = 0; i < _levels.length; i++) {
+                if(!_levels[i].audio) {
+                    _start_level = i;
+                    break;
+                }
+            }
+            // in case of audio only playlist, force startLevel to 0 
+            if(_start_level == -1) {
+               Log.info("playlist is audio-only");
+               _start_level = 0;
+            }
         };
 
         /** Store the manifest data. **/

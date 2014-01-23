@@ -53,7 +53,7 @@ package org.mangui.HLS.streaming {
             if(event is SecurityErrorEvent) {
                var error:SecurityErrorEvent = event as SecurityErrorEvent;
                 txt = "Cannot load M3U8: crossdomain access denied:" + error.text;
-            } else if (event is IOErrorEvent) {
+            } else if (event is IOErrorEvent && _levels.length) {
                 Log.warn("I/O Error while trying to load Playlist, retry in 2s");
                 _timeoutID = setTimeout(_loadPlaylist,2000);
             } else {

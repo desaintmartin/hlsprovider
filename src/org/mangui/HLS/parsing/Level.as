@@ -29,6 +29,8 @@ package org.mangui.HLS.parsing {
         public var averageduration:Number;
         /** Total duration **/
         public var duration:Number;
+        /**  Audio Identifier **/
+        public var audio_stream_id:String;
 
         /** Create the quality level. **/
         public function Level(bitrate:Number=150000, height:Number=90, width:Number=160):void {

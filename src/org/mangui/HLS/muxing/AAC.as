@@ -48,7 +48,7 @@ package org.mangui.HLS.muxing {
             i++;
           }
         var audiotracks:Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
-        audiotracks.push(new HLSAudioTrack('AAC ES', 0));
+        audiotracks.push(new HLSAudioTrack('AAC ES', HLSAudioTrack.FROM_DEMUX, 0,true));
         Log.debug("AAC: all tags extracted, callback demux");
         callback(audioTags,new Vector.<Tag>(),adif, new ByteArray(),0,audiotracks);
 

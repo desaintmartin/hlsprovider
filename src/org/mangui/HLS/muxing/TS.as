@@ -156,11 +156,18 @@ package org.mangui.HLS.muxing {
           Log.debug("TS: extracting MP3 tags");
           _readMPEG();
         }
+        
+        var isDefault:Boolean = true;
+        
         for (var i:Number=0; i<_aacIds.length; ++i) {
-          audioList.push(new HLSAudioTrack('TS/AAC ' + i, _aacIds[i]));
+          audioList.push(new HLSAudioTrack('TS/AAC ' + i, HLSAudioTrack.FROM_DEMUX,_aacIds[i],isDefault));
+          if(isDefault)
+            isDefault = false;
         }
         for (i=0; i<_mp3Ids.length; ++i) {
-          audioList.push(new HLSAudioTrack('TS/MP3 ' + i, _mp3Ids[i]));
+          audioList.push(new HLSAudioTrack('TS/MP3 ' + i, HLSAudioTrack.FROM_DEMUX,_mp3Ids[i],isDefault));
+          if(isDefault)
+            isDefault = false;
         }
       }
       Log.debug("TS: " + _audioTags.length + " audio tags extracted");

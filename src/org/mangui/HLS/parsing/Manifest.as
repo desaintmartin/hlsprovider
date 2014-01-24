@@ -36,6 +36,10 @@ package org.mangui.HLS.parsing {
         private static const KEY:String = '#EXT-X-KEY:';
         /** Tag that provides byte range info */
         private static const BYTERANGE:String = '#EXT-X-BYTERANGE:';
+        /** useful regular expression */ 
+        private static const replacespace:RegExp = new RegExp("\\s+","g");
+        private static const replacesinglequote:RegExp = new RegExp("\\\'","g");
+        private static const replacedoublequote:RegExp = new RegExp("\\\"","g");
 
         /** Index in the array with levels. **/
         private var _index:Number;
@@ -141,9 +145,6 @@ package org.mangui.HLS.parsing {
                 decrypt_url = null;
                 decrypt_iv = null;
                 // remove space, single and double quote
-                var replacespace:RegExp = new RegExp("\\s+","g");
-                var replacesinglequote:RegExp = new RegExp("\\\'","g");
-                var replacedoublequote:RegExp = new RegExp("\\\"","g");
                 keyLine=keyLine.replace(replacespace,"");
                 keyLine=keyLine.replace(replacesinglequote,"");
                 keyLine=keyLine.replace(replacedoublequote,"");
@@ -244,12 +245,15 @@ package org.mangui.HLS.parsing {
                         if(param.indexOf('BANDWIDTH') > -1) {
                             level.bitrate = param.split('=')[1];
                         } else if (param.indexOf('RESOLUTION') > -1) {
-							var res:String= param.split('=')[1] as String;
-							var dim:Array = res.split('x');
+                           var res:String= param.split('=')[1] as String;
+                           var dim:Array = res.split('x');
                             level.width =  parseInt(dim[0]);
                             level.height  = parseInt(dim[1]);
                         } else if (param.indexOf('CODECS') > -1 && line.indexOf('avc1') == -1) {
                             level.audio = true;
+                        } else if (param.indexOf('AUDIO') > -1) {
+                            level.audio_stream_id = param.split('=')[1];
+                            level.audio_stream_id = level.audio_stream_id.replace(replacedoublequote,"");
                         }
                     }
                     // Look for next non-blank line, for url
@@ -277,7 +281,6 @@ package org.mangui.HLS.parsing {
             var altAudioTracks:Vector.<AltAudioTrack> = new Vector.<AltAudioTrack>();
             var lines:Array = data.split("\n");
             var i:Number = 0;
-            var replacedoublequote:RegExp = new RegExp("\\\"","g");
             while (i<lines.length) {
                 var line:String = lines[i++];
               if(line.indexOf(ALTERNATE_AUDIO) == 0) {

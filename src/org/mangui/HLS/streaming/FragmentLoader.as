@@ -105,8 +105,10 @@ package org.mangui.HLS.streaming {
 
         /** current audio track id **/
         private var _curAudioTrack:Number = -1;
-        /** list of audio tracks in fragment **/
-        private var _audioList:Vector.<HLSAudioTrack> = null;
+        /** list of audio tracks from demuxed fragments **/
+        private var _audioTracksfromDemux:Vector.<HLSAudioTrack> = null;
+        /** list of audio tracks from Manifest, matching with current level **/
+        private var _audioTracksfromManifest:Vector.<HLSAudioTrack> = null;
         /** Reference to the alternate audio track list. **/
         private var _altAudioTrackLists:Vector.<AltAudioTrack>;
 
@@ -143,7 +145,7 @@ package org.mangui.HLS.streaming {
         }
 
         public function getAudioTrackList():Vector.<HLSAudioTrack> {
-            return _audioList;
+            return _audioTracksfromDemux;
         }
 
         /** key load completed. **/
@@ -250,7 +252,7 @@ package org.mangui.HLS.streaming {
          Log.debug("probe fragment type");
          if (TS.probe(data) == true) {
             Log.debug("MPEG2-TS found");
-            new TS(data, _fragReadHandler,_curAudioTrack);
+            new TS(data, _fragReadHandler,_curAudioTrack);  
          } else if (AAC.probe(data) == true) {
             Log.debug("AAC ES found");
             new AAC(data,_fragReadHandler);
@@ -547,6 +549,30 @@ package org.mangui.HLS.streaming {
         /** Store the manifest data. **/
         private function _levelUpdatedHandler(event:HLSEvent):void {
           _last_updated_level = event.level;
+          if(_last_updated_level == _level) {
+            var altAudioTrack:AltAudioTrack;
+            _audioTracksfromManifest = new Vector.<HLSAudioTrack>();
+            var stream_id:String = _levels[_level].audio_stream_id;
+            // check if audio stream id is set
+            if(stream_id) {
+               // if set, try to find if any alternate audio streams are matching with this ID
+               if(_altAudioTrackLists) {
+                  for( var i:Number = 0 ; i < _altAudioTrackLists.length ; i++) {
+                     altAudioTrack = _altAudioTrackLists[i];
+                     if(altAudioTrack.group_id == stream_id) {
+                        var isDefault:Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
+                        _audioTracksfromManifest.push(new HLSAudioTrack(altAudioTrack.name, HLSAudioTrack.FROM_PLAYLIST, i, isDefault));
+                        if(isDefault) {
+                           Log.info("default track : " + altAudioTrack.name);
+                        } else {
+                           Log.info("alternate track : " + altAudioTrack.name);
+                        }
+                     }
+                  }
+               }
+            }
+            Log.info(_audioTracksfromManifest.length + " audio tracks matching with current level");
+          }
         };
 
     /** Handles the actual reading of the TS fragment **/
@@ -557,13 +583,13 @@ package org.mangui.HLS.streaming {
         setAudioTrack(audioTrack);
         var changed:Boolean = false;
          audioList = audioList.sort(function(a:HLSAudioTrack,b:HLSAudioTrack):Number { return a.id - b.id; });
-        if (!_audioList) {
+        if (!_audioTracksfromDemux) {
             changed = true;
-        } else if (_audioList.length != audioList.length) {
+        } else if (_audioTracksfromDemux.length != audioList.length) {
             changed = true;
         } else {
-            for (var idx:int=0; idx<_audioList.length; ++idx) {
-                if (_audioList[idx].id != audioList[idx].id) {
+            for (var idx:int=0; idx<_audioTracksfromDemux.length; ++idx) {
+                if (_audioTracksfromDemux[idx].id != audioList[idx].id) {
                     changed = true;
                     break;
                 }
@@ -571,7 +597,7 @@ package org.mangui.HLS.streaming {
         }
         // update audio list
         if (changed) {
-            _audioList = audioList;
+            _audioTracksfromDemux = audioList;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_TRACKS_LIST_CHANGE));
         }
 

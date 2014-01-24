@@ -3,6 +3,7 @@ package org.mangui.jwplayer.media {
 
     import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
+    import org.mangui.HLS.utils.Log;
     
     import com.longtailvideo.jwplayer.events.MediaEvent;
     import com.longtailvideo.jwplayer.model.PlayerConfig;
@@ -32,6 +33,9 @@ package org.mangui.jwplayer.media {
         private var _video:Video;
         /** current position **/
         protected var _media_position:Number;
+        /** Video size **/
+        private var _streamWidth:Number = 0;
+        private var _streamHeight:Number = 0;
 
         public function HLSProvider() {
             super('hls');
@@ -94,6 +98,20 @@ package org.mangui.jwplayer.media {
                 duration: event.mediatime.duration
             });
          }
+         
+            var videoWidth:Number = _video.videoWidth;
+            var videoHeight:Number = _video.videoHeight;
+
+            if (videoWidth && videoHeight) {
+              var changed:Boolean = _streamWidth != videoWidth || _streamHeight != videoHeight;
+              if (changed) {
+                _streamHeight = videoHeight;
+                _streamWidth = videoWidth;
+                 Log.info("video size changed to " +  _streamWidth + "/" + _streamHeight);
+                 resize(_width, _height);
+                }
+              }
+         
         };
 
         /** Forward state changes from the framework. **/
@@ -190,14 +208,26 @@ package org.mangui.jwplayer.media {
 
         /** Do a resize on the video. **/
         override public function resize(width:Number,height:Number):void {
-            _hls.setWidth(width);
-            _height = height;
-            _width = width;
-            if(_levels && _levels[_level] && _levels[_level].width) {
-                var ratio:Number = _levels[_level].width / _levels[_level].height;
-                _video.height = Math.round(_video.width / ratio);
+            var need_resize:Boolean = false;
+            if (_height != height || width != _width) {
+               Log.info("resize video to " +  width + "/" + height);
+               _hls.setWidth(width);
+               _height = height;
+               _width = width;
+               need_resize = true;
             }
-            Stretcher.stretch(_video, width, height, config.stretching);
+            if(_streamWidth) {
+               var ratio:Number =_streamWidth / _streamHeight;
+               var adjusted_height:Number = Math.round(_video.width / ratio); 
+               if (_video.height != adjusted_height) {
+                   need_resize = true;
+                  _video.height = Math.round(_video.width / ratio);
+                  Log.info("AR adjust height to " +  _video.height);
+               }
+            }
+            if(need_resize) {
+               Stretcher.stretch(_video, width, height, config.stretching);
+            }
         };
 
 

@@ -143,12 +143,12 @@ package org.mangui.osmf.plugins
         addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
       }
 
-      // set live/VOD mode
+      // set Live/Recorded mode
       var streamUrlRes:StreamingURLResource = resource as StreamingURLResource;
       if(_hls.getType() == HLSTypes.LIVE) {
         streamUrlRes.streamType = StreamType.LIVE;
       } else {
-        streamUrlRes.streamType = StreamType.DVR;
+        streamUrlRes.streamType = StreamType.RECORDED;
       }
 
       //setup drm trait

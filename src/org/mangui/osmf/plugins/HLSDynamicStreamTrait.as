@@ -48,6 +48,7 @@ package org.mangui.osmf.plugins
       Log.debug("HLSDynamicStreamTrait:autoSwitchChangeStart:"+value);
       if(value == true) {
         _hls.setPlaybackQuality(-1);
+        _hls.stream.seek(_hls.getPosition());
       }
     }
 

@@ -272,7 +272,7 @@ package org.mangui.HLS.muxing {
 				}
 				// If NAL units are offset, push preceding data into the previous tag.
 				overflow = units[0].start - units[0].header - _videoPES[i].payload;
-				if(overflow) {
+				if(overflow && _videoTags.length >0) {
 					_videoTags[_videoTags.length-1].push(_videoPES[i].data,_videoPES[i].payload,overflow);
 				}
 				_videoTags.push(new Tag(Tag.AVC_NALU,_videoPES[i].pts,_videoPES[i].dts,false));

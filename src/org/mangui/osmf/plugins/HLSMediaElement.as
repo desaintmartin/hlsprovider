@@ -10,6 +10,7 @@ package org.mangui.osmf.plugins
   import org.mangui.HLS.HLSTypes;
  
   import org.osmf.media.LoadableElementBase;
+  import org.osmf.media.MediaElement;
   import org.osmf.media.videoClasses.VideoSurface;
   import org.osmf.media.MediaResourceBase;
   import org.osmf.media.URLResource;
@@ -159,7 +160,7 @@ package org.mangui.osmf.plugins
 
       //setup alternative audio trait
       Log.debug("HLSMediaElement:AlternativeAudioTrait");
-      var alternateAudioTrait:HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls);
+      var alternateAudioTrait:HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls,this as MediaElement);
       addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
     }
   }

@@ -103,14 +103,16 @@ package org.mangui.HLS.streaming {
         /** boolean to indicate whether Buffer could request new fragment load **/
         private var _need_reload:Boolean=true;
 
-        /** current audio track id **/
-        private var _curAudioTrack:Number = -1;
-        /** list of audio tracks from demuxed fragments **/
-        private var _audioTracksfromDemux:Vector.<HLSAudioTrack> = null;
-        /** list of audio tracks from Manifest, matching with current level **/
-        private var _audioTracksfromManifest:Vector.<HLSAudioTrack> = null;
         /** Reference to the alternate audio track list. **/
         private var _altAudioTrackLists:Vector.<AltAudioTrack>;
+        /** list of audio tracks from demuxed fragments **/
+        private var _audioTracksfromDemux:Vector.<HLSAudioTrack>;
+        /** list of audio tracks from Manifest, matching with current level **/
+        private var _audioTracksfromManifest:Vector.<HLSAudioTrack>;
+        /** merged audio tracks list **/
+        private var _audioTracks:Vector.<HLSAudioTrack>;
+        /** current audio track id **/
+        private var _audioTrackId:Number;
 
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
@@ -131,21 +133,21 @@ package org.mangui.HLS.streaming {
         };
 
         public function setAudioTrack(num:Number):void {
-            if (_curAudioTrack != num) {
-                _curAudioTrack = num;
+            if (_audioTrackId != num) {
+                _audioTrackId = num;
                 var ev:HLSEvent = new HLSEvent(HLSEvent.AUDIO_TRACK_CHANGE);
-                ev.audioTrack = _curAudioTrack;
+                ev.audioTrack = _audioTrackId;
                 _hls.dispatchEvent(ev);
                 Log.info('Setting audio track to ' + num);
             }
         }
 
         public function getAudioTrackId():Number {
-            return _curAudioTrack;
+            return _audioTrackId;
         }
 
         public function getAudioTrackList():Vector.<HLSAudioTrack> {
-            return _audioTracksfromDemux;
+            return _audioTracks;
         }
 
         /** key load completed. **/
@@ -252,7 +254,23 @@ package org.mangui.HLS.streaming {
          Log.debug("probe fragment type");
          if (TS.probe(data) == true) {
             Log.debug("MPEG2-TS found");
-            new TS(data, _fragReadHandler,_curAudioTrack);  
+            var audio_pid:Number;
+            var audio_extract:Boolean;
+            if(_audioTrackId ==-1) {
+               // unknown, will be retrieved from demux
+               audio_pid = -1;
+               audio_extract = true;
+            } else {
+               var track:HLSAudioTrack = _audioTracks[_audioTrackId];
+               if(track.source == HLSAudioTrack.FROM_DEMUX) {
+                  audio_pid = _audioTracks[_audioTrackId].id;
+                  audio_extract = true;
+               } else {
+                  audio_pid = -1;
+                  audio_extract = false;
+               }
+            }
+            new TS(data, _fragReadHandler,audio_extract,audio_pid);
          } else if (AAC.probe(data) == true) {
             Log.debug("AAC ES found");
             new AAC(data,_fragReadHandler);
@@ -531,7 +549,11 @@ package org.mangui.HLS.streaming {
             _levels = event.levels;
             _start_level = -1;
             _manifest_just_loaded = true;
-            
+            // reset audio tracks
+            _audioTrackId = -1;
+            _audioTracksfromDemux = new Vector.<HLSAudioTrack>();
+            _audioTracksfromManifest = new Vector.<HLSAudioTrack>();
+            _audioTracksMerge();
             // set up start level as being the lowest non-audio level.
             for(var i:Number = 0; i < _levels.length; i++) {
                 if(!_levels[i].audio) {
@@ -546,62 +568,145 @@ package org.mangui.HLS.streaming {
             }
         };
 
-        /** Store the manifest data. **/
-        private function _levelUpdatedHandler(event:HLSEvent):void {
-          _last_updated_level = event.level;
-          if(_last_updated_level == _level) {
-            var altAudioTrack:AltAudioTrack;
-            _audioTracksfromManifest = new Vector.<HLSAudioTrack>();
-            var stream_id:String = _levels[_level].audio_stream_id;
-            // check if audio stream id is set
-            if(stream_id) {
-               // if set, try to find if any alternate audio streams are matching with this ID
-               if(_altAudioTrackLists) {
-                  for( var i:Number = 0 ; i < _altAudioTrackLists.length ; i++) {
-                     altAudioTrack = _altAudioTrackLists[i];
+         /** Store the manifest data. **/
+         private function _levelUpdatedHandler(event:HLSEvent):void {
+            _last_updated_level = event.level;
+            if(_last_updated_level == _level) {
+               var altAudioTrack:AltAudioTrack;
+               var audioTrackList:Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>(); 
+               var stream_id:String = _levels[_level].audio_stream_id;
+               // check if audio stream id is set, and alternate audio tracks available
+               if(stream_id && _altAudioTrackLists) {
+                  // try to find alternate audio streams matching with this ID
+                  for( var idx:Number = 0 ; idx < _altAudioTrackLists.length ; idx++) {
+                     altAudioTrack = _altAudioTrackLists[idx];
                      if(altAudioTrack.group_id == stream_id) {
                         var isDefault:Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
-                        _audioTracksfromManifest.push(new HLSAudioTrack(altAudioTrack.name, HLSAudioTrack.FROM_PLAYLIST, i, isDefault));
-                        if(isDefault) {
-                           Log.info("default track : " + altAudioTrack.name);
-                        } else {
-                           Log.info("alternate track : " + altAudioTrack.name);
-                        }
+                        Log.debug(" audio track[" + audioTrackList.length +"]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
+                        audioTrackList.push(new HLSAudioTrack(altAudioTrack.name, HLSAudioTrack.FROM_PLAYLIST, idx, isDefault));
                      }
                   }
                }
+               // check if audio tracks matching with current level have changed since last time 
+               var audio_track_changed:Boolean = false;
+               if (_audioTracksfromManifest.length != audioTrackList.length) {
+                  audio_track_changed = true;
+               } else {
+                  for (idx=0; idx<_audioTracksfromManifest.length; ++idx) {
+                     if (_audioTracksfromManifest[idx].id != audioTrackList[idx].id) {
+                        audio_track_changed = true;
+                     }
+                  }
+               }
+               // update audio list
+               if (audio_track_changed) {
+                  _audioTracksfromManifest = audioTrackList;
+                  _audioTracksMerge();
+               }
             }
-            Log.info(_audioTracksfromManifest.length + " audio tracks matching with current level");
-          }
-        };
+         };
+
+      // merge audio track info from demux and from manifest into a unified list that will be exposed to upper layer
+    private function _audioTracksMerge():void {
+      var i:Number;
+      var default_demux:Number = -1;
+      var default_manifest:Number = -1;
+      var default_found:Boolean = false;
+      var default_track_title:String;
+      var audioTrack:HLSAudioTrack;
+      _audioTracks = new Vector.<HLSAudioTrack>();
+      
+      // first look for default audio track.
+      for (i=0;i<_audioTracksfromManifest.length;i++) {
+         if(_audioTracksfromManifest[i].isDefault) {
+            default_manifest = i;
+            break;
+         }
+      }
+      for (i=0;i<_audioTracksfromDemux.length;i++) {
+         if(_audioTracksfromDemux[i].isDefault) {
+            default_demux = i;
+            break;
+         }
+      }
+      /* default audio track from manifest should take precedence */
+      if (default_manifest !=-1) {
+         audioTrack = _audioTracksfromManifest[default_manifest];
+         // if URL set, default audio track is not embedded into MPEG2-TS
+         if(_altAudioTrackLists[audioTrack.id].url || default_demux ==-1) {
+            Log.debug("default audio track found in Manifest");
+            default_found = true;
+            _audioTracks.push(audioTrack);
+         } else { // empty URL, default audio track is embedded into MPEG2-TS. retrieve track title from manifest and override demux title
+            default_track_title = audioTrack.title;
+            if(default_demux != -1) {
+               Log.debug("default audio track signaled in Manifest, will be retrieved from MPEG2-TS");
+               audioTrack = _audioTracksfromDemux[default_demux];
+               audioTrack.title = default_track_title;
+               default_found = true;
+               _audioTracks.push(audioTrack);
+            }
+         }
+      } else if (default_demux !=-1 ){
+         audioTrack = _audioTracksfromDemux[default_demux];
+         default_found = true;
+         _audioTracks.push(audioTrack);
+      }
+      // then append other audio tracks, start from manifest list, then continue with demux list
+      for (i=0;i<_audioTracksfromManifest.length;i++) {
+         if(!_audioTracksfromManifest[i].isDefault) {
+            Log.debug("alternate audio track found in Manifest");
+            audioTrack = _audioTracksfromManifest[i];
+            _audioTracks.push(audioTrack);
+         }
+      }
+
+      for (i=0;i<_audioTracksfromDemux.length;i++) {
+         if(!_audioTracksfromDemux[i].isDefault) {
+            Log.debug("alternate audio track retrieved from demux");
+            audioTrack = _audioTracksfromDemux[i];
+            _audioTracks.push(audioTrack);
+         }
+      }
+      // notify audio track list update
+      _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_TRACKS_LIST_CHANGE));
+
+      // switch track id to default audio track, if found
+      if(default_found == true && _audioTrackId ==-1) {
+         setAudioTrack(0);
+      }
+    }
 
     /** Handles the actual reading of the TS fragment **/
-    private function _fragReadHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray,audioTrack:Number=-1,audioList:Vector.<HLSAudioTrack>=null):void {
-       var min_pts:Number = Number.POSITIVE_INFINITY;
-       var max_pts:Number = Number.NEGATIVE_INFINITY;
-       // update current audio track
-        setAudioTrack(audioTrack);
-        var changed:Boolean = false;
-         audioList = audioList.sort(function(a:HLSAudioTrack,b:HLSAudioTrack):Number { return a.id - b.id; });
-        if (!_audioTracksfromDemux) {
-            changed = true;
-        } else if (_audioTracksfromDemux.length != audioList.length) {
-            changed = true;
-        } else {
-            for (var idx:int=0; idx<_audioTracksfromDemux.length; ++idx) {
-                if (_audioTracksfromDemux[idx].id != audioList[idx].id) {
-                    changed = true;
-                    break;
-                }
+    private function _fragReadHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray,audioPID:Number=-1,audioTrackList:Vector.<HLSAudioTrack>=null):void {
+       var audio_index:Number;
+       var audio_track_changed:Boolean = false;
+       audioTrackList = audioTrackList.sort(function(a:HLSAudioTrack,b:HLSAudioTrack):Number { return a.id - b.id; });
+         for (var idx:int=0; idx<audioTrackList.length; ++idx) {
+            // retrieve index id of current audio track
+            if (audioTrackList[idx].id == audioPID) {
+               audio_index = idx;
+               break;
             }
-        }
-        // update audio list
-        if (changed) {
-            _audioTracksfromDemux = audioList;
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_TRACKS_LIST_CHANGE));
-        }
+         }
+         if (_audioTracksfromDemux.length != audioTrackList.length) {
+            audio_track_changed = true;
+         } else {
+            for (idx=0; idx<_audioTracksfromDemux.length; ++idx) {
+               if (_audioTracksfromDemux[idx].id != audioTrackList[idx].id) {
+                  audio_track_changed = true;
+               }
+            }
+         }
+         // update audio list if changed 
+         if (audio_track_changed) {
+            _audioTracksfromDemux = audioTrackList;
+            _audioTracksMerge();
+         }
 
        // Tags used for PTS analysis
+       var min_pts:Number = Number.POSITIVE_INFINITY;
+       var max_pts:Number = Number.NEGATIVE_INFINITY;
        var ptsTags:Vector.<Tag>;
 
       // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed

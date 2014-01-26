@@ -41,6 +41,8 @@ package org.mangui.HLS.muxing {
     /** Packet ID of selected audio stream. **/
     private var _audioId:Number = -1;
     private var _audioIsAAC:Boolean = false;
+    /** should we extract audio ? **/
+    private var _audioExtract:Boolean;
     /** List of AAC and MP3 audio PIDs */
     private var _aacIds:Vector.<uint> = new Vector.<uint>();
     private var _mp3Ids:Vector.<uint> = new Vector.<uint>();
@@ -88,17 +90,18 @@ package org.mangui.HLS.muxing {
       data.position = pos;
       return false;
     }
-		
-		/** Transmux the M2TS file into an FLV file. **/
-		public function TS(data:ByteArray,callback:Function,audioTrack:Number) {
-			// Extract the elementary streams.
-			_data = data;
-			_callback = callback;
-			_timer = new Timer(0,0);
-			_timer.addEventListener(TimerEvent.TIMER, _readData);
-			_timer.start();
-      _audioId = audioTrack;
-		};
+
+      /** Transmux the M2TS file into an FLV file. **/
+      public function TS(data:ByteArray,callback:Function,audioExtract:Boolean,audioPID:Number) {
+         // Extract the elementary streams.
+         _data = data;
+         _callback = callback;
+         _timer = new Timer(0,0);
+         _timer.addEventListener(TimerEvent.TIMER, _readData);
+         _timer.start();
+         _audioId = audioPID;
+         _audioExtract = audioExtract;
+      };
 		
 		/** append new TS data */
 		//public function appendData(newData:ByteArray):void {
@@ -470,17 +473,19 @@ package org.mangui.HLS.muxing {
         read += sel + 5;
       }
       if (_audioId <= 0 || !audioFound) {
-        Log.debug("Found " + _aacIds.length + " AAC tracks");
-        Log.debug("Found " + _mp3Ids.length + " MP3 tracks");
-        // automatically select audio track
-        if (_aacIds.length > 0) {
-          _audioId = _audioFallbackId = _aacIds[0];
-          _audioIsAAC = _audioFallbackIsAAC = true;
-        } else if (_mp3Ids.length > 0) {
-          _audioId = _audioFallbackId = _mp3Ids[0];
-          _audioIsAAC = _audioFallbackIsAAC = false;
+        if(_audioExtract) {
+          // automatically select audio track
+          Log.debug("Found " + _aacIds.length + " AAC tracks");
+          Log.debug("Found " + _mp3Ids.length + " MP3 tracks");
+          if (_aacIds.length > 0) {
+            _audioId = _audioFallbackId = _aacIds[0];
+            _audioIsAAC = _audioFallbackIsAAC = true;
+          } else if (_mp3Ids.length > 0) {
+            _audioId = _audioFallbackId = _mp3Ids[0];
+            _audioIsAAC = _audioFallbackIsAAC = false;
+          }
+          Log.debug("Selected audio track: " + _audioId);
         }
-        Log.debug("Selected audio track: " + _audioId);
       }
       return len + pointerField;
     };

@@ -117,9 +117,9 @@ package org.mangui.HLS.streaming {
             
             // Set playback state
             // check low buffer condition
-            if (buffer < _buffer_min_len) {
+            if (super.bufferLength < _buffer_min_len) {
               if(_reached_vod_end) {
-                if(buffer ==0) {
+                if(super.bufferLength ==0) {
                   // reach end of playlist + playback complete (as buffer is empty).
                   // stop timer, report event and switch to IDLE mode.
                   clearInterval(_interval);

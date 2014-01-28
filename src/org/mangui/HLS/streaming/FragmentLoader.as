@@ -55,9 +55,9 @@ package org.mangui.HLS.streaming {
         /** sequence number that's currently loading. **/
         private var _seqnum:Number;
         /** start level **/
-        private var _start_level:int = 0;
+        private var _start_level:int;
         /** Quality level of the last fragment load. **/
-        private var _level:int = 0;
+        private var _level:int;
         /* overrided quality_manual_level level */
         private var _manual_level:int = -1;
         /** Reference to the manifest levels. **/
@@ -548,6 +548,7 @@ package org.mangui.HLS.streaming {
         private function _manifestLoadedHandler(event:HLSEvent):void {
             _levels = event.levels;
             _start_level = -1;
+            _level = 0;
             _manifest_just_loaded = true;
             // reset audio tracks
             _audioTrackId = -1;

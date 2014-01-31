@@ -60,6 +60,16 @@ package org.mangui.HLS.streaming {
             }
         };
 
+
+        public function getbestlevel(download_bandwidth:Number):Number {
+            for (var i:Number = _nbLevel-1 ; i >= 0 ; i--) {
+               if(_bitrate[i] <= download_bandwidth) {
+                  return i;
+               }
+            }
+            return 0;
+        }
+
         /** Update the quality level for the next fragment load. **/
         public function getnextlevel(current_level:Number, buffer:Number, last_segment_duration:Number, last_fetch_duration:Number, last_bandwidth:Number):Number {
             if(last_fetch_duration == 0 || last_segment_duration == 0) {

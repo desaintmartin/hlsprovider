@@ -353,7 +353,6 @@ package org.mangui.HLS.streaming {
           }
           if(level != _level || _manifest_just_loaded) {
             _level = level;
-            _manifest_just_loaded = false;
             _switchlevel = true;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
           }
@@ -785,6 +784,21 @@ package org.mangui.HLS.streaming {
       // Calculate bandwidth
       _last_process_duration = (new Date().valueOf() - _frag_loading_start_time);
       _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_process_duration);
+      
+      if(_manifest_just_loaded) {
+         _manifest_just_loaded = false;
+         // check if we can directly switch to a better bitrate, in case download bandwidth is enough
+         var bestlevel:Number = _autoLevelManager.getbestlevel(_last_bandwidth);
+         if (bestlevel > _level) {
+            Log.info("enough download bandwidth, adjust start level from "+ _level +  " to " + bestlevel);
+            // let's directly jump to the accurate level to improve quality at player start
+            _level = bestlevel;
+            _need_reload = true;
+            _switchlevel = true;
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
+            return;
+         }
+      }
 
       try {
          _switchlevel = false;

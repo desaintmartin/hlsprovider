@@ -162,8 +162,9 @@ package org.mangui.HLS.streaming {
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
         public function _levelSwitchHandler(event:HLSEvent):void {
             _current_level = event.level;
+            Log.debug("switch to level "+ _current_level);
             if(_load_in_progress == false && (_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0)) {
-              Log.debug("switch to level "+ _current_level + ", load Playlist");
+              Log.debug("(re)load Playlist");
               clearTimeout(_timeoutID);
               _timeoutID = setTimeout(_loadActiveLevelPlaylist,0);
             }

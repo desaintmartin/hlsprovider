@@ -343,7 +343,7 @@ package org.mangui.HLS.streaming {
           } else if(_pts_just_loaded == true) {
             _pts_just_loaded = false;
             level = _level;
-            /* in case we are switching levels (waiting for playlist to reload), stick to same level */
+            /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
           } else if(_switchlevel == true) {
             level = _level;
           } else if (_manual_level == -1 ) {
@@ -367,8 +367,8 @@ package org.mangui.HLS.streaming {
             // reset IO Error when loading first fragment
             _bIOError = false;
             _need_reload = false;
+            _switchlevel = true;            
             updateLevel(0);
-            _switchlevel = true;
 
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
             if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {

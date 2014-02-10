@@ -59,7 +59,7 @@ the following containers are supported:
 
 ##How to use it :
 
-download package : https://github.com/mangui/HLSprovider/archive/master.zip
+download latest release from here : https://github.com/mangui/HLSprovider/releases
 
 ###chromeless based setup:
 from zip, extract test/chromeless folder, and get inspired by example.html

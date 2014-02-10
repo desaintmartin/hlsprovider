@@ -35,7 +35,7 @@ package org.mangui.HLS.muxing {
         /** Get Avcc header from AVC stream 
         See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
         **/
-        public static function getAVCC(nalu:ByteArray,position:Number=0):ByteArray {
+        public static function getAVCC(nalu:ByteArray,position:Number):ByteArray {
             // Find SPS and PPS units in AVC stream.
             var units:Vector.<VideoFrame> = AVC.getNALU(nalu,position);
             var sps:Number = -1;
@@ -84,7 +84,7 @@ package org.mangui.HLS.muxing {
 
 
         /** Return an array with NAL delimiter indexes. **/
-        public static function getNALU(nalu:ByteArray,position:Number=0):Vector.<VideoFrame> {
+        public static function getNALU(nalu:ByteArray,position:Number):Vector.<VideoFrame> {
             var units:Vector.<VideoFrame> = new Vector.<VideoFrame>();
             var unit_start:Number;
             var unit_type:Number;

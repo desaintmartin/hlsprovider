@@ -7,6 +7,9 @@ package org.mangui.flowplayer {
   
    import org.mangui.HLS.utils.Log;
 
+   import org.flowplayer.model.Plugin;
+   import org.flowplayer.model.PluginModel;
+   import org.flowplayer.view.Flowplayer;
    import org.flowplayer.controller.StreamProvider;
    import org.flowplayer.controller.TimeProvider;
    import org.flowplayer.controller.VolumeController;
@@ -14,7 +17,29 @@ package org.mangui.flowplayer {
    import org.flowplayer.model.Clip;
    import org.flowplayer.model.Playlist;
 
-   public class HLSProvider  implements StreamProvider {
+   public class HLSProvider  implements StreamProvider,Plugin {
+      
+         private var _volumecontroller:VolumeController;
+         private var _playlist:Playlist;
+         private var _timeProvider:TimeProvider;
+
+        private var _model:PluginModel;
+        private var _player:Flowplayer;
+        
+      public function getDefaultConfig():Object {
+            return null;
+        }
+      
+        public function onConfig(model:PluginModel):void {
+             Log.info("onConfig()");
+            _model = model;
+        }
+    
+        public function onLoad(player:Flowplayer):void {
+            Log.info("onLoad()");
+            _player = player;
+            _model.dispatchOnLoad();
+        }
 
         /**
          * Starts loading the specivied clip. Once video data is available the provider
@@ -96,7 +121,6 @@ package org.mangui.flowplayer {
          * File size in bytes.
          */
         public function get fileSize():Number {
-            Log.info("fileSize()");
             return 0;
         }
 
@@ -104,7 +128,6 @@ package org.mangui.flowplayer {
          * Current playhead time in seconds.
          */
         public function get time():Number {
-            Log.info("time()");
             return 0;
         }
 
@@ -112,7 +135,6 @@ package org.mangui.flowplayer {
          * The point in timeline where the buffered data region begins, in seconds.
          */
         public function get bufferStart():Number {
-            Log.info("bufferStart()");
             return 0;
         }
 
@@ -120,7 +142,6 @@ package org.mangui.flowplayer {
          * The point in timeline where the buffered data region ends, in seconds.
          */
         public function get bufferEnd():Number {
-            Log.info("bufferEnd()");
             return 0;
         }
 
@@ -128,15 +149,16 @@ package org.mangui.flowplayer {
          * Does this provider support random seeking to unbuffered areas in the timeline?
          */
         public function get allowRandomSeek():Boolean {
-            Log.info("allowRandomSeek()");
+            Log.debug("allowRandomSeek()");
             return true;
         }
 
         /**
          * Volume controller used to control the video volume.
          */
+         
         public function set volumeController(controller:VolumeController):void {
-            Log.info("set volumeController()");
+            _volumecontroller = controller;
             return;
         }
 
@@ -154,13 +176,14 @@ package org.mangui.flowplayer {
          * The playlist instance.
          */
         public function set playlist(playlist:Playlist):void {
-            Log.info("set playlist()");
+            Log.debug("set playlist()");
+            _playlist = playlist;
             return;
         }
 
         public function get playlist():Playlist {
-            Log.info("get playlist()");
-            return null;
+            Log.debug("get playlist()");
+            return _playlist;
         }
         
 
@@ -226,7 +249,8 @@ package org.mangui.flowplayer {
          * @param timeProvider
          */
         public function set timeProvider(timeProvider:TimeProvider):void {
-            Log.info("set timeProvider()");
+            Log.debug("set timeProvider()");
+            _timeProvider = timeProvider;
             return;
         }
 

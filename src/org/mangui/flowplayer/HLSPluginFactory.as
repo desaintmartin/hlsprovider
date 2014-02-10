@@ -9,7 +9,7 @@ package org.mangui.flowplayer {
         }
         
         public function newPlugin():Object {
-            return new HLSPlugin();
+            return new HLSProvider();
         }
     }
 }

@@ -4,7 +4,11 @@ package org.mangui.flowplayer {
    import flash.net.NetConnection;
    import flash.net.NetStream;
    import flash.utils.Dictionary;
+   import flash.media.Video;
   
+   import org.mangui.HLS.HLS;
+   import org.mangui.HLS.HLSEvent;
+   import org.mangui.HLS.HLSStates;
    import org.mangui.HLS.utils.Log;
 
    import org.flowplayer.model.Plugin;
@@ -13,18 +17,35 @@ package org.mangui.flowplayer {
    import org.flowplayer.controller.StreamProvider;
    import org.flowplayer.controller.TimeProvider;
    import org.flowplayer.controller.VolumeController;
-   import org.flowplayer.model.ClipEvent;
    import org.flowplayer.model.Clip;
+   import org.flowplayer.model.ClipEvent;
+   import org.flowplayer.model.ClipEventType;
    import org.flowplayer.model.Playlist;
 
    public class HLSProvider  implements StreamProvider,Plugin {
       
-         private var _volumecontroller:VolumeController;
-         private var _playlist:Playlist;
-         private var _timeProvider:TimeProvider;
+       private var _volumecontroller:VolumeController;
+       private var _playlist:Playlist;
+       private var _timeProvider:TimeProvider;
+       private var _model:PluginModel;
+       private var _player:Flowplayer;
+      private var _clip:Clip;
 
-        private var _model:PluginModel;
-        private var _player:Flowplayer;
+       private var _video:Video;
+
+      /** reference to the framework. **/
+      private var _hls:HLS;
+      private var _hlsState:String = HLSStates.IDLE;
+      // event values
+      private var _position:Number = 0;
+      private var _duration:Number = 0;
+      private var _bufferedTime:Number = 0;
+      private var _videoWidth:Number = -1;
+      private var _videoHeight:Number = -1;
+      private var _isManifestLoaded:Boolean = false;
+      private var _isPaused:Boolean = true;
+      private var _isEnded:Boolean = false;
+
         
       public function getDefaultConfig():Object {
             return null;
@@ -38,9 +59,59 @@ package org.mangui.flowplayer {
         public function onLoad(player:Flowplayer):void {
             Log.info("onLoad()");
             _player = player;
+            _hls = new HLS();
+            _video = new Video();
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
+            _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED,_manifestHandler);
+            _hls.addEventListener(HLSEvent.MEDIA_TIME,_mediaTimeHandler);
+            _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _model.dispatchOnLoad();
         }
 
+    private function _completeHandler(event:HLSEvent):void {
+      _isEnded = true;
+      _isPaused = false;
+      //sendEvent(HtmlMediaEvent.ENDED);
+    };
+
+    private function _errorHandler(event:HLSEvent):void {
+    };
+
+    private function _manifestHandler(event:HLSEvent):void {
+      _duration = event.levels[0].duration;
+      _videoWidth = event.levels[0].width;
+      _videoHeight = event.levels[0].height;
+      _isManifestLoaded = true;
+      _hls.stream.play();
+      _clip.dispatch(ClipEventType.BEGIN);
+      _clip.dispatch(ClipEventType.START);
+    };
+
+    private function _mediaTimeHandler(event:HLSEvent):void {
+      _position = event.mediatime.position;
+      _duration = event.mediatime.duration;
+      _bufferedTime = event.mediatime.buffer+event.mediatime.position;
+    };
+
+    private function _stateHandler(event:HLSEvent):void {
+      _hlsState = event.state;
+      //Log.txt("state:"+ _hlsState);
+      switch(event.state) {
+          case HLSStates.IDLE:
+            break;
+          case HLSStates.BUFFERING:
+            break;
+          case HLSStates.PLAYING:
+            _isPaused = false;
+            _isEnded = false;
+            break;
+          case HLSStates.PAUSED:
+            _isPaused = true;
+            _isEnded = false;
+            break;
+      }
+    };
         /**
          * Starts loading the specivied clip. Once video data is available the provider
          * must set it to the clip using <code>clip.setContent()</code>. Typically the video
@@ -55,7 +126,9 @@ package org.mangui.flowplayer {
          * @see #getVideo()
          */
         public function load(event:ClipEvent, clip:Clip, pauseAfterStart:Boolean = true):void {
+            _clip = clip;
             Log.info("load()" + clip.completeUrl);
+            _hls.load(clip.completeUrl);
             return;
         }
 
@@ -67,7 +140,7 @@ package org.mangui.flowplayer {
          */
         public function getVideo(clip:Clip):DisplayObject {
          Log.info("getVideo()");
-         return null;
+         return _video;
         }
 
         /**
@@ -86,6 +159,7 @@ package org.mangui.flowplayer {
          */
         public function pause(event:ClipEvent):void {
             Log.info("pause()");
+            _hls.stream.pause();
             return;
         }
 
@@ -95,6 +169,7 @@ package org.mangui.flowplayer {
          */
         public function resume(event:ClipEvent):void {
             Log.info("resume()");
+            _hls.stream.resume();
             return;
         }
 
@@ -104,6 +179,7 @@ package org.mangui.flowplayer {
          */
         public function stop(event:ClipEvent, closeStream:Boolean = false):void {
             Log.info("stop()");
+            _hls.stream.close();
             return;
         }
 
@@ -114,6 +190,7 @@ package org.mangui.flowplayer {
          */
         public function seek(event:ClipEvent, seconds:Number):void {
             Log.info("seek()");
+            _hls.stream.seek(seconds);
             return;
         }
 
@@ -128,7 +205,7 @@ package org.mangui.flowplayer {
          * Current playhead time in seconds.
          */
         public function get time():Number {
-            return 0;
+            return _position;
         }
 
         /**
@@ -142,7 +219,7 @@ package org.mangui.flowplayer {
          * The point in timeline where the buffered data region ends, in seconds.
          */
         public function get bufferEnd():Number {
-            return 0;
+            return _bufferedTime;
         }
 
         /**
@@ -229,7 +306,7 @@ package org.mangui.flowplayer {
          */
         public function get netStream():NetStream {
             Log.info("get netStream()");
-            return null;
+            return _hls.stream;
         }
 
         /**

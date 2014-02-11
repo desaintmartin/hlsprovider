@@ -369,7 +369,7 @@ package org.mangui.HLS.streaming {
             // reset IO Error when loading first fragment
             _bIOError = false;
             _need_reload = false;
-            _switchlevel = true;            
+            _switchlevel = true;
             updateLevel(0);
 
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed

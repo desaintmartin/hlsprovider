@@ -88,6 +88,13 @@ listStreams(teststreams, "streamlist");
 jwplayer("player").setup({
 width: 640,height: 360,
 skin: "newtubedark.zip",
+hls_debug : false,
+hls_debug2 : false,
+hls_minbufferlength : 3,
+hls_maxbufferlength : 60,
+hls_startfromlowestlevel : true,
+hls_live_flushurlcache : false,
+hls_live_seekdurationthreshold : 60,
 plugins: { 'qualitymonitor.swf' : {} },
 modes: [
 { type:'flash', src:'player.swf', config: { provider:'HLSProvider5.swf', file:'../../../playlists/test_001/stream.m3u8' } },

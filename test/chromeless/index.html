@@ -72,12 +72,39 @@ a:visited {
     <th colspan="2"><button onclick="play()">Play</button></th>
     <th colspan="2"><button onclick="pause()">Pause</button></th>
     <th colspan="2"><button onclick="resume()">Resume</button></th>
-    <th colspan="1"><button onclick="stop()">Stop</button></th>
+    <th colspan="2"><button onclick="stop()">Stop</button></th>
     <th colspan="1"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></th>
     <th colspan="1"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></th>
+    <th colspan="1"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></th>
+    <th colspan="1"><button onclick="toggleStartFromLowestLevel()">Toggle start From Lowest Level</button></th>
   </tr>
-  <tr><td>state</td><td>Position</td><td>Duration</td><td>Min Buffer Size</td><td>Buffer Size</td><td>Max Buffer Size</td><td>Quality Level</td><td>Log debug</td><td>Log debug2</td></tr>
-  <tr><td>IDLE</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>false</td><td>false</td></tr>
+  <tr><td>state</td>
+      <td>Position</td>
+      <td>Duration</td>
+      <td>Min Buffer Size</td>
+      <td>Buffer Size</td>
+      <td>Max Buffer Size</td>
+      <td>Quality Level</td>
+      <td>Audio Track Id</td>
+      <td>Log debug</td>
+      <td>Log debug2</td>
+      <td>Flush Live URL</td>
+      <td>Start From Lowest Level</td>
+  </tr>
+  <tr>
+    <td>IDLE</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>false</td>
+    <td>false</td>
+    <td>false</td>
+    <td>false</td>
+  </tr>
 </table>
 
 <table border id="mediaControl">
@@ -162,6 +189,7 @@ function load(url) {
     document.getElementById('mediaInfo').rows[2].cells[4].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  0;
   }
 }
 
@@ -266,7 +294,7 @@ function toggleDebugLogs() {
   if(obj != null) {
     var state = obj.getLogDebug();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[8].innerHTML =  state;
     obj.playerSetLogDebug(state);
     appendLog("toggle debug logs to:" + state);
   }
@@ -277,9 +305,31 @@ function toggleDebug2Logs() {
   if(obj != null) {
     var state = obj.getLogDebug2();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[8].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[9].innerHTML =  state;
     obj.playerSetLogDebug2(state);
     appendLog("toggle debug2 logs to:" + state);
+  }
+}
+
+function toggleFlushLiveURLCache() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getflushLiveURLCache();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[10].innerHTML =  state;
+    obj.playerSetflushLiveURLCache(state);
+    appendLog("toggle flush live URL cache to:" + state);
+  }
+}
+
+function toggleStartFromLowestLevel() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getstartFromLowestLevel();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[11].innerHTML =  state;
+    obj.playerSetstartFromLowestLevel(state);
+    appendLog("toggle start from lowest level to:" + state);
   }
 }
 

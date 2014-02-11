@@ -61,6 +61,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getbufferLength",_getbufferLength);
             ExternalInterface.addCallback("getLogDebug",_getLogDebug);
             ExternalInterface.addCallback("getLogDebug2",_getLogDebug2);
+            ExternalInterface.addCallback("getflushLiveURLCache",_getflushLiveURLCache);
+            ExternalInterface.addCallback("getstartFromLowestLevel",_getstartFromLowestLevel);
             ExternalInterface.addCallback("getPlayerVersion",_getPlayerVersion);
             ExternalInterface.addCallback("getAudioTrackList",_getAudioTrackList);
             ExternalInterface.addCallback("getAudioTrackId",_getAudioTrackId);
@@ -75,6 +77,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetLevel",_setLevel);
             ExternalInterface.addCallback("playerSetmaxBufferLength",_setmaxBufferLength);
             ExternalInterface.addCallback("playerSetminBufferLength",_setminBufferLength);
+            ExternalInterface.addCallback("playerSetflushLiveURLCache",_setflushLiveURLCache);
+            ExternalInterface.addCallback("playerSetstartFromLowestLevel",_setstartFromLowestLevel);
             ExternalInterface.addCallback("playerSetLogDebug",_setLogDebug);
             ExternalInterface.addCallback("playerSetLogDebug2",_setLogDebug2);
             ExternalInterface.addCallback("playerSetAudioTrack",_setAudioTrack);
@@ -163,6 +167,8 @@ package org.mangui.chromeless {
         private function _getbufferLength():Number { return _hls.getBufferLength(); };
         private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
         private function _getminBufferLength():Number { return _hls.minBufferLength; };
+        private function _getflushLiveURLCache():Boolean { return _hls.flushLiveURLCache; };
+        private function _getstartFromLowestLevel():Boolean { return _hls.startFromLowestLevel; };
         private function _getLogDebug():Boolean { return Log.LOG_DEBUG_ENABLED; };
         private function _getLogDebug2():Boolean { return Log.LOG_DEBUG2_ENABLED; };
         private function _getPlayerVersion():Number { return 2; };
@@ -187,6 +193,8 @@ package org.mangui.chromeless {
         private function _setLevel(level:Number):void { _hls.setPlaybackQuality(level); if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
         private function _setmaxBufferLength(new_len:Number):void { _hls.maxBufferLength = new_len;};
         private function _setminBufferLength(new_len:Number):void { _hls.minBufferLength = new_len;};
+        private function _setflushLiveURLCache(flushLiveURLCache:Boolean):void { _hls.flushLiveURLCache = flushLiveURLCache;};
+        private function _setstartFromLowestLevel(startFromLowestLevel:Boolean):void { _hls.startFromLowestLevel = startFromLowestLevel;};
         private function _setLogDebug(debug:Boolean):void{ Log.LOG_DEBUG_ENABLED=debug; };
         private function _setLogDebug2(debug2:Boolean):void{ Log.LOG_DEBUG2_ENABLED=debug2; };
         private function _setAudioTrack(val:Number):void { if (val == _hls.getAudioTrackId()) return; _hls.setAudioTrack(val);if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};

@@ -36,6 +36,8 @@ package org.mangui.jwplayer.media {
         /** Video size **/
         private var _streamWidth:Number = 0;
         private var _streamHeight:Number = 0;
+        
+        private var _seekInLiveDurationThreshold:Number = 60;
 
         public function HLSProvider() {
             super('hls');
@@ -71,8 +73,8 @@ package org.mangui.jwplayer.media {
         /** Update video A/R on manifest load. **/
         private function _manifestHandler(event:HLSEvent):void {
             _levels = event.levels;
-            // only report position/duration/buffer for VOD playlist and live playlist with duration > 60s
-            if(_hls.getType() == HLSTypes.VOD || _levels[0].duration > 60) {
+            // only report position/duration/buffer for VOD playlist and live playlist with duration > _seekInLiveDurationThreshold
+            if(_hls.getType() == HLSTypes.VOD || _levels[0].duration > _seekInLiveDurationThreshold) {
                item.duration = _levels[0].duration;
             } else {
                item.duration=-1;
@@ -86,8 +88,8 @@ package org.mangui.jwplayer.media {
 
         /** Update playback position. **/
         private function _mediaTimeHandler(event:HLSEvent):void {
-         // only report position/duration/buffer for VOD playlist and live playlist with duration > 60s
-         if(_hls.getType() == HLSTypes.VOD || event.mediatime.duration > 60) {
+         // only report position/duration/buffer for VOD playlist and live playlist with duration > _seekInLiveDurationThreshold
+         if(_hls.getType() == HLSTypes.VOD || event.mediatime.duration > _seekInLiveDurationThreshold) {
             item.duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
             var _bufferPercent:Number = 100*(_media_position+event.mediatime.buffer)/event.mediatime.duration;
@@ -155,9 +157,53 @@ package org.mangui.jwplayer.media {
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _hls.addEventListener(HLSEvent.AUDIO_ONLY, _audioHandler);
             _level = 0;
-			mute(cfg.mute);
+            var value:Object;
+
+            // parse configuration parameters
+            value = cfg.hls_debug;
+            if(value != null) {
+               Log.info("hls_debug:"+ value);
+               Log.LOG_DEBUG_ENABLED = value as Boolean;
+            }
+
+            value = cfg.hls_debug2;
+            if(value != null) {
+               Log.info("hls_debug2:"+ value);
+               Log.LOG_DEBUG2_ENABLED = value as Boolean;
+            }
+            
+            value = cfg.hls_minbufferlength;
+            if(value != null) {
+               Log.info("hls_minbufferlength:"+ value);
+               _hls.minBufferLength = value as Number;
+            }
+            
+            value = cfg.hls_maxbufferlength;
+            if(value != null) {
+               Log.info("hls_maxbufferlength:"+ value);
+               _hls.maxBufferLength= value as Number;
+            }
+
+            value = cfg.hls_startfromlowestlevel;
+            if(value != null) {
+               Log.info("hls_startfromlowestlevel:"+ value);
+               _hls.startFromLowestLevel = value as Boolean;
+            }
+
+            value = cfg.hls_live_flushurlcache;
+            if(value != null) {
+               Log.info("hls_live_flushurlcache:"+ value);
+               _hls.flushLiveURLCache= value as Boolean;
+            }
+
+            value = cfg.hls_live_seekdurationthreshold;
+            if(value != null) {
+               Log.info("hls_live_seekdurationthreshold:"+ value);
+               _seekInLiveDurationThreshold = value as Number;
+            }
+            mute(cfg.mute);
         };
-		
+
 		
 		/** Check that Flash Player version is sufficient (10.1 or above) **/
 		private function _checkVersion():Number {

@@ -83,6 +83,7 @@ from zip, extract test/jwplayer5 folder, and get inspired by example.html
     
     </script>
 
+
 ###jwplayer6 based setup:
 from zip, extract test/jwplayer6 folder, and get inspired by example.html
 
@@ -100,6 +101,30 @@ from zip, extract test/jwplayer6 folder, and get inspired by example.html
     height: 480,
     primary: "flash"
     });
+
+###jwplayer 5/6 customization parameters:
+
+functional behavior can be tweaked by adding configuration keys :
+
+    jwplayer("player").setup({
+	hls_debug : false,
+	hls_debug2 : false,
+	hls_minbufferlength : 3,
+	hls_maxbufferlength : 60,
+	hls_startfromlowestlevel : true,
+	hls_live_flushurlcache : false,
+	hls_live_seekdurationthreshold : 60,
+	...
+
+
+* hls_debug (true/default false) : toggle debug traces
+* hls_debug2 (true/default false) : toggle more verbose debug traces
+* hls_minbufferlength (default 3s) : set minimum buffer length before playback can start
+* hls_maxbufferlength (default 60s) : set maximum buffer length (0 means infinite buffering)
+* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level. if set to false, playback will start from level matching download bandwidth.
+* hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)  
+* hls\_live\_seekdurationthreshold (true/default 60s) : allow seeking in live playlist if playlist duration is greater than a certain threshold. by default, live playlists with duration greater than 60s are seekable.
+
 
 ###License
 the following files (from [jwplayer.com](http://www.jwplayer.com)) are governed by a Creative Commons license:

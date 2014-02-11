@@ -52,7 +52,7 @@ package org.mangui.HLS.parsing {
 
 
         /** Load a playlist M3U8 file. **/
-        public function loadPlaylist(url:String,success:Function,error:Function,index:Number,type:String):void {
+        public function loadPlaylist(url:String,success:Function,error:Function,index:Number,type:String,flushLiveURLcache:Boolean):void {
             _url = url;
             _success = success;
             _index = index;
@@ -60,7 +60,7 @@ package org.mangui.HLS.parsing {
             _urlloader.addEventListener(Event.COMPLETE,_loaderHandler);
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR,error);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR,error);
-            if (type == HLSTypes.LIVE) {
+            if (flushLiveURLcache && type == HLSTypes.LIVE) {
                /* 
                  add time parameter to force reload URL, there are some issues with browsers reloading from cache even if the URL has been updated ...
                  see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache

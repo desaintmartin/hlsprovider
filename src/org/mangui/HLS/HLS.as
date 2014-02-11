@@ -140,6 +140,26 @@ import flash.net.NetConnection;
     public function setAudioTrack(val:Number):void {
         _fragmentLoader.setAudioTrack(val);
     }
+
+   /** if set to true, it will force to flush live URL cache, could be useful with live playlist 
+    * as some combinations of Flash Player / Internet Explorer are not able to detect updated URL properly
+    **/ 
+   public function set flushLiveURLCache(val:Boolean):void {
+      _manifestLoader.flushLiveURLCache=val;
+   }
+
+   public function get flushLiveURLCache():Boolean {
+   return _manifestLoader.flushLiveURLCache;
+   }
+
+   public function set startFromLowestLevel(val:Boolean):void {
+      _fragmentLoader.startFromLowestLevel=val;
+   }
+
+   public function get startFromLowestLevel():Boolean {
+   return _fragmentLoader.startFromLowestLevel;
+   }
+
 }
 ;
 }

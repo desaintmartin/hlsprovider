@@ -33,6 +33,8 @@ package org.mangui.HLS.streaming {
         private var _current_level:Number;
         /** current level **/
         private var _load_in_progress:Boolean = false;
+        /** flush live URL cache **/
+        private var _flushLiveURLCache:Boolean = false;
 
         /** Setup the loader. **/
         public function ManifestLoader(hls:HLS) {
@@ -156,7 +158,7 @@ package org.mangui.HLS.streaming {
             _load_in_progress = true;
             _reload_playlists_timer = getTimer();
             // load active M3U8 playlist only
-            new Manifest().loadPlaylist(_levels[_current_level].url,_parseLevelPlaylist,_errorHandler,_current_level,_type);
+            new Manifest().loadPlaylist(_levels[_current_level].url,_parseLevelPlaylist,_errorHandler,_current_level,_type,_flushLiveURLCache);
         };
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
@@ -176,5 +178,14 @@ package org.mangui.HLS.streaming {
                 clearTimeout(_timeoutID);
             }
         };
+
+   public function set flushLiveURLCache(val:Boolean):void {
+      _flushLiveURLCache=val;
+   }
+
+   public function get flushLiveURLCache():Boolean {
+   return _flushLiveURLCache;
+   }        
+        
     }
 }

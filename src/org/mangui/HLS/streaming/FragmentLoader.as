@@ -113,6 +113,8 @@ package org.mangui.HLS.streaming {
         private var _audioTracks:Vector.<HLSAudioTrack>;
         /** current audio track id **/
         private var _audioTrackId:Number;
+        
+        public var startFromLowestLevel:Boolean=false;
 
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
@@ -787,16 +789,18 @@ package org.mangui.HLS.streaming {
       
       if(_manifest_just_loaded) {
          _manifest_just_loaded = false;
-         // check if we can directly switch to a better bitrate, in case download bandwidth is enough
-         var bestlevel:Number = _autoLevelManager.getbestlevel(_last_bandwidth);
-         if (bestlevel > _level) {
-            Log.info("enough download bandwidth, adjust start level from "+ _level +  " to " + bestlevel);
-            // let's directly jump to the accurate level to improve quality at player start
-            _level = bestlevel;
-            _need_reload = true;
-            _switchlevel = true;
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
-            return;
+         if(startFromLowestLevel == false) {
+            // check if we can directly switch to a better bitrate, in case download bandwidth is enough
+            var bestlevel:Number = _autoLevelManager.getbestlevel(_last_bandwidth);
+            if (bestlevel > _level) {
+               Log.info("enough download bandwidth, adjust start level from "+ _level +  " to " + bestlevel);
+               // let's directly jump to the accurate level to improve quality at player start
+               _level = bestlevel;
+               _need_reload = true;
+               _switchlevel = true;
+               _hls.dispatchEvent(new HLSEvent(HLSEvent.QUALITY_SWITCH,_level));
+               return;
+            }
          }
       }
 

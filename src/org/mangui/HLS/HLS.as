@@ -64,7 +64,7 @@ import flash.net.NetConnection;
         };
 
 
-        /** Return the current playback position. **/
+        /** Return the current playback state. **/
         public function getState():String {
             return _hlsNetStream.getState();
         };

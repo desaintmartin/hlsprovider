@@ -122,7 +122,8 @@ package org.mangui.jwplayer.media {
                 case HLSStates.IDLE:
                     setState(PlayerState.IDLE);
                     break;
-                case HLSStates.BUFFERING:
+                case HLSStates.PLAYING_BUFFERING:
+                case HLSStates.PAUSED_BUFFERING:
                     setState(PlayerState.BUFFERING);
                     break;
                 case HLSStates.PLAYING:

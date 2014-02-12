@@ -49,8 +49,6 @@ package org.mangui.HLS.streaming {
         private var _buffer_min_len:Number=3;
         /** playlist duration **/
         private var _playlist_duration:Number=0;
-
-        private var _was_playing:Boolean = false;
         /** Create the buffer. **/
 
         public function HLSNetStream(connection:NetConnection, hls:HLS, fragmentLoader:FragmentLoader):void {
@@ -127,22 +125,26 @@ package org.mangui.HLS.streaming {
                   _setState(HLSStates.IDLE);
                 }
               } else if(_state == HLSStates.PLAYING) {
-                // low buffer condition and play state. switch to buffering state
-                _setState(HLSStates.BUFFERING);
+                // low buffer condition and play state. switch to play buffering state
+                _setState(HLSStates.PLAYING_BUFFERING);
+              } else if(_state == HLSStates.PAUSED) {
+                // low buffer condition and pause state. switch to paused buffering state
+                _setState(HLSStates.PAUSED_BUFFERING);
               }
-            } else if (_state == HLSStates.BUFFERING) {
-              // not in low buffer condition anymore, but state is buffering
-              if(_was_playing)
+            } else { // no more in low buffer state
+               if (_state == HLSStates.PLAYING_BUFFERING) {
                 _setState(HLSStates.PLAYING);
-              else
+               } else
+                if (_state == HLSStates.PAUSED_BUFFERING) {
                 _setState(HLSStates.PAUSED);
+               }
             }
             
             // try to append data into NetStream
             //if we are already in PLAYING state, OR
             if((_state == HLSStates.PLAYING) ||
             //if we are in Buffering State, with enough buffer data (at least _buffer_min_len seconds) OR at the end of a VOD playlist
-               (_state == HLSStates.BUFFERING && (buffer > _buffer_min_len || _reached_vod_end)))
+               ((_state == HLSStates.PLAYING_BUFFERING || _state == HLSStates.PAUSED_BUFFERING) && (buffer > _buffer_min_len || _reached_vod_end)))
              {
                 //Log.debug("appending data into NetStream");
                 while(_buffer_current_index < _buffer.length && // append data until we drain our _buffer[] array AND
@@ -328,8 +330,7 @@ package org.mangui.HLS.streaming {
         _playStart = Number(args[1]);
       } else {
             _playStart = 0;
-         }         
-      _was_playing = true;
+         }
       Log.info("HLSNetStream:play("+_playStart+")");
       seek(_playStart);
     }
@@ -337,26 +338,27 @@ package org.mangui.HLS.streaming {
     override public function play2(param : NetStreamPlayOptions):void 
     {
       Log.info("HLSNetStream:play2("+param.start+")");
-      _was_playing = true;      
       seek(param.start);
     }
 
     /** Pause playback. **/
     override public function pause():void {
         Log.info("HLSNetStream:pause");
-        if(_state == HLSStates.PLAYING || _state == HLSStates.BUFFERING) {
+        if(_state == HLSStates.PLAYING) {
             clearInterval(_interval);
             super.pause();
-            _was_playing = false;
             _setState(HLSStates.PAUSED);
+        } else if(_state == HLSStates.PLAYING_BUFFERING) {
+            clearInterval(_interval);
+            super.pause();
+            _setState(HLSStates.PAUSED_BUFFERING);
         }
     };
     
     /** Resume playback. **/
     override public function resume():void {
          Log.info("HLSNetStream:resume");
-        if(_state == HLSStates.PAUSED) {
-            _was_playing = true;
+        if(_state == HLSStates.PAUSED || _state == HLSStates.PAUSED_BUFFERING) {
             clearInterval(_interval);
             super.resume();
             _interval = setInterval(_checkBuffer,100);
@@ -410,11 +412,13 @@ package org.mangui.HLS.streaming {
                _reached_vod_end = false;
                _seek_position_real = Number.NEGATIVE_INFINITY;
                _last_buffer = 0;
-               _was_playing = (_state == HLSStates.PLAYING) || (_state == HLSStates.IDLE);
-               if(!_was_playing) {
+               
+               if(_state == HLSStates.PAUSED || _state == HLSStates.PAUSED_BUFFERING) {
                  super.pause();
+                 _setState(HLSStates.PAUSED_BUFFERING);
+               } else {
+                  _setState(HLSStates.PLAYING_BUFFERING);  
                }
-               _setState(HLSStates.BUFFERING);
                clearInterval(_interval);
                _interval = setInterval(_checkBuffer,100);
         };

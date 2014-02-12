@@ -26,7 +26,8 @@ package org.mangui.osmf.plugins
    /** state changed handler **/
     private function _stateChangedHandler(event:HLSEvent):void {
       switch(event.state) {
-         case HLSStates.BUFFERING:
+         case HLSStates.PLAYING_BUFFERING:
+         case HLSStates.PAUSED_BUFFERING:
             Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(true)");
             setBuffering(true);
             break;

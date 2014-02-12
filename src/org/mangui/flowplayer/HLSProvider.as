@@ -9,6 +9,7 @@ package org.mangui.flowplayer {
    import org.mangui.HLS.HLS;
    import org.mangui.HLS.HLSEvent;
    import org.mangui.HLS.HLSStates;
+   import org.mangui.HLS.HLSTypes;
    import org.mangui.HLS.utils.Log;
 
    import org.flowplayer.model.Plugin;
@@ -18,6 +19,7 @@ package org.mangui.flowplayer {
    import org.flowplayer.controller.TimeProvider;
    import org.flowplayer.controller.VolumeController;
    import org.flowplayer.model.Clip;
+   import org.flowplayer.model.ClipType;
    import org.flowplayer.model.ClipEvent;
    import org.flowplayer.model.ClipEventType;
    import org.flowplayer.model.Playlist;
@@ -43,8 +45,8 @@ package org.mangui.flowplayer {
       private var _videoWidth:Number = -1;
       private var _videoHeight:Number = -1;
       private var _isManifestLoaded:Boolean = false;
-      private var _isPaused:Boolean = true;
-      private var _isEnded:Boolean = false;
+      private var _pauseAfterStart:Boolean;
+      private var _seekable:Boolean= false;
 
         
       public function getDefaultConfig():Object {
@@ -70,9 +72,7 @@ package org.mangui.flowplayer {
         }
 
     private function _completeHandler(event:HLSEvent):void {
-      _isEnded = true;
-      _isPaused = false;
-      //sendEvent(HtmlMediaEvent.ENDED);
+      _clip.dispatch(ClipEventType.FINISH);
     };
 
     private function _errorHandler(event:HLSEvent):void {
@@ -80,18 +80,35 @@ package org.mangui.flowplayer {
 
     private function _manifestHandler(event:HLSEvent):void {
       _duration = event.levels[0].duration;
-      _videoWidth = event.levels[0].width;
-      _videoHeight = event.levels[0].height;
       _isManifestLoaded = true;
-      _hls.stream.play();
-      _clip.dispatch(ClipEventType.BEGIN);
-      _clip.dispatch(ClipEventType.START);
+      _clip.duration = _duration;
+      if(_hls.getType() == HLSTypes.LIVE) {
+         _seekable = false;
+      } else {
+         _seekable = true; 
+      }
+      if(_pauseAfterStart == false) {
+         _hls.stream.play();
+       }
     };
 
     private function _mediaTimeHandler(event:HLSEvent):void {
       _position = event.mediatime.position;
       _duration = event.mediatime.duration;
       _bufferedTime = event.mediatime.buffer+event.mediatime.position;
+      var videoWidth:Number = _video.videoWidth;
+      var videoHeight:Number = _video.videoHeight;
+      if (videoWidth && videoHeight) {
+         var changed:Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
+         if (changed) {
+            Log.info("video size changed to " +  videoWidth + "/" + videoHeight);
+            _videoWidth = videoWidth;
+            _videoHeight = videoHeight;
+            _clip.originalWidth = videoWidth;
+            _clip.originalHeight = videoHeight;
+            _clip.dispatch(ClipEventType.START);
+         }
+      }
     };
 
     private function _stateHandler(event:HLSEvent):void {
@@ -99,16 +116,12 @@ package org.mangui.flowplayer {
       //Log.txt("state:"+ _hlsState);
       switch(event.state) {
           case HLSStates.IDLE:
-            break;
-          case HLSStates.BUFFERING:
-            break;
+          case HLSStates.PLAYING_BUFFERING:
           case HLSStates.PLAYING:
-            _isPaused = false;
-            _isEnded = false;
             break;
           case HLSStates.PAUSED:
-            _isPaused = true;
-            _isEnded = false;
+          case HLSStates.PAUSED_BUFFERING:
+            _clip.dispatch(ClipEventType.PAUSE);
             break;
       }
     };
@@ -129,6 +142,9 @@ package org.mangui.flowplayer {
             _clip = clip;
             Log.info("load()" + clip.completeUrl);
             _hls.load(clip.completeUrl);
+            _pauseAfterStart = pauseAfterStart;
+            clip.type = ClipType.VIDEO;
+            clip.dispatch(ClipEventType.BEGIN);
             return;
         }
 
@@ -139,7 +155,7 @@ package org.mangui.flowplayer {
          * @see #attachStream()
          */
         public function getVideo(clip:Clip):DisplayObject {
-         Log.info("getVideo()");
+         Log.debug("getVideo()");
          return _video;
         }
 
@@ -149,7 +165,8 @@ package org.mangui.flowplayer {
          * @see #getVideo()
          */
         public function attachStream(video:DisplayObject):void {
-            Log.info("attachStream()");
+            Log.debug("attachStream()");
+            Video(video).attachNetStream(_hls.stream);
             return;
         }
 
@@ -170,6 +187,7 @@ package org.mangui.flowplayer {
         public function resume(event:ClipEvent):void {
             Log.info("resume()");
             _hls.stream.resume();
+            _clip.dispatch(ClipEventType.RESUME);
             return;
         }
 
@@ -226,8 +244,8 @@ package org.mangui.flowplayer {
          * Does this provider support random seeking to unbuffered areas in the timeline?
          */
         public function get allowRandomSeek():Boolean {
-            Log.debug("allowRandomSeek()");
-            return true;
+            //Log.info("allowRandomSeek()");
+            return _seekable;
         }
 
         /**
@@ -236,6 +254,7 @@ package org.mangui.flowplayer {
          
         public function set volumeController(controller:VolumeController):void {
             _volumecontroller = controller;
+            _volumecontroller.netStream = _hls.stream;
             return;
         }
 
@@ -253,7 +272,7 @@ package org.mangui.flowplayer {
          * The playlist instance.
          */
         public function set playlist(playlist:Playlist):void {
-            Log.debug("set playlist()");
+            //Log.debug("set playlist()");
             _playlist = playlist;
             return;
         }
@@ -273,7 +292,7 @@ package org.mangui.flowplayer {
          * @see ClipEventType#CONNECTION_EVENT
          */
         public function addConnectionCallback(name:String, listener:Function):void {
-            Log.info("addConnectionCallback()");
+            Log.debug("addConnectionCallback()");
             return;
         }
 
@@ -287,7 +306,7 @@ package org.mangui.flowplayer {
          * @see ClipEventType.NETSTREAM_EVENT
          */
         public function addStreamCallback(name:String, listener:Function):void {
-            Log.info("addStreamCallback()");
+            Log.debug("addStreamCallback()");
             return;
         }
 
@@ -296,7 +315,7 @@ package org.mangui.flowplayer {
          * @return a dictionary of callbacks, keyed using callback names and values being the callback functions
          */
         public function get streamCallbacks():Dictionary {
-            Log.info("get streamCallbacks()");
+            Log.debug("get streamCallbacks()");
             return null;
         }
 
@@ -305,7 +324,7 @@ package org.mangui.flowplayer {
          * @return the netStream currently in use, or null if this provider has not started streaming yet
          */
         public function get netStream():NetStream {
-            Log.info("get netStream()");
+            Log.debug("get netStream()");
             return _hls.stream;
         }
 
@@ -314,7 +333,7 @@ package org.mangui.flowplayer {
          * @return the netConnection currently in use, or null if this provider has not started streaming yet
          */
         public function get netConnection():NetConnection {
-            Log.info("get netConnection()");
+            Log.debug("get netConnection()");
             return null;
         }
 

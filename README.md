@@ -6,6 +6,7 @@
 * **JWPlayer** free edition version **5.x**
 * **JWPlayer** free edition version **6.x**
 * **OSMF** version **2.0**
+* **FlowPlayer** version **3.2.12** (beta) 
 * **http://mediaelementjs.com** (support being added here : https://github.com/mangui/mediaelement)
 * **http://www.videojs.com** (support being added here : https://github.com/mangui/video-js-swf)
  
@@ -53,6 +54,7 @@ the following containers are supported:
 * http://streambox.fr/HLSProvider/jwplayer6
 * http://streambox.fr/HLSProvider/osmf/GrindPlayer.html
 * http://streambox.fr/HLSProvider/osmf/StrobeMediaPlayback.html
+* http://streambox.fr/HLSProvider/flowplayer/index.html
 * http://streambox.fr/HLSProvider/mediaelement/demo/mediaelementplayer-hls.html
 * http://streambox.fr/HLSProvider/videojs/flash_demo.html
 
@@ -66,6 +68,9 @@ from zip, extract test/chromeless folder, and get inspired by example.html
 
 ###OSMF based setup:
 from zip, extract test/osmf folder, and get inspired by index.html
+
+###FlowPlayer based setup:
+from zip, extract test/flowplayer folder, and get inspired by index.html
 
 ###jwplayer5 based setup:
 from zip, extract test/jwplayer5 folder, and get inspired by example.html

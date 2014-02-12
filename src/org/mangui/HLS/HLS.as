@@ -41,10 +41,19 @@ import flash.net.NetConnection;
 
 
         /** Return the current quality level. **/
-        public function getLevel():Number {
-            return _fragmentLoader.getLevel();
+        public function get level():Number {
+            return _fragmentLoader.level;
         };
 
+        /* manually set playback level (-1 for automatic level selection) */
+        public function set level(level:Number):void {
+           _fragmentLoader.level = level;
+        };
+
+        /* check if we are in autolevel mode */
+        public function get autolevel():Boolean {
+            return _fragmentLoader.autolevel;
+        };
 
         /** Return the list with bitrate levels. **/
         public function getLevels():Vector.<Level> {
@@ -87,10 +96,7 @@ import flash.net.NetConnection;
             _fragmentLoader.setWidth(width);
         };
 
-        /* update playback quality level */
-        public function setPlaybackQuality(level:Number):void {
-            _fragmentLoader.setPlaybackQuality(level);
-        };
+
     public function get stream():NetStream {
         return _hlsNetStream;
     }

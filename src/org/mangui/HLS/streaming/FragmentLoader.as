@@ -323,12 +323,6 @@ package org.mangui.HLS.streaming {
           return _need_reload;
         };
 
-        /** Get the quality level for the next fragment. **/
-        public function getLevel():Number {
-            return _level;
-        };
-
-
         /** Get the current QOS metrics. **/
         public function getMetrics():HLSMetrics {
             return new HLSMetrics(_level, _last_bandwidth, _width);
@@ -826,9 +820,22 @@ package org.mangui.HLS.streaming {
             _width = width;
         }
 
-        /* update playback quality level */
-        public function setPlaybackQuality(level:Number):void {
+        /** return current quality level. **/
+        public function get level():Number {
+            return _level;
+        };
+        /* set current quality level */
+        public function set level(level:Number):void {
            _manual_level = level;
+        };
+
+        /** get auto/manual level mode **/
+        public function get autolevel():Boolean {
+            if(_manual_level == -1) {
+               return true;
+            } else {
+               return false;
+            }
         };
     }
 }

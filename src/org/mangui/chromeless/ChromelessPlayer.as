@@ -158,7 +158,7 @@ package org.mangui.chromeless {
         }
 
         /** Javascript getters. **/
-        private function _getLevel():Number { return _hls.getLevel(); };
+        private function _getLevel():Number { return _hls.level; };
         private function _getLevels():Vector.<Level> { return _hls.getLevels(); };
         private function _getMetrics():Object { return _hls.getMetrics(); };
         private function _getPosition():Number { return _hls.getPosition(); };
@@ -190,7 +190,7 @@ package org.mangui.chromeless {
         private function _seek(position:Number):void { _hls.stream.seek(position); };
         private function _stop():void { _hls.stream.close(); };
         private function _volume(percent:Number):void { _hls.stream.soundTransform = new SoundTransform(percent/100);};
-        private function _setLevel(level:Number):void { _hls.setPlaybackQuality(level); if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
+        private function _setLevel(level:Number):void { _hls.level = level; if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
         private function _setmaxBufferLength(new_len:Number):void { _hls.maxBufferLength = new_len;};
         private function _setminBufferLength(new_len:Number):void { _hls.minBufferLength = new_len;};
         private function _setflushLiveURLCache(flushLiveURLCache:Boolean):void { _hls.flushLiveURLCache = flushLiveURLCache;};

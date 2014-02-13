@@ -40,12 +40,12 @@ import flash.net.NetConnection;
         };
 
 
-        /** Return the current quality level. **/
+        /** Return the playback quality level of last loaded fragment **/
         public function get level():Number {
             return _fragmentLoader.level;
         };
 
-        /* manually set playback level (-1 for automatic level selection) */
+        /*  set playback quality level (-1 for automatic level selection) */
         public function set level(level:Number):void {
            _fragmentLoader.level = level;
         };
@@ -55,13 +55,13 @@ import flash.net.NetConnection;
             return _fragmentLoader.autolevel;
         };
 
-        /** Return the list with bitrate levels. **/
+        /** Return bitrate level lists. **/
         public function get levels():Vector.<Level> {
             return _manifestLoader.levels;
         };
 
 
-        /** Return the list with switching metrics. **/
+        /** Return metrics info **/
         public function get metrics():HLSMetrics {
             return _fragmentLoader.metrics;
         };
@@ -78,24 +78,24 @@ import flash.net.NetConnection;
         };
 
 
-        /** Return the type of stream. **/
+        /** Return the type of stream (VOD/LIVE). **/
         public function get type():String {
             return _manifestLoader.type;
         };
 
 
-        /** Start playing an new HLS stream. **/
+        /** Load and parse a new HLS URL **/
         public function load(url:String):void {
             _hlsNetStream.close();
             _manifestLoader.load(url);
         };  
 
-        /** Update the screen width. **/
+        /** Update the screen width (just used for metrics) **/
         public function set width(width:Number):void {
             _fragmentLoader.width = width;
         };
 
-
+   /** return HLS NetStream **/
     public function get stream():NetStream {
         return _hlsNetStream;
     }
@@ -111,37 +111,38 @@ import flash.net.NetConnection;
       return _hlsNetStream.bufferLength;
     };
 
-    /** set min Buffer Length  **/
+    /** set minimum buffer Length in seconds 
+     * playback will start only if this minimum threshold is reached */
     public function set minBufferLength(new_len:Number):void {
       _hlsNetStream.minBufferLength = new_len;
     }
 
-    /** get min Buffer Length  **/
+    /** set minimum buffer Length in seconds */
     public function get minBufferLength():Number {
       return _hlsNetStream.minBufferLength;
     };
 
-    /** set max Buffer Length  **/
+    /** set maximum buffer Length that can be buffered. setting to 0 means infinite buffering **/
     public function set maxBufferLength(new_len:Number):void {
       _hlsNetStream.maxBufferLength = new_len;
     }
 
-    /** get max Buffer Length  **/
+    /** get maximum buffer Length  **/
     public function get maxBufferLength():Number {
       return _hlsNetStream.maxBufferLength;
     };
 
-    /** get the list of audio tracks **/
+    /** get audio tracks list**/
     public function get audioTracks():Vector.<HLSAudioTrack> {
         return _fragmentLoader.audioTracks;
     };
 
-    /** get the id of the selected audio track **/
+    /** get index of the selected audio track (index in audio track lists) **/
     public function get audioTrack():Number {
         return _fragmentLoader.audioTrack;
     };
 
-    /** select an audio track **/
+    /** select an audio track, based on its index in audio track lists**/
     public function set audioTrack(val:Number):void {
         _fragmentLoader.audioTrack = val;
     }
@@ -153,14 +154,18 @@ import flash.net.NetConnection;
       _manifestLoader.flushLiveURLCache=val;
    }
 
+   /* retrieve force flush live URL cache boolean */
    public function get flushLiveURLCache():Boolean {
    return _manifestLoader.flushLiveURLCache;
    }
 
+
+   /* if set to true, playback will start from lowest non-audio level. (default is false) */
    public function set startFromLowestLevel(val:Boolean):void {
       _fragmentLoader.startFromLowestLevel=val;
    }
 
+   /* retrieve start level logic (default false) */
    public function get startFromLowestLevel():Boolean {
    return _fragmentLoader.startFromLowestLevel;
    }

@@ -13,7 +13,7 @@ package org.mangui.osmf.plugins
     {
       _hls = hls;
       _hls.addEventListener(HLSEvent.QUALITY_SWITCH,_qualitySwitchHandler);
-      super(true,0,hls.getLevels().length);
+      super(true,0,hls.levels.length);
     }
    
 
@@ -23,7 +23,7 @@ package org.mangui.osmf.plugins
       {
         throw new RangeError(OSMFStrings.getString(OSMFStrings.STREAMSWITCH_INVALID_INDEX));
       }
-      var bitrate:Number = _hls.getLevels()[index].bitrate/1024;
+      var bitrate:Number = _hls.levels[index].bitrate/1024;
       Log.debug("HLSDynamicStreamTrait:getBitrateForIndex("+index+")="+bitrate);
       return bitrate;
     }
@@ -49,7 +49,7 @@ package org.mangui.osmf.plugins
         // only seek if we are not in autoswitch mode already      
       if(value == true && _hls.autolevel == false) {
         _hls.level =-1;
-        _hls.stream.seek(_hls.getPosition());
+        _hls.stream.seek(_hls.position);
       }
     }
 

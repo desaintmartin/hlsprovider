@@ -159,12 +159,12 @@ package org.mangui.chromeless {
 
         /** Javascript getters. **/
         private function _getLevel():Number { return _hls.level; };
-        private function _getLevels():Vector.<Level> { return _hls.getLevels(); };
-        private function _getMetrics():Object { return _hls.getMetrics(); };
-        private function _getPosition():Number { return _hls.getPosition(); };
-        private function _getState():String { return _hls.getState(); };
-        private function _getType():String { return _hls.getType(); };
-        private function _getbufferLength():Number { return _hls.getBufferLength(); };
+        private function _getLevels():Vector.<Level> { return _hls.levels; };
+        private function _getMetrics():Object { return _hls.metrics; };
+        private function _getPosition():Number { return _hls.position; };
+        private function _getState():String { return _hls.state; };
+        private function _getType():String { return _hls.type; };
+        private function _getbufferLength():Number { return _hls.bufferLength; };
         private function _getmaxBufferLength():Number { return _hls.maxBufferLength; };
         private function _getminBufferLength():Number { return _hls.minBufferLength; };
         private function _getflushLiveURLCache():Boolean { return _hls.flushLiveURLCache; };
@@ -174,13 +174,13 @@ package org.mangui.chromeless {
         private function _getPlayerVersion():Number { return 2; };
         private function _getAudioTrackList():Array {
             var list:Array = [];
-            var vec:Vector.<HLSAudioTrack> = _hls.getAudioTrackList();
+            var vec:Vector.<HLSAudioTrack> = _hls.audioTracks;
             for (var i:Object in vec) {
                 list.push(vec[i]);
             }
             return list;
         };
-        private function _getAudioTrackId():Number{ return _hls.getAudioTrackId();};
+        private function _getAudioTrackId():Number{ return _hls.audioTrack;};
 
         /** Javascript calls. **/
         private function _load(url:String):void { _hls.load(url); };
@@ -197,7 +197,7 @@ package org.mangui.chromeless {
         private function _setstartFromLowestLevel(startFromLowestLevel:Boolean):void { _hls.startFromLowestLevel = startFromLowestLevel;};
         private function _setLogDebug(debug:Boolean):void{ Log.LOG_DEBUG_ENABLED=debug; };
         private function _setLogDebug2(debug2:Boolean):void{ Log.LOG_DEBUG2_ENABLED=debug2; };
-        private function _setAudioTrack(val:Number):void { if (val == _hls.getAudioTrackId()) return; _hls.setAudioTrack(val);if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
+        private function _setAudioTrack(val:Number):void { if (val == _hls.audioTrack) return; _hls.audioTrack=val;if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
 
         /** Mouse click handler. **/
         private function _clickHandler(event:MouseEvent):void {
@@ -206,14 +206,14 @@ package org.mangui.chromeless {
             } else {
                 stage.displayState = StageDisplayState.FULL_SCREEN;
             }
-            _hls.setWidth(stage.stageWidth);
+            _hls.width = stage.stageWidth;
         };
 
         /** StageVideo detector. **/
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
             var available:Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
             _hls = new HLS();
-            _hls.setWidth(stage.stageWidth);
+            _hls.width = stage.stageWidth;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED,_fragmentHandler);
@@ -237,7 +237,7 @@ package org.mangui.chromeless {
         };
 
         private function _onStageResize(event:Event):void {
-          _hls.setWidth(stage.stageWidth);
+          _hls.width = stage.stageWidth;
           stage.fullScreenSourceRect = new Rectangle(0,0,stage.stageWidth,stage.stageHeight);
           _sheet.width = stage.stageWidth;
           _sheet.height = stage.stageHeight;

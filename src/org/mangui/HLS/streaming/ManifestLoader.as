@@ -65,13 +65,13 @@ package org.mangui.HLS.streaming {
         };
 
         /** Return the current manifest. **/
-        public function getLevels():Vector.<Level> {
+        public function get levels():Vector.<Level> {
             return _levels;
         };
 
 
         /** Return the stream type. **/
-        public function getType():String {
+        public function get type():String {
             return _type;
         };
 

@@ -125,7 +125,7 @@ package org.mangui.osmf.plugins
       addTrait(MediaTraitType.SEEK, seekTrait);
 
       
-      var levels:Vector.<Level> = _hls.getLevels();
+      var levels:Vector.<Level> = _hls.levels;
       var nbLevel:Number = levels.length;
       if(nbLevel > 1) {
         var urlRes:URLResource = resource as URLResource;
@@ -146,7 +146,7 @@ package org.mangui.osmf.plugins
 
       // set Live/Recorded mode
       var streamUrlRes:StreamingURLResource = resource as StreamingURLResource;
-      if(_hls.getType() == HLSTypes.LIVE) {
+      if(_hls.type == HLSTypes.LIVE) {
         streamUrlRes.streamType = StreamType.LIVE;
       } else {
         streamUrlRes.streamType = StreamType.RECORDED;

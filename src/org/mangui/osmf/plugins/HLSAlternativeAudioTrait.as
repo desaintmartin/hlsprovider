@@ -72,7 +72,7 @@ package org.mangui.osmf.plugins
          {  
             _activeTransitionIndex = indexToSwitchTo;
             _transitionInProgress = true;
-            _hls.setAudioTrack(indexToSwitchTo+1);
+            _hls.audioTrack = indexToSwitchTo+1;
          }
       }
 
@@ -86,7 +86,7 @@ package org.mangui.osmf.plugins
 
       private function _audioTrackListChangedHandler(event:HLSEvent):void {
          Log.debug("HLSDynamicStreamTrait:_audioTrackListChangedHandler");
-         _audioTrackList = _hls.getAudioTrackList();
+         _audioTrackList = _hls.audioTracks;
          if(_audioTrackList.length >0) {
             // try to change default Audio Track Title for GrindPlayer ...
             if(_audioTrackList[0].title.indexOf("TS/") == -1) {

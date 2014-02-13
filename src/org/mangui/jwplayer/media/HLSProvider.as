@@ -74,7 +74,7 @@ package org.mangui.jwplayer.media {
         private function _manifestHandler(event:HLSEvent):void {
             _levels = event.levels;
             // only report position/duration/buffer for VOD playlist and live playlist with duration > _seekInLiveDurationThreshold
-            if(_hls.getType() == HLSTypes.VOD || _levels[0].duration > _seekInLiveDurationThreshold) {
+            if(_hls.type == HLSTypes.VOD || _levels[0].duration > _seekInLiveDurationThreshold) {
                item.duration = _levels[0].duration;
             } else {
                item.duration=-1;
@@ -89,7 +89,7 @@ package org.mangui.jwplayer.media {
         /** Update playback position. **/
         private function _mediaTimeHandler(event:HLSEvent):void {
          // only report position/duration/buffer for VOD playlist and live playlist with duration > _seekInLiveDurationThreshold
-         if(_hls.getType() == HLSTypes.VOD || event.mediatime.duration > _seekInLiveDurationThreshold) {
+         if(_hls.type == HLSTypes.VOD || event.mediatime.duration > _seekInLiveDurationThreshold) {
             item.duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
             var _bufferPercent:Number = 100*(_media_position+event.mediatime.buffer)/event.mediatime.duration;
@@ -258,7 +258,7 @@ package org.mangui.jwplayer.media {
             var need_resize:Boolean = false;
             if (_height != height || width != _width) {
                Log.info("resize video to " +  width + "/" + height);
-               _hls.setWidth(width);
+               _hls.width= width;
                _height = height;
                _width = width;
                need_resize = true;

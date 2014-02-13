@@ -56,32 +56,31 @@ import flash.net.NetConnection;
         };
 
         /** Return the list with bitrate levels. **/
-        public function getLevels():Vector.<Level> {
-            return _manifestLoader.getLevels();
+        public function get levels():Vector.<Level> {
+            return _manifestLoader.levels;
         };
 
 
         /** Return the list with switching metrics. **/
-        public function getMetrics():Object {
-            return _fragmentLoader.getMetrics();
+        public function get metrics():HLSMetrics {
+            return _fragmentLoader.metrics;
         };
 
-
         /** Return the current playback position. **/
-        public function getPosition():Number {
-            return _hlsNetStream.getPosition();
+        public function get position():Number {
+            return _hlsNetStream.position;
         };
 
 
         /** Return the current playback state. **/
-        public function getState():String {
-            return _hlsNetStream.getState();
+        public function get state():String {
+            return _hlsNetStream.state;
         };
 
 
         /** Return the type of stream. **/
-        public function getType():String {
-            return _manifestLoader.getType();
+        public function get type():String {
+            return _manifestLoader.type;
         };
 
 
@@ -92,8 +91,8 @@ import flash.net.NetConnection;
         };  
 
         /** Update the screen width. **/
-        public function setWidth(width:Number):void {
-            _fragmentLoader.setWidth(width);
+        public function set width(width:Number):void {
+            _fragmentLoader.width = width;
         };
 
 
@@ -108,7 +107,7 @@ import flash.net.NetConnection;
     }
 
     /** get current Buffer Length  **/
-    public function getBufferLength():Number {
+    public function get bufferLength():Number {
       return _hlsNetStream.bufferLength;
     };
 
@@ -133,18 +132,18 @@ import flash.net.NetConnection;
     };
 
     /** get the list of audio tracks **/
-    public function getAudioTrackList():Vector.<HLSAudioTrack> {
-        return _fragmentLoader.getAudioTrackList();
+    public function get audioTracks():Vector.<HLSAudioTrack> {
+        return _fragmentLoader.audioTracks;
     };
 
     /** get the id of the selected audio track **/
-    public function getAudioTrackId():Number {
-        return _fragmentLoader.getAudioTrackId();
+    public function get audioTrack():Number {
+        return _fragmentLoader.audioTrack;
     };
 
     /** select an audio track **/
-    public function setAudioTrack(val:Number):void {
-        _fragmentLoader.setAudioTrack(val);
+    public function set audioTrack(val:Number):void {
+        _fragmentLoader.audioTrack = val;
     }
 
    /** if set to true, it will force to flush live URL cache, could be useful with live playlist 

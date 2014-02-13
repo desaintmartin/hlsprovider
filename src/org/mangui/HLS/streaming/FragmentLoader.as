@@ -134,7 +134,7 @@ package org.mangui.HLS.streaming {
             _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
         };
 
-        public function setAudioTrack(num:Number):void {
+        public function set audioTrack(num:Number):void {
             if (_audioTrackId != num) {
                 _audioTrackId = num;
                 var ev:HLSEvent = new HLSEvent(HLSEvent.AUDIO_TRACK_CHANGE);
@@ -144,11 +144,11 @@ package org.mangui.HLS.streaming {
             }
         }
 
-        public function getAudioTrackId():Number {
+        public function get audioTrack():Number {
             return _audioTrackId;
         }
 
-        public function getAudioTrackList():Vector.<HLSAudioTrack> {
+        public function get audioTracks():Vector.<HLSAudioTrack> {
             return _audioTracks;
         }
 
@@ -326,7 +326,7 @@ package org.mangui.HLS.streaming {
         };
 
         /** Get the current QOS metrics. **/
-        public function getMetrics():HLSMetrics {
+        public function get metrics():HLSMetrics {
             return new HLSMetrics(_level, _last_bandwidth, _width);
         };
 
@@ -369,13 +369,13 @@ package org.mangui.HLS.streaming {
             updateLevel(0);
 
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
-            if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {
+            if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
               // playlist not yet received
               Log.debug("loadfirstfragment : playlist not received for level:"+_level);
               return 1;
             }
 
-            if (_hls.getType() == HLSTypes.LIVE) {
+            if (_hls.type == HLSTypes.LIVE) {
                var seek_position:Number;
                /* follow HLS spec :
                   If the EXT-X-ENDLIST tag is not present
@@ -421,7 +421,7 @@ package org.mangui.HLS.streaming {
 
             updateLevel(buffer);
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
-            if ((_levels[_level].fragments.length == 0) || (_hls.getType() == HLSTypes.LIVE && _last_updated_level != _level)) {
+            if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
               // playlist not yet received
               Log.debug("loadnextfragment : playlist not received for level:"+_level);
               return 1;
@@ -466,7 +466,7 @@ package org.mangui.HLS.streaming {
             if(_pts_loading_in_progress == false) {
               if(last_seqnum == _levels[_level].end_seqnum) {
               // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
-              if (_hls.getType() == HLSTypes.VOD)
+              if (_hls.type == HLSTypes.VOD)
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
               return 1;
               } else {
@@ -611,7 +611,7 @@ package org.mangui.HLS.streaming {
       var default_manifest:Number = -1;
       var default_found:Boolean = false;
       var default_track_title:String;
-      var audioTrack:HLSAudioTrack;
+      var audioTrack_:HLSAudioTrack;
       _audioTracks = new Vector.<HLSAudioTrack>();
       
       // first look for default audio track.
@@ -629,41 +629,41 @@ package org.mangui.HLS.streaming {
       }
       /* default audio track from manifest should take precedence */
       if (default_manifest !=-1) {
-         audioTrack = _audioTracksfromManifest[default_manifest];
+         audioTrack_ = _audioTracksfromManifest[default_manifest];
          // if URL set, default audio track is not embedded into MPEG2-TS
-         if(_altAudioTrackLists[audioTrack.id].url || default_demux ==-1) {
+         if(_altAudioTrackLists[audioTrack_.id].url || default_demux ==-1) {
             Log.debug("default audio track found in Manifest");
             default_found = true;
-            _audioTracks.push(audioTrack);
+            _audioTracks.push(audioTrack_);
          } else { // empty URL, default audio track is embedded into MPEG2-TS. retrieve track title from manifest and override demux title
-            default_track_title = audioTrack.title;
+            default_track_title = audioTrack_.title;
             if(default_demux != -1) {
                Log.debug("default audio track signaled in Manifest, will be retrieved from MPEG2-TS");
-               audioTrack = _audioTracksfromDemux[default_demux];
-               audioTrack.title = default_track_title;
+               audioTrack_ = _audioTracksfromDemux[default_demux];
+               audioTrack_.title = default_track_title;
                default_found = true;
-               _audioTracks.push(audioTrack);
+               _audioTracks.push(audioTrack_);
             }
          }
       } else if (default_demux !=-1 ){
-         audioTrack = _audioTracksfromDemux[default_demux];
+         audioTrack_ = _audioTracksfromDemux[default_demux];
          default_found = true;
-         _audioTracks.push(audioTrack);
+         _audioTracks.push(audioTrack_);
       }
       // then append other audio tracks, start from manifest list, then continue with demux list
       for (i=0;i<_audioTracksfromManifest.length;i++) {
          if(!_audioTracksfromManifest[i].isDefault) {
             Log.debug("alternate audio track found in Manifest");
-            audioTrack = _audioTracksfromManifest[i];
-            _audioTracks.push(audioTrack);
+            audioTrack_ = _audioTracksfromManifest[i];
+            _audioTracks.push(audioTrack_);
          }
       }
 
       for (i=0;i<_audioTracksfromDemux.length;i++) {
          if(!_audioTracksfromDemux[i].isDefault) {
             Log.debug("alternate audio track retrieved from demux");
-            audioTrack = _audioTracksfromDemux[i];
-            _audioTracks.push(audioTrack);
+            audioTrack_ = _audioTracksfromDemux[i];
+            _audioTracks.push(audioTrack_);
          }
       }
       // notify audio track list update
@@ -671,7 +671,7 @@ package org.mangui.HLS.streaming {
 
       // switch track id to default audio track, if found
       if(default_found == true && _audioTrackId ==-1) {
-         setAudioTrack(0);
+         audioTrack = 0;
       }
     }
 
@@ -810,7 +810,7 @@ package org.mangui.HLS.streaming {
          _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED,_levels[_level].duration));
          _callback(tags,min_pts,max_pts,_hasDiscontinuity,start_offset);
          _pts_loading_in_progress = false;
-         _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, getMetrics()));
+         _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));
       } catch (error:Error) {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
       }
@@ -818,7 +818,7 @@ package org.mangui.HLS.streaming {
 
 
         /** Provide the loader with screen width information. **/
-        public function setWidth(width:Number):void {
+        public function set width(width:Number):void {
             _width = width;
         }
 

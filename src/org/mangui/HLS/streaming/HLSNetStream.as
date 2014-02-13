@@ -176,13 +176,13 @@ package org.mangui.HLS.streaming {
 
 
         /** Return the current playback state. **/
-        public function getPosition():Number {
+        public function get position():Number {
             return _playback_current_position;
         };
 
 
         /** Return the current playback state. **/
-        public function getState():String {
+        public function get state():String {
             return _state;
         };
 

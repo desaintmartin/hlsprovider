@@ -416,7 +416,7 @@ function onAudioTracksListChange(trackList) {
   appendLog("new track list");
   for (var t in trackList) {
     appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
-    html += '<button onclick="setAudioTrack(' + trackList[t].id + ')">' + trackList[t].title + '</button>';
+    html += '<button onclick="setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
   }
   d.innerHTML = html;
 }

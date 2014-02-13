@@ -155,11 +155,11 @@ package org.mangui.HLS.streaming {
         /** key load completed. **/
         private function _keyCompleteHandler(event:Event):void {
             Log.debug("key loading completed");
+            var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
             // Collect key data
-            if( _keystreamloader.bytesAvailable > 0 ) {
+            if( _keystreamloader.bytesAvailable == 16 ) {
               var keyData:ByteArray = new ByteArray();
               _keystreamloader.readBytes(keyData,0,0);
-              var frag:Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
               _keymap[frag.decrypt_url] = keyData;
               // now load fragment
               try {
@@ -168,6 +168,8 @@ package org.mangui.HLS.streaming {
               } catch (error:Error) {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
               }
+            } else {
+               _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "URL " + frag.decrypt_url + "\ninvalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes"));
             }
         };
 

@@ -116,11 +116,18 @@ package org.mangui.flowplayer {
       //Log.txt("state:"+ _hlsState);
       switch(event.state) {
           case HLSStates.IDLE:
-          case HLSStates.PLAYING_BUFFERING:
           case HLSStates.PLAYING:
+          _clip.dispatch(ClipEventType.BUFFER_FULL);
+            break;
+          case HLSStates.PLAYING_BUFFERING:
+            _clip.dispatch(ClipEventType.BUFFER_EMPTY);
+            break;
+          case HLSStates.PAUSED_BUFFERING:
+            _clip.dispatch(ClipEventType.BUFFER_EMPTY);
+            _clip.dispatch(ClipEventType.PAUSE);
             break;
           case HLSStates.PAUSED:
-          case HLSStates.PAUSED_BUFFERING:
+            _clip.dispatch(ClipEventType.BUFFER_FULL);
             _clip.dispatch(ClipEventType.PAUSE);
             break;
       }
@@ -216,6 +223,8 @@ package org.mangui.flowplayer {
         public function seek(event:ClipEvent, seconds:Number):void {
             Log.info("seek()");
             _hls.stream.seek(seconds);
+            _position = seconds;
+            _bufferedTime = seconds;
             return;
         }
 

@@ -747,7 +747,7 @@ package org.mangui.HLS.streaming {
 
       var tags:Vector.<Tag> = new Vector.<Tag>();
       // Push codecprivate tags only when switching.
-      if(_switchlevel) {
+      if(_switchlevel || _hasDiscontinuity) {
         if (videoTags.length > 0) {
           var avccTag:Tag = new Tag(Tag.AVC_HEADER,videoTags[0].pts,videoTags[0].dts,true);
           avccTag.push(avcc,0,avcc.length);

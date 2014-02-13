@@ -23,6 +23,7 @@ package org.mangui.flowplayer {
    import org.flowplayer.model.ClipEvent;
    import org.flowplayer.model.ClipEventType;
    import org.flowplayer.model.Playlist;
+   import org.flowplayer.view.StageVideoWrapper;
 
    public class HLSProvider  implements StreamProvider,Plugin {
       
@@ -62,7 +63,6 @@ package org.mangui.flowplayer {
             Log.info("onLoad()");
             _player = player;
             _hls = new HLS();
-            _video = new Video();
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED,_manifestHandler);
@@ -156,6 +156,13 @@ package org.mangui.flowplayer {
          */
         public function getVideo(clip:Clip):DisplayObject {
          Log.debug("getVideo()");
+         if (clip.useStageVideo) {
+               Log.debug("useStageVideo");
+            _video = new StageVideoWrapper(clip);
+         } else {
+            _video = new Video();
+            _video.smoothing = clip.smoothing;
+         }
          return _video;
         }
 

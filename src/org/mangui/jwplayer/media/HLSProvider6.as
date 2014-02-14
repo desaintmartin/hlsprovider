@@ -6,14 +6,18 @@ package org.mangui.jwplayer.media {
     import org.mangui.HLS.HLSEvent;
     import org.mangui.jwplayer.media.HLSProvider;
 
-    /** �dditional method needed for jwplayer6 **/
+    /** additional method needed for jwplayer6 **/
     public class HLSProvider6 extends HLSProvider {
 
       /** Array of quality levels **/
       private var _qualityLevels:Array;
       
       private function level2label(level:Level):String {
+         if(level.name) {
+            return level.name;
+         } else {
          return(level.height + 'p / ' + Math.round(level.bitrate/1024) + 'kb');
+         }
       }
 
       override public function initializeMediaProvider(cfg:PlayerConfig):void {

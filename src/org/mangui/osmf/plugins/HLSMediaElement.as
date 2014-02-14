@@ -133,8 +133,7 @@ package org.mangui.osmf.plugins
         var streamItems:Vector.<DynamicStreamingItem> = new Vector.<DynamicStreamingItem>();
         
         for(var i:Number=0; i < nbLevel; i++) {
-          var name:String = levels[i].height + 'p / ' + Math.round(levels[i].bitrate/1024) + 'kb';
-          streamItems.push(new DynamicStreamingItem(name, levels[i].bitrate/1024, levels[i].width, levels[i].height));
+          streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate/1024, levels[i].width, levels[i].height));
         }
         dynamicRes.streamItems = streamItems;
         dynamicRes.initialIndex = 0;
@@ -163,5 +162,13 @@ package org.mangui.osmf.plugins
       var alternateAudioTrait:HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls,this as MediaElement);
       addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
     }
+    
+      private function level2label(level:Level):String {
+         if(level.name) {
+            return level.name;
+         } else {
+         return(level.height + 'p / ' + Math.round(level.bitrate/1024) + 'kb');
+         }
+      }
   }
 }

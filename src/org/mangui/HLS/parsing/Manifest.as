@@ -252,8 +252,9 @@ package org.mangui.HLS.parsing {
                         } else if (param.indexOf('CODECS') > -1 && line.indexOf('avc1') == -1) {
                             level.audio = true;
                         } else if (param.indexOf('AUDIO') > -1) {
-                            level.audio_stream_id = param.split('=')[1];
-                            level.audio_stream_id = level.audio_stream_id.replace(replacedoublequote,"");
+                            level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote,"");
+                        } else if (param.indexOf('NAME') > -1) {
+                            level.name = (param.split('=')[1] as String).replace(replacedoublequote,"");
                         }
                     }
                     // Look for next non-blank line, for url

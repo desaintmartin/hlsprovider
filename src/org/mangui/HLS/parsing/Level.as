@@ -7,18 +7,20 @@ package org.mangui.HLS.parsing {
     public class Level {
 
 
-        /** Whether this is audio only. **/
+        /** audio only Level ? **/
         public var audio:Boolean;
-        /** Bitrate of the video in this level. **/
+        /** Level Bitrate. **/
         public var bitrate:Number;
-        /** Array with fragments for this level. **/
-        public var fragments:Vector.<Fragment>;
-        /** Height of the video in this level. **/
+        /** Level Name. **/
+        public var name:String;
+        /** video width (from playlist) **/
+        public var width:Number;
+        /** video height (from playlist) **/
         public var height:Number;
         /** URL of this bitrate level (for M3U8). **/
         public var url:String;
-        /** Width of the video in this level. **/
-        public var width:Number;
+        /** Level fragments **/
+        public var fragments:Vector.<Fragment>;
         /** min sequence number from M3U8. **/
         public var start_seqnum:Number;
         /** max sequence number from M3U8. **/

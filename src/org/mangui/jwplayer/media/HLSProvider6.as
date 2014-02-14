@@ -21,6 +21,7 @@ package org.mangui.jwplayer.media {
       }
 
       override public function initializeMediaProvider(cfg:PlayerConfig):void {
+         _stageEnabled = true;
          super.initializeMediaProvider(cfg);
          _currentQuality = 0;
       }

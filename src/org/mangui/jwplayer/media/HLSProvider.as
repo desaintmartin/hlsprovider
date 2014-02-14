@@ -10,11 +10,14 @@ package org.mangui.jwplayer.media {
     import com.longtailvideo.jwplayer.model.PlaylistItem;
     import com.longtailvideo.jwplayer.media.*;
     import com.longtailvideo.jwplayer.player.PlayerState;
-    import com.longtailvideo.jwplayer.utils.Stretcher;
+    import com.longtailvideo.jwplayer.utils.RootReference;
+    
 
     import flash.display.DisplayObject;
+    import flash.geom.Rectangle;
     import flash.media.SoundTransform;
     import flash.media.Video;
+    import flash.media.StageVideo;
     import flash.system.Capabilities;
     import flash.events.Event;
    
@@ -31,12 +34,15 @@ package org.mangui.jwplayer.media {
         protected var _levels:Vector.<Level>;
         /** Reference to the video object. **/
         private var _video:Video;
+        /** Reference to the stage video element. **/
+        private var _stageVideo:StageVideo;
+        /** Whether or not StageVideo is enabled (not working with JW5) **/
+        protected var _stageEnabled:Boolean = false;
         /** current position **/
         protected var _media_position:Number;
-        /** Video size **/
-        private var _streamWidth:Number = 0;
-        private var _streamHeight:Number = 0;
-        
+        /** Video Original size **/
+        private var _videoWidth:Number=0;
+        private var _videoHeight:Number=0;
         private var _seekInLiveDurationThreshold:Number = 60;
 
         public function HLSProvider() {
@@ -59,7 +65,6 @@ package org.mangui.jwplayer.media {
         /** Forward QOS metrics on fragment load. **/
         protected function _fragmentHandler(event:HLSEvent):void {
             _level = event.metrics.level;
-            resize(_width,_height);
             sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_META, { metadata: {
                 bandwidth: Math.round(event.metrics.bandwidth/1024),
                 droppedFrames: 0,
@@ -100,21 +105,26 @@ package org.mangui.jwplayer.media {
                 duration: event.mediatime.duration
             });
          }
-         
-            var videoWidth:Number = _video.videoWidth;
-            var videoHeight:Number = _video.videoHeight;
+         var videoWidth:Number;
+         var videoHeight:Number;
+         if(_stageVideo) {
+            videoWidth  = _stageVideo.videoWidth;
+            videoHeight = _stageVideo.videoHeight;
+         } else {
+            videoWidth  = _video.videoWidth;
+            videoHeight = _video.videoHeight;
+         }
 
-            if (videoWidth && videoHeight) {
-              var changed:Boolean = _streamWidth != videoWidth || _streamHeight != videoHeight;
-              if (changed) {
-                _streamHeight = videoHeight;
-                _streamWidth = videoWidth;
-                 Log.info("video size changed to " +  _streamWidth + "/" + _streamHeight);
-                 resize(_width, _height);
-                }
-              }
-         
-        };
+         if (videoWidth && videoHeight) {
+            if (_videoWidth != videoWidth || _videoHeight != videoHeight) {
+               _videoHeight = videoHeight;
+               _videoWidth = videoWidth;
+               Log.info("video size changed to " +  _videoWidth + "/" + _videoHeight);
+               // force resize to adjust video A/R
+               resize(_width, _height);
+            }
+         }
+      };
 
         /** Forward state changes from the framework. **/
         private function _stateHandler(event:HLSEvent):void {
@@ -146,17 +156,31 @@ package org.mangui.jwplayer.media {
         /** Set the volume on init. **/
         override public function initializeMediaProvider(cfg:PlayerConfig):void {
             super.initializeMediaProvider(cfg);
-            _hls = new HLS();
+            _hls = new HLS(); 
             _hls.stream.soundTransform = new SoundTransform(cfg.volume/100);
-            _video = new Video(320,180);
-            _video.smoothing = true;
-            _video.attachNetStream(_hls.stream);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED,_fragmentHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED,_manifestHandler);
             _hls.addEventListener(HLSEvent.STATE,_stateHandler);
             _hls.addEventListener(HLSEvent.AUDIO_ONLY, _audioHandler);
+
+            // Allow stagevideo to be disabled by user config
+            if (cfg.hasOwnProperty('stagevideo') && cfg['stagevideo'].toString() == "false") {
+               _stageEnabled = false;
+            }
+            _video = new Video(320, 240);
+            _video.smoothing = true;
+            // Use stageVideo when available
+            if (_stageEnabled && RootReference.stage.stageVideos.length > 0) {
+               _stageVideo = RootReference.stage.stageVideos[0];
+               _stageVideo.viewPort = new Rectangle(0,0,320,240);
+               _stageVideo.attachNetStream(_hls.stream);
+               Log.info("stage video enabled");
+            } else {
+               _video.attachNetStream(_hls.stream);
+            }
+
             _level = 0;
             var value:Object;
 
@@ -255,28 +279,45 @@ package org.mangui.jwplayer.media {
 
         /** Do a resize on the video. **/
         override public function resize(width:Number,height:Number):void {
-            var need_resize:Boolean = false;
-            if (_height != height || width != _width) {
-               Log.info("resize video to " +  width + "/" + height);
-               _hls.width= width;
-               _height = height;
-               _width = width;
-               need_resize = true;
-            }
-            if(_streamWidth) {
-               var ratio:Number =_streamWidth / _streamHeight;
-               var adjusted_height:Number = Math.round(_video.width / ratio); 
-               if (_video.height != adjusted_height) {
-                   need_resize = true;
-                  _video.height = Math.round(_video.width / ratio);
-                  Log.info("AR adjust height to " +  _video.height);
+            Log.info("resize video from ["+ _videoWidth + "," + _videoHeight + "]" + "to ["+ width + "," + height + "]");
+            _hls.width= width;
+            _width = width;
+            _height = height;
+            if(_videoWidth && _videoHeight) {
+               var rect:Rectangle = resizeRectangle(_videoWidth, _videoHeight, width, height);
+               if(_stageVideo) {
+                  _stageVideo.viewPort = rect;
+               } else {
+                  _video.x = rect.x;
+                  _video.y = rect.y;
+                  _video.width = rect.width;
+                  _video.height = rect.height;
                }
             }
-            if(need_resize) {
-               Stretcher.stretch(_video, width, height, config.stretching);
-            }
         };
+        
+        private function resizeRectangle(videoWidth:Number, videoHeight:Number,containerWidth:Number, containerHeight:Number):Rectangle {
+            var rect:Rectangle = new Rectangle();
+            var xscale:Number = containerWidth/videoWidth;
+            var yscale:Number = containerHeight/videoHeight;            
+            if(xscale >=yscale) {
+               rect.width = Math.min(videoWidth*yscale,containerWidth);
+               rect.height = videoHeight*yscale;
 
+            } else {
+               rect.width = Math.min(videoWidth*xscale,containerWidth);
+               rect.height = videoHeight*xscale;
+            }
+            rect.width = Math.ceil(rect.width);
+            rect.height = Math.ceil(rect.height);
+            rect.x = Math.round((containerWidth-rect.width)/2);
+            rect.y = Math.round((containerHeight-rect.height)/2);
+            Log.debug("width:"+rect.width);
+            Log.debug("height:"+rect.height);
+            Log.debug("x:"+rect.x);
+            Log.debug("y:"+rect.y);
+            return rect;
+        }
 
         /** Seek to a certain position in the item. **/
         override public function seek(pos:Number):void {

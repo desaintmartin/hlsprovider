@@ -103,19 +103,16 @@ package org.mangui.HLS.utils {
           pad = new NullPad;
           _read_position+=CHUNK_SIZE;
           _data.readBytes(dumpByteArray,0,CHUNK_SIZE);
-          newIv = new ByteArray;
           // Save new IV from ciphertext
-          dumpByteArray.position += (dumpByteArray.length-16);
+          newIv = new ByteArray();
+          dumpByteArray.position = (CHUNK_SIZE-16);
           dumpByteArray.readBytes(newIv, 0, 16);
         }
         dumpByteArray.position = 0;
         //Log.info("before decrypt");
         _mode = new CBCMode(_key, pad);
         pad.setBlockSize(_mode.getBlockSize());
-        if (_mode is IVMode) {
-          var ivmode:IVMode = _mode as IVMode;
-          ivmode.IV = _iv;
-        }
+        (_mode as IVMode).IV = _iv;
         _mode.decrypt(dumpByteArray);
         //Log.info("after decrypt");
         _decrypteddata.writeBytes(dumpByteArray);
@@ -138,6 +135,7 @@ package org.mangui.HLS.utils {
     }
     
     public function destroy():void {
+      _key.dispose();
       _key = null;
       _mode = null;
     }

@@ -1,5 +1,6 @@
 #!/bin/bash
 FLEXPATH=../../flex_sdk_4.6
+#FLEXPATH=../../../apache_flex_sdk
 
 echo "Compiling HLSProvider.swc"
 $FLEXPATH/bin/compc -include-sources ../src/org/mangui/HLS -output ../lib/HLSProvider.swc -library-path+=../lib/as3crypto.swc -use-network=false -optimize=true -incremental=true -target-player="10.1" -static-link-runtime-shared-libraries=true

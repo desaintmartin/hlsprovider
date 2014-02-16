@@ -32,8 +32,6 @@ package org.mangui.HLS.muxing {
     private var _pmtParsed:Boolean= false;
     /** any TS packets before PMT ? **/
     private var _packetsBeforePMT:Boolean = false;
-    /** are we in fallback PID parsing mode ? **/
-    private var _fallbackMode:Boolean= false;
     /** Packet ID of the Program Map Table. **/
     private var _pmtId:Number = -1;
     /** Packet ID of the video stream. **/
@@ -46,12 +44,6 @@ package org.mangui.HLS.muxing {
     /** List of AAC and MP3 audio PIDs */
     private var _aacIds:Vector.<uint> = new Vector.<uint>();
     private var _mp3Ids:Vector.<uint> = new Vector.<uint>();
-    /** fallback Packet ID of the video stream. **/
-    private static var _avcFallbackId:Number = -1;
-    /** fallback Packet ID of audio stream. **/
-    private static var _audioFallbackId:Number = -1;
-    /** fallback Packet ID of the MP3 audio stream. **/
-    private static var _audioFallbackIsAAC:Boolean= false;
     /** List of packetized elementary streams with AAC. **/
     private var _audioPES:Vector.<PES> = new Vector.<PES>();
     /** List of packetized elementary streams with AVC. **/
@@ -120,27 +112,11 @@ package org.mangui.HLS.muxing {
       // finish reading TS fragment
       if (!_data.bytesAvailable) {
         // first check if TS parsing was successful
-        if(_pmtParsed == false && _fallbackMode == false) {
+        if(_pmtParsed == false) {
           // if parsing not successful, try to reparse segment will fallback A/V PIDs if any
-          Log.error("TS: no PMT found, trying to reparse using fallback PIDs");
-          if(_audioFallbackId !=-1 || _avcFallbackId != -1)  {
-             _data.position = 0;
-             _audioId = _audioFallbackId;
-             _audioIsAAC = _audioFallbackIsAAC;
-             if(_audioId > 0) {
-               if(_audioIsAAC) {
-                  _aacIds.push(_audioId);
-               } else {
-                  _mp3Ids.push(_audioId);
-               }
-             }
-             _avcId = _avcFallbackId;
-             _fallbackMode = true;
-          } else {
-            Log.error("TS: no fallback PIDs available, report parsing error");
+            Log.error("TS: no PMT found, report parsing error");
             _callback(null,null,null,null);
-          }
-        } else {
+          } else {
           _timer.stop();
            if (_videoPES.length == 0 && _audioPES.length == 0 ) {
             Log.error("No audio or video streams found.");
@@ -448,8 +424,6 @@ package org.mangui.HLS.muxing {
       var pil:uint = _data.readUnsignedShort() & 0x3FF;
       _data.position += pil;
       read += pil;
-      // reset AVC fallback PIDs before parsing PMT
-      _avcFallbackId = -1;
       // Loop through the streams in the PMT.
       while(read < len) {
         // stream type
@@ -461,7 +435,7 @@ package org.mangui.HLS.muxing {
         _aacIds.push(sid);
         } else if (typ == 0x1B) {
           // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
-          _avcId = _avcFallbackId = sid;
+          _avcId = sid;
         } else if (typ == 0x03 || typ == 0x04) {
           //    ISO/IEC 11172-3 (MPEG-1 audio)
           // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
@@ -485,13 +459,13 @@ package org.mangui.HLS.muxing {
           Log.debug("Found " + _aacIds.length + " AAC tracks");
           Log.debug("Found " + _mp3Ids.length + " MP3 tracks");
           if (_aacIds.length > 0) {
-            _audioId = _audioFallbackId = _aacIds[0];
-            _audioIsAAC = _audioFallbackIsAAC = true;
+            _audioId = _aacIds[0];
+            _audioIsAAC = true;
           } else if (_mp3Ids.length > 0) {
-            _audioId = _audioFallbackId = _mp3Ids[0];
-            _audioIsAAC = _audioFallbackIsAAC = false;
+            _audioId = _mp3Ids[0];
+            _audioIsAAC = false;
           }
-          Log.debug("Selected audio track: " + _audioId);
+          Log.debug("Selected audio PID: " + _audioId);
         }
       }
       return len + pointerField;

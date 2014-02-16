@@ -221,7 +221,7 @@ package org.mangui.HLS.streaming {
           _fragstreamloader.readBytes(_fragByteArray,_fragWritePosition,0);
           _fragWritePosition=_fragByteArray.length;
           Log.debug2("bytesLoaded/bytesTotal:"+event.bytesLoaded + "/"+ event.bytesTotal);
-          if(_decryptAES != null) {	  
+          if(_decryptAES != null) {
             _decryptAES.notifyappend();
           }
           if(event.bytesLoaded == event.bytesTotal) {
@@ -503,34 +503,21 @@ package org.mangui.HLS.streaming {
             _last_segment_decrypt_key_url = frag.decrypt_url;
             _frag_byterange_start_offset = frag.byterange_start_offset;
             _frag_byterange_end_offset = frag.byterange_end_offset;
-            if(_last_segment_decrypt_key_url != null && (_keymap[_last_segment_decrypt_key_url] == undefined)) {
-              _last_segment_decrypt_iv = frag.decrypt_iv;
-              // load key
-              Log.debug("loading key:" + _last_segment_decrypt_key_url);
-              _keystreamloader.load(new URLRequest(_last_segment_decrypt_key_url));
-            } else {
-              try {
-                 _fragByteArray = null;
-                  Log.debug("loading fragment:" + frag.url);
-                 _fragstreamloader.load(new URLRequest(frag.url));
-                  //if (frag.byterange_start_offset ==-1) {
-                  //  _fragstreamloader.load(new URLRequest(frag.url));
-                  //} else {
-                  //   // use as3httpclientlib for Range Request
-                  //   var client:HttpClient = new HttpClient();
-                  //   client.listener.onData = function(event:HttpDataEvent):void { 
-                  //      _fragDemux(event.bytes);
-                  //    };
-                  //   client.listener.onError = _fragErrorHandler;
-                  //   client.listener.onStatus = function(event:HttpStatusEvent):void {
-                  //   };
-                  //   var request:HttpRequest = new Get();
-                  //   request.addHeader("Range", "bytes=" + frag.byterange_start_offset + "-" + frag.byterange_end_offset);
-                  //   client.request(new URI(frag.url),request);
-                  //}
-              } catch (error:Error) {
-                  _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
-              }
+            if(_last_segment_decrypt_key_url != null) {
+               _last_segment_decrypt_iv = frag.decrypt_iv;
+               if(_keymap[_last_segment_decrypt_key_url] == undefined) {
+                  // load key
+                  Log.debug("loading key:" + _last_segment_decrypt_key_url);
+                  _keystreamloader.load(new URLRequest(_last_segment_decrypt_key_url));
+                  return;
+               }
+            }
+            try {
+               _fragByteArray = null;
+               Log.debug("loading fragment:" + frag.url);
+               _fragstreamloader.load(new URLRequest(frag.url));
+            } catch (error:Error) {
+               _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
             }
         }
 

@@ -127,6 +127,13 @@ package org.mangui.HLS.muxing {
              _data.position = 0;
              _audioId = _audioFallbackId;
              _audioIsAAC = _audioFallbackIsAAC;
+             if(_audioId > 0) {
+               if(_audioIsAAC) {
+                  _aacIds.push(_audioId);
+               } else {
+                  _mp3Ids.push(_audioId);
+               }
+             }
              _avcId = _avcFallbackId;
              _fallbackMode = true;
           } else {

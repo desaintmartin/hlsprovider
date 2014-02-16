@@ -4,6 +4,7 @@ package org.mangui.jwplayer.media {
     import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
     import org.mangui.HLS.utils.Log;
+    import org.mangui.HLS.utils.ScaleVideo;
     
     import com.longtailvideo.jwplayer.events.MediaEvent;
     import com.longtailvideo.jwplayer.model.PlayerConfig;
@@ -284,7 +285,7 @@ package org.mangui.jwplayer.media {
             _width = width;
             _height = height;
             if(_videoWidth && _videoHeight) {
-               var rect:Rectangle = resizeRectangle(_videoWidth, _videoHeight, width, height);
+               var rect:Rectangle = ScaleVideo.resizeRectangle(_videoWidth, _videoHeight, width, height);
                if(_stageVideo) {
                   _stageVideo.viewPort = rect;
                } else {
@@ -295,29 +296,6 @@ package org.mangui.jwplayer.media {
                }
             }
         };
-        
-        private function resizeRectangle(videoWidth:Number, videoHeight:Number,containerWidth:Number, containerHeight:Number):Rectangle {
-            var rect:Rectangle = new Rectangle();
-            var xscale:Number = containerWidth/videoWidth;
-            var yscale:Number = containerHeight/videoHeight;            
-            if(xscale >=yscale) {
-               rect.width = Math.min(videoWidth*yscale,containerWidth);
-               rect.height = videoHeight*yscale;
-
-            } else {
-               rect.width = Math.min(videoWidth*xscale,containerWidth);
-               rect.height = videoHeight*xscale;
-            }
-            rect.width = Math.ceil(rect.width);
-            rect.height = Math.ceil(rect.height);
-            rect.x = Math.round((containerWidth-rect.width)/2);
-            rect.y = Math.round((containerHeight-rect.height)/2);
-            Log.debug("width:"+rect.width);
-            Log.debug("height:"+rect.height);
-            Log.debug("x:"+rect.x);
-            Log.debug("y:"+rect.y);
-            return rect;
-        }
 
         /** Seek to a certain position in the item. **/
         override public function seek(pos:Number):void {

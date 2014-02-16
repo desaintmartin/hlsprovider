@@ -28,8 +28,8 @@ package org.mangui.chromeless {
         private var _video:Video = null;
 
         /** Video size **/
-        private var _streamWidth:Number = 0;
-        private var _streamHeight:Number = 0;
+        private var _videoWidth:Number = 0;
+        private var _videoHeight:Number = 0;
 
         /** current media position */
         private var _media_position:Number;
@@ -126,12 +126,13 @@ package org.mangui.chromeless {
             var videoHeight:Number = _video ? _video.videoHeight : _stageVideo.videoHeight;
 
             if (videoWidth && videoHeight) {
-              var changed:Boolean = _streamWidth != videoWidth || _streamHeight != videoHeight;
+              var changed:Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
               if (changed) {
-                _streamHeight = videoHeight;
-                _streamWidth = videoWidth;
+                _videoHeight = videoHeight;
+                _videoWidth = videoWidth;
+                _resize();
                 if (ExternalInterface.available) {
-                    ExternalInterface.call("onVideoSize", _streamWidth, _streamHeight);
+                    ExternalInterface.call("onVideoSize", _videoWidth, _videoHeight);
                 }
               }
             }
@@ -241,15 +242,22 @@ package org.mangui.chromeless {
           stage.fullScreenSourceRect = new Rectangle(0,0,stage.stageWidth,stage.stageHeight);
           _sheet.width = stage.stageWidth;
           _sheet.height = stage.stageHeight;
-          // resize video
-          if (_video) {
-            _video.width = stage.stageWidth;
-            _video.height= stage.stageHeight;
-          } else if (_stageVideo) {
-            _stageVideo.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
-          }
+          _resize();
         };
 
+         private function _resize():void {
+            var rect:Rectangle;
+            rect = ScaleVideo.resizeRectangle(_videoWidth, _videoHeight, stage.stageWidth, stage.stageHeight);
+            // resize video
+            if (_video) {
+               _video.width = rect.width;
+               _video.height = rect.height;
+               _video.x = rect.x;
+               _video.y = rect.y;
+            } else if (_stageVideo) {
+               _stageVideo.viewPort = rect;
+            }
+         }
     }
 
 }

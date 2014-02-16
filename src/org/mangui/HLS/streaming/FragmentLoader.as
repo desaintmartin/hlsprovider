@@ -369,7 +369,9 @@ package org.mangui.HLS.streaming {
             updateLevel(0);
 
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
-            if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
+            if ((_levels[_level].fragments.length == 0) || 
+            (_hls.type == HLSTypes.LIVE && 
+             _last_updated_level != _level)) {
               // playlist not yet received
               Log.debug("loadfirstfragment : playlist not received for level:"+_level);
               return 1;

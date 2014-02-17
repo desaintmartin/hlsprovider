@@ -53,7 +53,7 @@ package org.mangui.HLS.streaming {
 
         public function HLSNetStream(connection:NetConnection, hls:HLS, fragmentLoader:FragmentLoader):void {
             super(connection);
-            super.inBufferSeek = true;
+            super.bufferTime = _buffer_min_len;
             _hls = hls;
             _fragmentLoader = fragmentLoader;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED,_lastVODFragmentLoadedHandler);
@@ -345,11 +345,9 @@ package org.mangui.HLS.streaming {
     override public function pause():void {
         Log.info("HLSNetStream:pause");
         if(_state == HLSStates.PLAYING) {
-            clearInterval(_interval);
             super.pause();
             _setState(HLSStates.PAUSED);
         } else if(_state == HLSStates.PLAYING_BUFFERING) {
-            clearInterval(_interval);
             super.pause();
             _setState(HLSStates.PAUSED_BUFFERING);
         }
@@ -358,11 +356,12 @@ package org.mangui.HLS.streaming {
     /** Resume playback. **/
     override public function resume():void {
          Log.info("HLSNetStream:resume");
-        if(_state == HLSStates.PAUSED || _state == HLSStates.PAUSED_BUFFERING) {
-            clearInterval(_interval);
+        if(_state == HLSStates.PAUSED) {
             super.resume();
-            _interval = setInterval(_checkBuffer,100);
             _setState(HLSStates.PLAYING);
+        } else if(_state == HLSStates.PAUSED_BUFFERING) {
+            super.resume();
+            _setState(HLSStates.PLAYING_BUFFERING);
         }
     };
 
@@ -383,6 +382,7 @@ package org.mangui.HLS.streaming {
         new_len = 0;
       }
       _buffer_min_len = new_len;
+      super.bufferTime = new_len;
     };
 
     /** get max Buffer Length  **/

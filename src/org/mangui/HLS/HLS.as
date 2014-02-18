@@ -1,6 +1,7 @@
 package org.mangui.HLS {
 
 
+import flash.net.URLStream;
 import org.mangui.HLS.parsing.Level;
 import org.mangui.HLS.streaming.*;
 import org.mangui.HLS.utils.*;
@@ -17,15 +18,18 @@ import flash.net.NetConnection;
         private var _manifestLoader:ManifestLoader;
         /** HLS NetStream **/
         private var _hlsNetStream:HLSNetStream;
+        /** HLS URLStream **/
+        private var _hlsURLStream:Class;
 
 	private var _client:Object = {};
 
         /** Create and connect all components. **/
-    public function HLS():void {
+    public function HLS(urlstream:Class=null):void {
             var connection:NetConnection = new NetConnection();
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
-            _fragmentLoader = new FragmentLoader(this);
+            _hlsURLStream = (urlstream == null) ? URLStream as Class : urlstream;
+            _fragmentLoader = new FragmentLoader(this,_hlsURLStream);
             _hlsNetStream = new HLSNetStream(connection,this, _fragmentLoader);
         };
 
@@ -170,6 +174,10 @@ import flash.net.NetConnection;
    return _fragmentLoader.startFromLowestLevel;
    }
 
+   /* retrieve URL stream loader */
+   public function get URLstream():Class {
+   return _hlsURLStream;
+   }
 }
 ;
 }

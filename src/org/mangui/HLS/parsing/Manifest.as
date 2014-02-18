@@ -60,14 +60,17 @@ package org.mangui.HLS.parsing {
             _urlloader.addEventListener(Event.COMPLETE,_loaderHandler);
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR,error);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR,error);
-            if (flushLiveURLcache && type == HLSTypes.LIVE && _url.indexOf("?") == -1) {
+            if (flushLiveURLcache && type == HLSTypes.LIVE) {
                /* 
-                 add time parameter to force reload URL, there are some issues with browsers reloading from cache even if the URL has been updated ...
+                 add time parameter to force reload URL, there are some issues with browsers/CDN reloading from cache even if the URL has been updated ...
                  see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache
-                  * in case URL already contains an optional parameter, no need to append the time parameter, as the browser will automatically
-                  * reload URL in that case
                */
-               url+="?time=" + new Date().getTime();
+               var extra:String = "time=" + new Date().getTime();
+               if(_url.indexOf("?") == -1) {
+               url+="?" + extra;
+               } else {
+               url+="," + extra;
+               }
             }
             _urlloader.load(new URLRequest(url));
         };

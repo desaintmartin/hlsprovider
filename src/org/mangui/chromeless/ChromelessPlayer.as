@@ -213,7 +213,8 @@ package org.mangui.chromeless {
         /** StageVideo detector. **/
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
             var available:Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
-            _hls = new HLS(HLSURLStream as Class);
+            //_hls = new HLS(JSURLStream as Class);
+            _hls = new HLS();
             _hls.width = stage.stageWidth;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);

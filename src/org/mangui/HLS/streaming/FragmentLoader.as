@@ -128,7 +128,7 @@ package org.mangui.HLS.streaming {
             _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragErrorHandler);
             _fragstreamloader.addEventListener(ProgressEvent.PROGRESS,_fragProgressHandler);
             _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS,_fragHTTPStatusHandler);
-            _keystreamloader = (new urlStreamClass()) as URLStream;
+            _keystreamloader = new URLStream();
             _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
             _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyErrorHandler);
             _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);

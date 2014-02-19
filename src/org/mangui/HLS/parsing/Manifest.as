@@ -69,7 +69,7 @@ package org.mangui.HLS.parsing {
                if(_url.indexOf("?") == -1) {
                url+="?" + extra;
                } else {
-               url+="," + extra;
+               url+="&" + extra;
                }
             }
             _urlloader.load(new URLRequest(url));

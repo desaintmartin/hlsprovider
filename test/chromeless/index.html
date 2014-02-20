@@ -77,6 +77,7 @@ a:visited {
     <th colspan="1"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></th>
     <th colspan="1"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></th>
     <th colspan="1"><button onclick="toggleStartFromLowestLevel()">Toggle start From Lowest Level</button></th>
+    <th colspan="1"><button onclick="toggleJSURLStream()">Use JS URL Stream Loader</button></th>
   </tr>
   <tr><td>state</td>
       <td>Position</td>
@@ -90,6 +91,7 @@ a:visited {
       <td>Log debug2</td>
       <td>Flush Live URL</td>
       <td>Start From Lowest Level</td>
+      <td>Use JS URL Stream Loader</td>
   </tr>
   <tr>
     <td>IDLE</td>
@@ -100,6 +102,7 @@ a:visited {
     <td>0</td>
     <td>0</td>
     <td>0</td>
+    <td>false</td>
     <td>false</td>
     <td>false</td>
     <td>false</td>
@@ -333,6 +336,19 @@ function toggleStartFromLowestLevel() {
   }
 }
 
+function toggleJSURLStream() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getJSURLStream();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[12].innerHTML =  state;
+    obj.playerSetJSURLStream(state);
+    appendLog("toggle JS URL stream to:" + state);
+  }
+}
+
+
+
 function getAudioTrackList() {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
@@ -426,36 +442,72 @@ function onAudioTrackChange(trackId) {
   document.getElementById('mediaInfo').rows[2].cells[7].innerHTML = trackId;
 }
 
-function onRequestResource(URL) {
-  appendLog("loading fragment "+ URL);
-  URL_request(URL, URL_readBytes, "arraybuffer");  
+function onRequestResource0(URL) {
+  appendLog("loading fragment "+ URL + " for instance 0");
+  URL_request(URL,URL_readBytes0, transferFailed0, "arraybuffer");  
 }
 
-function URL_request(url, callback, responseType) {
+function onRequestResource1(URL) {
+  appendLog("loading fragment "+ URL + " for instance 1");
+  URL_request(URL,URL_readBytes1,transferFailed1, "arraybuffer");  
+}
+
+function URL_request(url, loadcallback, errorcallback,responseType) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", url, callback? true: false);
+    xhr.open("GET", url, loadcallback? true: false);
     if (responseType) {
       xhr.responseType = responseType;
     }
-    if (callback) {
-      xhr.onload = callback;
+    if (loadcallback) {
+      xhr.onload = loadcallback;
+      xhr.onerror= errorcallback;
       xhr.send();
     } else {
       xhr.send();
       return xhr.status == 200? xhr.response: "";
     }
 }
-
-function URL_readBytes(event) {
-  appendLog("fragment loaded");
-  var res = base64ArrayBuffer(event.currentTarget.response);
-  resourceLoaded(res);
-}
-
-function resourceLoaded(res) {
+function transferFailed0(oEvent) {
+    appendLog("An error occurred while transferring the file :" + oEvent.target.status);
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.resourceLoaded(res);
+    obj.resourceLoadingError0();
+  }
+}
+
+function transferFailed1(oEvent) {
+    appendLog("An error occurred while transferring the file :" + oEvent.target.status);
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.resourceLoadingError1();
+  }
+}
+
+
+function URL_readBytes0(event) {
+  appendLog("fragment loaded");
+  var res = base64ArrayBuffer(event.currentTarget.response);
+  resourceLoaded0(res);
+}
+
+function URL_readBytes1(event) {
+  appendLog("fragment loaded");
+  var res = base64ArrayBuffer(event.currentTarget.response);
+  resourceLoaded1(res);
+}
+
+
+function resourceLoaded0(res) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.resourceLoaded0(res);
+  }
+}
+
+function resourceLoaded1(res) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.resourceLoaded1(res);    
   }
 }
 

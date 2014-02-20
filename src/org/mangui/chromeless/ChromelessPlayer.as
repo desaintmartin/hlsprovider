@@ -1,6 +1,7 @@
 package org.mangui.chromeless {
 
 
+    import flash.net.URLStream;
     import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
     import org.mangui.HLS.utils.*;
@@ -63,6 +64,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getLogDebug2",_getLogDebug2);
             ExternalInterface.addCallback("getflushLiveURLCache",_getflushLiveURLCache);
             ExternalInterface.addCallback("getstartFromLowestLevel",_getstartFromLowestLevel);
+            ExternalInterface.addCallback("getJSURLStream",_getJSURLStream);
             ExternalInterface.addCallback("getPlayerVersion",_getPlayerVersion);
             ExternalInterface.addCallback("getAudioTrackList",_getAudioTrackList);
             ExternalInterface.addCallback("getAudioTrackId",_getAudioTrackId);
@@ -82,6 +84,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetLogDebug",_setLogDebug);
             ExternalInterface.addCallback("playerSetLogDebug2",_setLogDebug2);
             ExternalInterface.addCallback("playerSetAudioTrack",_setAudioTrack);
+            ExternalInterface.addCallback("playerSetJSURLStream",_setJSURLStream);
 
             setTimeout(_pingJavascript,50);
         };
@@ -172,6 +175,7 @@ package org.mangui.chromeless {
         private function _getstartFromLowestLevel():Boolean { return _hls.startFromLowestLevel; };
         private function _getLogDebug():Boolean { return Log.LOG_DEBUG_ENABLED; };
         private function _getLogDebug2():Boolean { return Log.LOG_DEBUG2_ENABLED; };
+        private function _getJSURLStream():Boolean { return (_hls.URLstream is JSURLStream); };
         private function _getPlayerVersion():Number { return 2; };
         private function _getAudioTrackList():Array {
             var list:Array = [];
@@ -198,6 +202,7 @@ package org.mangui.chromeless {
         private function _setstartFromLowestLevel(startFromLowestLevel:Boolean):void { _hls.startFromLowestLevel = startFromLowestLevel;};
         private function _setLogDebug(debug:Boolean):void{ Log.LOG_DEBUG_ENABLED=debug; };
         private function _setLogDebug2(debug2:Boolean):void{ Log.LOG_DEBUG2_ENABLED=debug2; };
+        private function _setJSURLStream(jsURLstream:Boolean):void { if (jsURLstream) {_hls.URLstream = JSURLStream as Class; } else {_hls.URLstream = URLStream as Class;}};
         private function _setAudioTrack(val:Number):void { if (val == _hls.audioTrack) return; _hls.audioTrack=val;if (!isNaN(_media_position)) {_hls.stream.seek(_media_position);}};
 
         /** Mouse click handler. **/
@@ -213,7 +218,6 @@ package org.mangui.chromeless {
         /** StageVideo detector. **/
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
             var available:Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
-            //_hls = new HLS(JSURLStream as Class);
             _hls = new HLS();
             _hls.width = stage.stageWidth;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);

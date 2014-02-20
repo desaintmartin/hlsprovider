@@ -249,6 +249,8 @@ package org.mangui.HLS.muxing {
 					Log.error(error.message);
 					continue;
 				}
+            var sps_found:Boolean = false;
+            var pps_found:Boolean = false;
 				units = AVC.getNALU(_videoPES[i].data,_videoPES[i].payload);
 				// If there's no NAL unit, push all data in the previous tag.
 				if(!units.length) {
@@ -270,13 +272,16 @@ package org.mangui.HLS.muxing {
 						if(units[j].type == 5) {
 							_videoTags[_videoTags.length-1].keyframe = true;
 						}
-					} else if (units[j].type == 7 || units[j].type == 8) {
-							if(_lastAVCCFrame == null) {
-								_lastAVCCFrame=_videoPES[i];
-							}
-					}
+					} else if (units[j].type == 7) {
+                     sps_found = true;
+					}  else if (units[j].type == 8) {
+                     pps_found = true;
+               }
 				}
-			}
+            if(_lastAVCCFrame == null && sps_found && pps_found) {
+               _lastAVCCFrame=_videoPES[i];
+            }
+         }
 		};
 		
 		

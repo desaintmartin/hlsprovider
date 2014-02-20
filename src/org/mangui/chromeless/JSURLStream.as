@@ -1,5 +1,8 @@
 package org.mangui.chromeless {
-   import com.hurlant.util.Base64;
+   import flash.events.IOErrorEvent;
+   import by.blooddy.crypto.Base64;
+   import flash.events.TimerEvent;
+   import flash.utils.Timer;
    import flash.external.ExternalInterface;
    import flash.events.Event;
    import flash.events.ProgressEvent;
@@ -9,17 +12,31 @@ package org.mangui.chromeless {
    import flash.net.URLRequest;
 
    public class JSURLStream extends URLStream {
-      
-      private var _connected:Boolean;
-      private var _resource:ByteArray = new ByteArray();
-      
+    private var _connected:Boolean;
+    private var _resource:ByteArray = new ByteArray();
+    /** Timer for decode packets **/ 
+    private var _timer:Timer;
+    /** read position **/
+    private var _read_position:Number;
+    /** read position **/
+    private var _base64_resource:String;
+    /** chunk size to avoid blocking **/
+    private static const CHUNK_SIZE:uint = 65536;
+    
+    private static var _instance_count:Number = 0;
+    private var _id:Number;
+
+
       public function JSURLStream() {
          addEventListener(Event.OPEN, onOpen);
          super();
          // Connect calls to JS.
          if (ExternalInterface.available) {
+            _id = _instance_count;
+            _instance_count++;
             Log.info("add callback resourceLoaded");
-            ExternalInterface.addCallback("resourceLoaded",_resourceLoaded);
+            ExternalInterface.addCallback("resourceLoaded" + _id,_resourceLoaded);
+            ExternalInterface.addCallback("resourceLoadingError" + _id,_resourceLoadingError);
          }
       }
 
@@ -50,8 +67,8 @@ package org.mangui.chromeless {
       override public function load(request : URLRequest) : void {
          Log.info("JSURLStream.load:"+request.url);
          if (ExternalInterface.available) {
-            ExternalInterface.call("onRequestResource", request.url);
-            dispatchEvent(new Event(Event.OPEN));
+            ExternalInterface.call("onRequestResource"+_id, request.url);
+            this.dispatchEvent(new Event(Event.OPEN));
          } else {
             super.load(request);
          }
@@ -63,10 +80,42 @@ package org.mangui.chromeless {
 
       private function _resourceLoaded(base64Resource:String):void {
          Log.info("resourceLoaded");
-         _resource = Base64.decodeToByteArray(base64Resource);
-         Log.info("resourceLoaded and decoded");
-         this.dispatchEvent(new ProgressEvent(ProgressEvent.PROGRESS, false, false, _resource.bytesAvailable, _resource.bytesAvailable));
-         this.dispatchEvent(new Event(Event.COMPLETE));
+         _resource = new ByteArray();
+         _read_position = 0;
+         _timer = new Timer(0,0);
+         _timer.addEventListener(TimerEvent.TIMER, _decodeData);
+         _timer.start();
+         _base64_resource = base64Resource;
+      }
+
+      private function _resourceLoadingError():void {
+         Log.info("resourceLoadingError");
+         this.dispatchEvent(new IOErrorEvent(IOErrorEvent.IO_ERROR));
+      }
+
+
+      /** decrypt a small chunk of packets each time to avoid blocking **/
+      private function _decodeData(e:Event):void {
+         var start_pos:Number = _read_position;
+         var end_pos:Number;
+         var decode_completed:Boolean;
+         if(_base64_resource.length <= _read_position + CHUNK_SIZE) {
+            end_pos = _base64_resource.length;
+            decode_completed = true;
+         } else {
+            end_pos = _read_position + CHUNK_SIZE;
+         }
+         var tmpString:String = _base64_resource.substring(start_pos,end_pos);
+         _resource.writeBytes(Base64.decode(tmpString));
+         if (decode_completed) {
+            _timer.stop();
+            Log.info("resourceLoaded and decoded");
+            _resource.position = 0;
+            this.dispatchEvent(new ProgressEvent(ProgressEvent.PROGRESS, false, false, _resource.bytesAvailable, _resource.bytesAvailable));
+            this.dispatchEvent(new Event(Event.COMPLETE));
+         } else {
+            _read_position = end_pos;
+         }
       }
    }
 }

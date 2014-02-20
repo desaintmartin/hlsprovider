@@ -12,7 +12,7 @@ echo "Compiling HLSProvider6.swf"
 $FLEXPATH/bin/mxmlc ../src/org/mangui/jwplayer/media/HLSProvider6.as -source-path ../src -o ../test/jwplayer6/HLSProvider6.swf -library-path+=../lib/as3crypto.swc -library-path+=../lib/jw6 -load-externs=../lib/jw6/jwplayer-6-classes.xml -use-network=false -optimize=true -incremental=true -target-player="10.2" -static-link-runtime-shared-libraries=true
 
 echo "Compiling HLSProviderChromeless.swf"
-$FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as -source-path ../src -o ../test/chromeless/HLSProviderChromeless.swf -library-path+=../lib/as3crypto.swc -use-network=false -optimize=true -incremental=true -target-player="11.1" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
+$FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as -source-path ../src -o ../test/chromeless/HLSProviderChromeless.swf -library-path+=../lib/as3crypto.swc -library-path+=../lib/blooddy_crypto.swc -use-network=false -optimize=true -incremental=true -target-player="11.1" -static-link-runtime-shared-libraries=true -default-size 480 270 -default-background-color=0x000000
 
 echo "Compiling HLSProviderFlowPlayer.swf"
 $FLEXPATH/bin/mxmlc ../src/org/mangui/flowplayer/HLSPluginFactory.as -source-path ../src -o ../test/flowplayer/HLSProviderFlowPlayer.swf -library-path+=../lib/as3crypto.swc -library-path+=../lib/flowplayer  -load-externs=../lib/flowplayer/flowplayer-classes.xml -use-network=false -optimize=true -incremental=true -target-player="11.1" -static-link-runtime-shared-libraries=true

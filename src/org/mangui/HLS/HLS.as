@@ -24,12 +24,12 @@ import flash.net.NetConnection;
 	private var _client:Object = {};
 
         /** Create and connect all components. **/
-    public function HLS(urlstream:Class=null):void {
+    public function HLS():void {
             var connection:NetConnection = new NetConnection();
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
-            _hlsURLStream = (urlstream == null) ? URLStream as Class : urlstream;
-            _fragmentLoader = new FragmentLoader(this,_hlsURLStream);
+            _hlsURLStream = URLStream as Class; // default loader
+            _fragmentLoader = new FragmentLoader(this);
             _hlsNetStream = new HLSNetStream(connection,this, _fragmentLoader);
         };
 
@@ -172,6 +172,11 @@ import flash.net.NetConnection;
    /* retrieve start level logic (default false) */
    public function get startFromLowestLevel():Boolean {
    return _fragmentLoader.startFromLowestLevel;
+   }
+
+   /* set URL stream loader */
+   public function set URLstream(urlstream:Class):void {
+      _hlsURLStream = urlstream;
    }
 
    /* retrieve URL stream loader */

@@ -400,7 +400,6 @@ package org.mangui.HLS.streaming {
         override public function seek(position:Number):void {
                Log.info("HLSNetStream:seek("+position+")");
                _buffer = new Vector.<Tag>();
-               _fragmentLoader.clearLoader();
                _fragment_loading = false;
                _buffer_current_index = 0;
                _buffer_start_pts = new Array();

@@ -113,25 +113,15 @@ package org.mangui.HLS.streaming {
         private var _audioTracks:Vector.<HLSAudioTrack>;
         /** current audio track id **/
         private var _audioTrackId:Number;
-        
         public var startFromLowestLevel:Boolean=false;
 
         /** Create the loader. **/
-        public function FragmentLoader(hls:HLS,urlStreamClass:Class):void {
+        public function FragmentLoader(hls:HLS):void {
             _hls = hls;
             _autoLevelManager = new AutoLevelManager(hls);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
             _hls.addEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE,_altAudioTracksListChangedHandler);
-            _fragstreamloader = (new urlStreamClass()) as URLStream;
-            _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
-            _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragErrorHandler);
-            _fragstreamloader.addEventListener(ProgressEvent.PROGRESS,_fragProgressHandler);
-            _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS,_fragHTTPStatusHandler);
-            _keystreamloader = new URLStream();
-            _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
-            _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyErrorHandler);
-            _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
         };
 
         public function set audioTrack(num:Number):void {
@@ -297,10 +287,13 @@ package org.mangui.HLS.streaming {
       }
 
 		/** Kill any active load **/
-		public function clearLoader():void {
-			if(_fragstreamloader.connected) {
+		private function _clearLoader():void {
+			if(_fragstreamloader && _fragstreamloader.connected) {
 				_fragstreamloader.close();
 			}
+         if(_keystreamloader && _keystreamloader.connected) {
+            _keystreamloader.close();
+         }
 			if(_decryptAES) {
 			 _decryptAES.cancel(); 
 			 _decryptAES = null;
@@ -359,9 +352,7 @@ package org.mangui.HLS.streaming {
 
         public function loadfirstfragment(position:Number,callback:Function):Number {
             Log.debug("loadfirstfragment(" + position + ")");
-             if(_fragstreamloader.connected) {
-                _fragstreamloader.close();
-            }
+            _clearLoader();
             // reset IO Error when loading first fragment
             _bIOError = false;
             _need_reload = false;
@@ -411,10 +402,6 @@ package org.mangui.HLS.streaming {
         /** Load a fragment **/
         public function loadnextfragment(buffer:Number,callback:Function):Number {
           Log.debug("loadnextfragment(buffer):(" + buffer+ ")");
-
-            if(_fragstreamloader.connected) {
-                _fragstreamloader.close();
-            }
             // in case IO Error reload same fragment
             if(_bIOError) {
               _seqnum--;
@@ -502,6 +489,19 @@ package org.mangui.HLS.streaming {
         };
         
         private function _loadfragment(frag:Fragment):void {
+            // postpone URLStream init before loading first fragment
+            if(_fragstreamloader == null) {
+               var urlStreamClass:Class = _hls.URLstream as Class;
+               _fragstreamloader = (new urlStreamClass()) as URLStream;
+               _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
+               _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragErrorHandler);
+               _fragstreamloader.addEventListener(ProgressEvent.PROGRESS,_fragProgressHandler);
+               _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS,_fragHTTPStatusHandler);
+               _keystreamloader = (new urlStreamClass()) as URLStream;
+               _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
+               _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyErrorHandler);
+               _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
+            }
             _last_segment_decrypt_key_url = frag.decrypt_url;
             _frag_byterange_start_offset = frag.byterange_start_offset;
             _frag_byterange_end_offset = frag.byterange_end_offset;

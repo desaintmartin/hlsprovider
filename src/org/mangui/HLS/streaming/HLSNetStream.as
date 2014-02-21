@@ -229,10 +229,10 @@ package org.mangui.HLS.streaming {
              *  
              */
             var i:Number = 0;
-            var keyframe_pts:Number;            
+            var keyframe_pts:Number;
             for(i = 0; i < tags.length ; i++) {
                // look for last keyframe with pts <= seek_pts
-               if(tags[i].keyframe == true && tags[i].pts <= seek_pts)
+               if(tags[i].keyframe == true && tags[i].pts <= seek_pts && tags[i].type.indexOf("AVC") !=-1)
                   keyframe_pts = tags[i].pts;
             }
             
@@ -257,7 +257,7 @@ package org.mangui.HLS.streaming {
                     }
                     break;
                   default:
-                    break;                        
+                    break;
                 }
               }
             }
@@ -399,6 +399,7 @@ package org.mangui.HLS.streaming {
         /** Start playing data in the buffer. **/
         override public function seek(position:Number):void {
                Log.info("HLSNetStream:seek("+position+")");
+               _fragmentLoader.clearLoader();
                _buffer = new Vector.<Tag>();
                _fragment_loading = false;
                _buffer_current_index = 0;

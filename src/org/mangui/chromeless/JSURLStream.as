@@ -35,8 +35,8 @@ package org.mangui.chromeless {
             _id = _instance_count;
             _instance_count++;
             Log.info("add callback resourceLoaded");
-            ExternalInterface.addCallback("resourceLoaded" + _id,_resourceLoaded);
-            ExternalInterface.addCallback("resourceLoadingError" + _id,_resourceLoadingError);
+            ExternalInterface.addCallback("resourceLoaded" + _id,resourceLoaded);
+            ExternalInterface.addCallback("resourceLoadingError" + _id,resourceLoadingError);
          }
       }
 
@@ -78,7 +78,7 @@ package org.mangui.chromeless {
          _connected = true;
       }
 
-      private function _resourceLoaded(base64Resource:String):void {
+      protected function resourceLoaded(base64Resource:String):void {
          Log.info("resourceLoaded");
          _resource = new ByteArray();
          _read_position = 0;
@@ -88,7 +88,7 @@ package org.mangui.chromeless {
          _base64_resource = base64Resource;
       }
 
-      private function _resourceLoadingError():void {
+      protected function resourceLoadingError():void {
          Log.info("resourceLoadingError");
          this.dispatchEvent(new IOErrorEvent(IOErrorEvent.IO_ERROR));
       }

@@ -287,7 +287,7 @@ package org.mangui.HLS.streaming {
       }
 
 		/** Kill any active load **/
-		private function _clearLoader():void {
+		public function clearLoader():void {
 			if(_fragstreamloader && _fragstreamloader.connected) {
 				_fragstreamloader.close();
 			}
@@ -352,7 +352,6 @@ package org.mangui.HLS.streaming {
 
         public function loadfirstfragment(position:Number,callback:Function):Number {
             Log.debug("loadfirstfragment(" + position + ")");
-            _clearLoader();
             // reset IO Error when loading first fragment
             _bIOError = false;
             _need_reload = false;
@@ -694,6 +693,10 @@ package org.mangui.HLS.streaming {
        // Tags used for PTS analysis
        var min_pts:Number = Number.POSITIVE_INFINITY;
        var max_pts:Number = Number.NEGATIVE_INFINITY;
+       var min_audio_pts:Number = Number.POSITIVE_INFINITY;
+       var max_audio_pts:Number = Number.NEGATIVE_INFINITY;
+       var min_video_pts:Number = Number.POSITIVE_INFINITY;
+       var max_video_pts:Number = Number.NEGATIVE_INFINITY;
        var ptsTags:Vector.<Tag>;
 
       // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed
@@ -704,17 +707,32 @@ package org.mangui.HLS.streaming {
          Log.error(error_txt);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error_txt));
       }
-
-       if (audioTags.length > 0) {
-        ptsTags = audioTags;
-      } else {
-      // no audio, video only stream
-        ptsTags = videoTags;
+      var k:Number;
+      if (audioTags.length > 0) {
+         for(k=0; k < audioTags.length; k++) {
+            min_audio_pts = Math.min(min_audio_pts,audioTags[k].pts);
+            max_audio_pts = Math.max(max_audio_pts,audioTags[k].pts);
+         }
+         ptsTags = audioTags;
+         min_pts = min_audio_pts;
+         max_pts = max_audio_pts;
+         Log.debug("m/M audio PTS:" + min_pts +"/" + max_pts);
       }
-
-      for(var k:Number=0; k < ptsTags.length; k++) {
-         min_pts = Math.min(min_pts,ptsTags[k].pts);
-         max_pts = Math.max(max_pts,ptsTags[k].pts);
+      
+      if (videoTags.length > 0) {
+         for(k=0; k < videoTags.length; k++) {
+            min_video_pts = Math.min(min_video_pts,videoTags[k].pts);
+            max_video_pts = Math.max(max_video_pts,videoTags[k].pts);
+         }
+         Log.debug("m/M video PTS:" + min_video_pts +"/" + max_video_pts);
+         if (audioTags.length == 0) {
+         // no audio, video only stream
+            ptsTags = videoTags;
+            min_pts = min_video_pts;
+            max_pts = max_video_pts;
+         } else {
+            Log.debug("Delta audio/video m/M PTS:" + (min_video_pts-min_audio_pts) +"/" + (max_video_pts-max_audio_pts));
+         }
       }
 
       /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */

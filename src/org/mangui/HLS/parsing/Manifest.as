@@ -36,7 +36,7 @@ package org.mangui.HLS.parsing {
         private static const KEY:String = '#EXT-X-KEY:';
         /** Tag that provides byte range info */
         private static const BYTERANGE:String = '#EXT-X-BYTERANGE:';
-        /** useful regular expression */ 
+        /** useful regular expression */
         private static const replacespace:RegExp = new RegExp("\\s+","g");
         private static const replacesinglequote:RegExp = new RegExp("\\\'","g");
         private static const replacedoublequote:RegExp = new RegExp("\\\"","g");
@@ -61,7 +61,7 @@ package org.mangui.HLS.parsing {
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR,error);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR,error);
             if (flushLiveURLcache && type == HLSTypes.LIVE) {
-               /* 
+               /*
                  add time parameter to force reload URL, there are some issues with browsers/CDN reloading from cache even if the URL has been updated ...
                  see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache
                */
@@ -78,7 +78,7 @@ package org.mangui.HLS.parsing {
 
         /** The M3U8 playlist was loaded. **/
         private function _loaderHandler(event:Event):void {
-			var loader:URLLoader = URLLoader(event.target);
+         var loader:URLLoader = URLLoader(event.target);
             _success(String(loader.data),_url,_index);
         };
 
@@ -207,10 +207,10 @@ package org.mangui.HLS.parsing {
                 var url:String = _extractURL(line,base);
                 var fragment_decrypt_iv:ByteArray;
                 if(decrypt_url !=null) {
-                /* as per HLS spec : 
+                /* as per HLS spec :  
                     if IV not defined, then use seqnum as IV :
-                    http://tools.ietf.org/html/draft-pantos-http-live-streaming-11#section-5.2 
-                 */                  
+                    http://tools.ietf.org/html/draft-pantos-http-live-streaming-11#section-5.2
+                 */
                   if(decrypt_iv != null) {
                     fragment_decrypt_iv = decrypt_iv;
                   } else {
@@ -266,7 +266,7 @@ package org.mangui.HLS.parsing {
                     do {
                         line = lines[i++];
                     } while(line.match(/^\s*$/));
-                    
+
                     level.url = Manifest._extractURL(line,base);
                     levels.push(level);
                 }
@@ -298,8 +298,8 @@ package org.mangui.HLS.parsing {
                   var alt_group_id:String;
                   var alt_lang:String;
                   var alt_name:String;
-                  var alt_autoselect:Boolean;
-                  var alt_default:Boolean;
+                  var alt_autoselect:Boolean = false;
+                  var alt_default:Boolean = false;
                   var alt_url:String;
                   for(var j:Number = 0; j<params.length; j++) {
                       var param:String = params[j];

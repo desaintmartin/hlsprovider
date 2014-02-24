@@ -257,11 +257,16 @@ package org.mangui.HLS.streaming {
             } else {
                var track:HLSAudioTrack = _audioTracks[_audioTrackId];
                if(track.source == HLSAudioTrack.FROM_DEMUX) {
-                  audio_pid = _audioTracks[_audioTrackId].id;
+                  audio_pid = track.id;
                   audio_extract = true;
                } else {
                   audio_pid = -1;
+                  if (_altAudioTrackLists[track.id].url) {
                   audio_extract = false;
+                  } else {
+                     Log.debug('Using default audio track from TS');
+                     audio_extract = true;
+                  }
                }
             }
             new TS(data, _fragReadHandler,_switchlevel || _hasDiscontinuity,audio_extract,audio_pid);

@@ -6,7 +6,7 @@
 * **JWPlayer** free edition version **5.x**
 * **JWPlayer** free edition version **6.x**
 * **OSMF** version **2.0**
-* **FlowPlayer** version **3.2.12** (beta) 
+* **FlowPlayer** version **3.2.12**
 * **http://mediaelementjs.com** (support being added here : https://github.com/mangui/mediaelement)
 * **http://www.videojs.com** (support being added here : https://github.com/mangui/video-js-swf)
  

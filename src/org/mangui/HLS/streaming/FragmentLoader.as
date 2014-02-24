@@ -640,7 +640,7 @@ package org.mangui.HLS.streaming {
       }
       // then append other audio tracks, start from manifest list, then continue with demux list
       for (i=0;i<_audioTracksfromManifest.length;i++) {
-         if(!_audioTracksfromManifest[i].isDefault) {
+         if(i != default_manifest) {
             Log.debug("alternate audio track found in Manifest");
             audioTrack_ = _audioTracksfromManifest[i];
             _audioTracks.push(audioTrack_);
@@ -648,7 +648,7 @@ package org.mangui.HLS.streaming {
       }
 
       for (i=0;i<_audioTracksfromDemux.length;i++) {
-         if(!_audioTracksfromDemux[i].isDefault) {
+         if(i != default_demux) {
             Log.debug("alternate audio track retrieved from demux");
             audioTrack_ = _audioTracksfromDemux[i];
             _audioTracks.push(audioTrack_);

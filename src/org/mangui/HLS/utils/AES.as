@@ -31,7 +31,7 @@ package org.mangui.HLS.utils {
     /** read position **/
     private var _read_position:Number;
     /** chunk size to avoid blocking **/
-    private static const CHUNK_SIZE:uint = 4096;
+    private static const CHUNK_SIZE:uint = 2048;
     /** is bytearray full ? **/
     private var _data_complete:Boolean;
 
@@ -56,7 +56,7 @@ package org.mangui.HLS.utils {
       _decrypteddata = new ByteArray();
       _read_position = 0;
       _timer = new Timer(0,0);
-      _timer.addEventListener(TimerEvent.TIMER, _decryptData);
+      _timer.addEventListener(TimerEvent.TIMER, _decryptTimer);
       _timer.start();
     }
 
@@ -79,8 +79,17 @@ package org.mangui.HLS.utils {
       }
     }
 
+
+    private function _decryptTimer(e:Event):void {
+      var start_time:Number = new Date().getTime();
+      do {
+         _decryptData();
+      // dont spend more than 20 ms in the decrypt timer to avoid blocking/freezing video
+      } while (_timer.running && new Date().getTime() - start_time < 20);
+    }
+
     /** decrypt a small chunk of packets each time to avoid blocking **/
-    private function _decryptData(e:Event):void {
+    private function _decryptData():void {
       _data.position = _read_position;
       if(_data.bytesAvailable) {
         var dumpByteArray:ByteArray = new ByteArray();
@@ -126,7 +135,6 @@ package org.mangui.HLS.utils {
         _timer.stop();
         if (_data_complete) {
           Log.debug("AES:data+decrypt completed, callback");
-          _timer = null;
           // callback
           _decrypteddata.position=0;
           _callback(_decrypteddata);

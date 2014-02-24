@@ -37,7 +37,7 @@ package org.mangui.HLS.muxing {
     /** Packet ID of the video stream. **/
     private var _avcId:Number = -1;
     /** Packet ID of selected audio stream. **/
-    private var _audioId:Number = -1;
+    private static var _audioId:Number = -1;
     private var _audioIsAAC:Boolean = false;
     /** should we extract audio ? **/
     private var _audioExtract:Boolean;
@@ -60,7 +60,10 @@ package org.mangui.HLS.muxing {
     private var _lastAVCCFrame:PES = null;
     /* callback function upon read complete */
     private var _callback:Function;
-		
+    /* current audio PES */
+    private static var _curAudioPES:ByteArray = null;
+    /* current video PES */
+    private static var _curVideoPES:ByteArray = null;
 		
     public static function probe(data:ByteArray):Boolean {
       var pos:Number = data.position;
@@ -84,15 +87,25 @@ package org.mangui.HLS.muxing {
     }
 
       /** Transmux the M2TS file into an FLV file. **/
-      public function TS(data:ByteArray,callback:Function,audioExtract:Boolean,audioPID:Number) {
+      public function TS(data:ByteArray,callback:Function,discontinuity:Boolean,audioExtract:Boolean,audioPID:Number) {
+         // in case of discontinuity, flush any partially parsed audio/video PES packet
+         if(discontinuity) {
+            _curAudioPES = null;
+            _curVideoPES = null;
+         } else { 
+            // in case there is no discontinuity, but audio PID change, flush any partially parsed audio PES packet
+            if(_audioExtract && audioPID != _audioId) {
+               _curAudioPES = null;
+            }
+         }
          // Extract the elementary streams.
          _data = data;
          _callback = callback;
+         _audioId = audioPID;
+         _audioExtract = audioExtract;
          _timer = new Timer(0,0);
          _timer.addEventListener(TimerEvent.TIMER, _readData);
          _timer.start();
-         _audioId = audioPID;
-         _audioExtract = audioExtract;
       };
 		
 		/** append new TS data */
@@ -326,7 +339,6 @@ package org.mangui.HLS.muxing {
 				}
 			}
 			
-			var pes:ByteArray = new ByteArray();
 			// Parse the PES, split by Packet ID.
 			switch (pid) {
 				case _patId:
@@ -353,20 +365,28 @@ package org.mangui.HLS.muxing {
 					break;
 				case _audioId:
 					if(stt) {
-						pes.writeBytes(_data,_data.position,todo);
-						_audioPES.push(new PES(pes,true));
-					} else if (_audioPES.length) {
-						_audioPES[_audioPES.length-1].data.writeBytes(_data,_data.position,todo);
+                  if (_curAudioPES) {
+                     // TODO: ensure pes is complete
+                     _audioPES.push(new PES(_curAudioPES, true));
+                  }
+                  _curAudioPES = new ByteArray();
+               }
+               if (_curAudioPES) {
+                  _curAudioPES.writeBytes(_data, _data.position, todo);
 					} else {
 						Log.warn("Discarding TS audio packet with id "+pid);
 					}
 					break;
 				case _avcId:
 					if(stt) {
-						pes.writeBytes(_data,_data.position,todo);
-						_videoPES.push(new PES(pes,false));
-					} else if (_videoPES.length) {
-						_videoPES[_videoPES.length-1].data.writeBytes(_data,_data.position,todo);
+                  if (_curVideoPES) {
+                     // TODO: ensure pes is complete
+                     _videoPES.push(new PES(_curVideoPES,false));
+                  }
+                  _curVideoPES = new ByteArray();
+               }
+               if (_curVideoPES) {
+                   _curVideoPES.writeBytes(_data, _data.position, todo);
 					} else {
 						Log.warn("Discarding TS video packet with id "+pid + " bad TS segmentation ?");
 					}

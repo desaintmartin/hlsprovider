@@ -264,7 +264,7 @@ package org.mangui.HLS.streaming {
                   audio_extract = false;
                }
             }
-            new TS(data, _fragReadHandler,audio_extract,audio_pid);
+            new TS(data, _fragReadHandler,_switchlevel || _hasDiscontinuity,audio_extract,audio_pid);
          } else if (AAC.probe(data) == true) {
             Log.debug("AAC ES found");
             new AAC(data,_fragReadHandler);

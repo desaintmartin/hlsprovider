@@ -163,8 +163,5 @@ If you'd like to support future development and new product features, please mak
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=463RB2ALVXJLA)
 
-[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/c3d851ee2663072644e59cc07088cf97 "githalytics.com")](http://githalytics.com/mangui/HLSprovider)
-
-
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mangui/hlsprovider/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 

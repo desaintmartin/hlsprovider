@@ -18,5 +18,10 @@ package org.mangui.HLS.parsing {
          default_track = alt_default;
          url = alt_url;
       };
+
+      public function toString():String {
+         return "AltAudioTrack url: " + url + " lang: " + lang + " name: " + name + ' default: ' + default_track;
+      };
+
    }
 }

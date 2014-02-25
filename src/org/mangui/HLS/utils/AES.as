@@ -1,5 +1,4 @@
 package org.mangui.HLS.utils {
-  import com.hurlant.crypto.symmetric.AESKey;
   import com.hurlant.crypto.symmetric.CBCMode;
   import com.hurlant.crypto.symmetric.ICipher;
   import com.hurlant.crypto.symmetric.IPad;
@@ -17,7 +16,7 @@ package org.mangui.HLS.utils {
    */
   public class AES
   {
-    private var _key:AESKey;
+    private var _key:FastAESKey;
     private var _mode:ICipher;
     private var _iv:ByteArray;
     /* callback function upon read complete */
@@ -38,7 +37,7 @@ package org.mangui.HLS.utils {
     
     public function AES(key:ByteArray,iv:ByteArray) {
       var pad:IPad = new PKCS5;
-      _key = new AESKey(key);
+      _key = new FastAESKey(key);
       _mode = new CBCMode(_key, pad);
       pad.setBlockSize(_mode.getBlockSize());
       _iv = iv;
@@ -144,7 +143,7 @@ package org.mangui.HLS.utils {
     
     public function destroy():void {
       _key.dispose();
-      _key = null;
+      //_key = null;
       _mode = null;
     }
   }

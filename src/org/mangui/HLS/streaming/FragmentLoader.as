@@ -154,6 +154,7 @@ package org.mangui.HLS.streaming {
               // now load fragment
               try {
                  Log.debug("loading fragment:" + frag.url);
+                 _fragByteArray = null;
                  _fragstreamloader.load(new URLRequest(frag.url));
               } catch (error:Error) {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));

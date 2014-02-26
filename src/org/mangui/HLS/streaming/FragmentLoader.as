@@ -82,8 +82,8 @@ package org.mangui.HLS.streaming {
         private var _frag_loading_start_time:Number;
         /** Time the decryption started. **/
         private var _frag_decrypt_start_time:Number;
-        /** Time the parsing started. **/
-        //private var _frag_parsing_start_time:Number;
+        /** Time the demux started. **/
+        private var _frag_demux_start_time:Number;
         /** Did the stream switch quality levels. **/
         private var _switchlevel:Boolean;
         /** Did a discontinuity occurs in the stream **/
@@ -217,6 +217,8 @@ package org.mangui.HLS.streaming {
           }
           if(event.bytesLoaded == event.bytesTotal) {
             Log.debug("loading completed");
+            var _loading_duration:uint = (new Date().valueOf() - _frag_loading_start_time);
+            Log.debug("Loading       duration/length/speed:"+_loading_duration+ "/" + _last_segment_size + "/" + ((8000*_last_segment_size/_loading_duration)/1024).toFixed(0) + " kb/s");
             _cancel_load = false;
             if(_decryptAES != null) {
               _decryptAES.notifycomplete();
@@ -234,7 +236,7 @@ package org.mangui.HLS.streaming {
     }
 
       private function _fragDemux(data : ByteArray) : void {
-         // _frag_parsing_start_time = new Date().valueOf();
+         _frag_demux_start_time = new Date().valueOf();
          
          /* deal with byte range if any specified */
          if (_frag_byterange_start_offset !=-1) {
@@ -671,6 +673,8 @@ package org.mangui.HLS.streaming {
 
     /** Handles the actual reading of the TS fragment **/
     private function _fragReadHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray,audioPID:Number=-1,audioTrackList:Vector.<HLSAudioTrack>=null):void {
+      var _demux_duration:uint = (new Date().valueOf() - _frag_demux_start_time);
+      Log.debug("Demux         duration/length/speed:"+_demux_duration+ "/" + _last_segment_size + "/" + ((8000*_last_segment_size/_demux_duration)/1024).toFixed(0) + " kb/s");
        var audio_index:Number;
        var audio_track_changed:Boolean = false;
        audioTrackList = audioTrackList.sort(function(a:HLSAudioTrack,b:HLSAudioTrack):Number { return a.id - b.id; });
@@ -794,7 +798,8 @@ package org.mangui.HLS.streaming {
 
       // Calculate bandwidth
       _last_process_duration = (new Date().valueOf() - _frag_loading_start_time);
-      _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_process_duration);
+      _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_process_duration);      
+      Log.debug("Total Process duration/length/speed:"+_last_process_duration+ "/" + _last_segment_size + "/" + ((8000*_last_segment_size/_last_process_duration)/1024).toFixed(0) + " kb/s");
       
       if(_manifest_just_loaded) {
          _manifest_just_loaded = false;

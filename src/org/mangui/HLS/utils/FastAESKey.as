@@ -2,7 +2,15 @@ package org.mangui.HLS.utils {
    import flash.utils.ByteArray;
    import com.hurlant.crypto.symmetric.ISymmetricKey;
 
+
+/* word based AES encryption/decryption
+ * inspired by
+ * https://code.google.com/p/crypto-js/source/browse/tags/3.1.2/src/aes.js
+ */
+
    public class FastAESKey implements ISymmetricKey {
+      
+      /* private data, specific to each key */
       private var keySize:uint;
       private var nRounds:uint;
       private var ksRows:uint;
@@ -11,7 +19,7 @@ package org.mangui.HLS.utils {
       private var keyWords:Vector.<uint>;
       private var state:Vector.<uint>;
       
-      // Lookup tables
+      // static Lookup tables
       private static var _SBOX:Vector.<uint>;
       private static var _INV_SBOX:Vector.<uint>;
       private static var _SUB_MIX_0:Vector.<uint>;
@@ -99,8 +107,9 @@ package org.mangui.HLS.utils {
          nRounds = keySize + 6;
          // Compute number of key schedule rows
          ksRows = (nRounds + 1) * 4;
-         key.position=0;
+         state = new Vector.<uint>(keySize);
          keyWords = new Vector.<uint>(keySize);
+         key.position=0;
          for(var i:uint=0; i< keySize ; i++) {
             keyWords[i] = key.readUnsignedInt();
          }
@@ -155,7 +164,6 @@ package org.mangui.HLS.utils {
       
 
       public function decrypt(block : ByteArray, index : uint = 0) : void {
-         this.state = new Vector.<uint>(keySize);
          block.position = index;
          for(var i:uint=0; i< keySize ; i++) {
             //state.push(block.readUnsignedInt());
@@ -191,6 +199,7 @@ package org.mangui.HLS.utils {
             var t1:uint;
             var t2:uint;
             var t3:uint;
+
             // Rounds
             for (var round:uint = 1; round < nRounds; round++) {
                 // Shift rows, sub bytes, mix columns, add round key
@@ -223,6 +232,16 @@ package org.mangui.HLS.utils {
       }
 
       public function encrypt(block : ByteArray, index : uint = 0) : void {
+         block.position = index;
+         for(var i:uint=0; i< keySize ; i++) {
+            //state.push(block.readUnsignedInt());
+            state[i] = block.readUnsignedInt();
+         }
+         _doCryptBlock(keySchedule,_SUB_MIX_0, _SUB_MIX_1,_SUB_MIX_2,_SUB_MIX_3, _SBOX);
+         block.position = index;
+         for(i=0; i< keySize ; i++) {
+            block.writeUnsignedInt(state[i]);
+         }
       }
 
       public function getBlockSize() : uint {

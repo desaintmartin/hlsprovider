@@ -21,8 +21,10 @@ HLSProvider could be used as library to build a custom flash player using a simp
 * buffer progress report
 * error resilience
 	* retry mechanism in case of I/O Errors
-	* fallback parsing mechanism in case of badly segmented TS streams
-* AES-128 decryption (progressive decryption performed in parallel of segment download)
+	* recovery mechanism in case of badly segmented TS streams
+* AES-128 decryption
+	* the algorithm has been optimized and should allow smooth playback on low-end devices
+	* decryption is performed progressively during fragment download.
 
 the following M3U8 tags are supported: 
 

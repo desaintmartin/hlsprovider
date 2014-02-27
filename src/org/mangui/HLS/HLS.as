@@ -92,12 +92,8 @@ import flash.net.NetConnection;
         public function load(url:String):void {
             _hlsNetStream.close();
             _manifestLoader.load(url);
-        };  
-
-        /** Update the screen width (just used for metrics) **/
-        public function set width(width:Number):void {
-            _fragmentLoader.width = width;
         };
+
 
    /** return HLS NetStream **/
     public function get stream():NetStream {

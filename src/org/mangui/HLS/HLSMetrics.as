@@ -6,12 +6,10 @@ package org.mangui.HLS {
       
       private var _level:Number;
       private var _bandwidth:Number;
-      private var _width:Number;
       
-		public function HLSMetrics(level:Number,bandwidth:Number, width:Number) {
+		public function HLSMetrics(level:Number,bandwidth:Number) {
          _level= level;
          _bandwidth = bandwidth;
-         _width = width;
       }
       
       public function get level():Number {
@@ -20,9 +18,6 @@ package org.mangui.HLS {
 
       public function get bandwidth():Number {
          return _bandwidth;
-      }
-		public function get screenwidth():Number {
-         return _width;
       }
     }
 }

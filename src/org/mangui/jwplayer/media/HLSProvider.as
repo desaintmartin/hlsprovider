@@ -71,7 +71,7 @@ package org.mangui.jwplayer.media {
                 droppedFrames: 0,
                 currentLevel: (_level+1) +' of ' + _levels.length + ' (' + 
                     Math.round(_levels[_level].bitrate/1024) + 'kbps, ' + _levels[_level].width + 'px)',
-                width: event.metrics.screenwidth
+                width: _width
             }});
         };
 
@@ -281,7 +281,6 @@ package org.mangui.jwplayer.media {
         /** Do a resize on the video. **/
         override public function resize(width:Number,height:Number):void {
             Log.info("resize video from ["+ _videoWidth + "," + _videoHeight + "]" + "to ["+ width + "," + height + "]");
-            _hls.width= width;
             _width = width;
             _height = height;
             if(_videoWidth && _videoHeight) {

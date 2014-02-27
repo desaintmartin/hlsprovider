@@ -89,8 +89,6 @@ package org.mangui.HLS.streaming {
         private var _switchlevel:Boolean;
         /** Did a discontinuity occurs in the stream **/
         private var _hasDiscontinuity:Boolean;
-        /** Width of the stage. **/
-        private var _width:Number = 480;
         /* flag handling load cancelled (if new seek occurs for example) */
         private var _cancel_load:Boolean;
         /* variable to deal with IO Error retry */
@@ -387,7 +385,7 @@ package org.mangui.HLS.streaming {
 
         /** Get the current QOS metrics. **/
         public function get metrics():HLSMetrics {
-            return new HLSMetrics(_level, _last_bandwidth, _width);
+            return new HLSMetrics(_level, _last_bandwidth);
         };
 
        private function _updateLevel(buffer:Number):Number {
@@ -893,12 +891,6 @@ package org.mangui.HLS.streaming {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
       }
     }
-
-
-        /** Provide the loader with screen width information. **/
-        public function set width(width:Number):void {
-            _width = width;
-        }
 
         /** return current quality level. **/
         public function get level():Number {

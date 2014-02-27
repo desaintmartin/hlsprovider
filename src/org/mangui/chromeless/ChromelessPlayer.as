@@ -108,7 +108,7 @@ package org.mangui.chromeless {
 
         private function _fragmentHandler(event:HLSEvent):void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("onFragment",event.metrics.bandwidth,event.metrics.level,event.metrics.screenwidth);
+                ExternalInterface.call("onFragment",event.metrics.bandwidth,event.metrics.level,stage.stageWidth);
             }
         };
 
@@ -212,14 +212,12 @@ package org.mangui.chromeless {
             } else {
                 stage.displayState = StageDisplayState.FULL_SCREEN;
             }
-            _hls.width = stage.stageWidth;
         };
 
         /** StageVideo detector. **/
         private function _onStageVideoState(event:StageVideoAvailabilityEvent):void {
             var available:Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
             _hls = new HLS();
-            _hls.width = stage.stageWidth;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE,_completeHandler);
             _hls.addEventListener(HLSEvent.ERROR,_errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED,_fragmentHandler);
@@ -243,7 +241,6 @@ package org.mangui.chromeless {
         };
 
         private function _onStageResize(event:Event):void {
-          _hls.width = stage.stageWidth;
           stage.fullScreenSourceRect = new Rectangle(0,0,stage.stageWidth,stage.stageHeight);
           _sheet.width = stage.stageWidth;
           _sheet.height = stage.stageHeight;

@@ -1,6 +1,8 @@
 package org.mangui.HLS.streaming {
 
 
+    import flash.events.Event;
+    import flash.events.TimerEvent;
     import org.mangui.HLS.*;
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.streaming.*;
@@ -21,8 +23,8 @@ package org.mangui.HLS.streaming {
         private var _fragment_loading:Boolean;
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reached_vod_end:Boolean;
-        /** Interval for checking buffer and position. **/
-        private var _interval:Number;
+        /** Timer used to check buffer and position. **/
+        private var _timer:Timer;
         /** requested start position **/
         private var _seek_position_requested:Number = 0;
          /** real start position , retrieved from first fragment **/
@@ -59,11 +61,13 @@ package org.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED,_lastVODFragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED,_playlistDurationUpdated);
             _setState(HLSStates.IDLE);
+            _timer = new Timer(100,0);
+            _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
         };
 
 
         /** Check the bufferlength. **/
-        private function _checkBuffer():void {
+        private function _checkBuffer(e:Event):void {
             var buffer:Number = 0;
             // Calculate the buffer and position.
             if(_buffer.length) {
@@ -120,7 +124,7 @@ package org.mangui.HLS.streaming {
                 if(super.bufferLength ==0) {
                   // reach end of playlist + playback complete (as buffer is empty).
                   // stop timer, report event and switch to IDLE mode.
-                  clearInterval(_interval);
+                  _timer.stop();
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
                   _setState(HLSStates.IDLE);
                 }
@@ -419,8 +423,7 @@ package org.mangui.HLS.streaming {
                } else {
                   _setState(HLSStates.PLAYING_BUFFERING);  
                }
-               clearInterval(_interval);
-               _interval = setInterval(_checkBuffer,100);
+               _timer.start();
         };
 
 
@@ -429,7 +432,7 @@ package org.mangui.HLS.streaming {
             Log.info("HLSNetStream:close");
             super.close();
             _fragment_loading = false;
-            clearInterval(_interval);
+            _timer.stop();
             _setState(HLSStates.IDLE);
         };
     }

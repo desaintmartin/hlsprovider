@@ -196,7 +196,6 @@ package org.mangui.HLS.streaming {
         private function _fragProgressHandler(event:ProgressEvent):void {
           if(_fragByteArray == null) {
             _fragByteArray = new ByteArray();
-            _last_segment_size = event.bytesTotal;
             _fragWritePosition = 0;
             //decrypt data if needed
             if (_last_segment_decrypt_key_url != null) {
@@ -215,17 +214,20 @@ package org.mangui.HLS.streaming {
           if(_decryptAES != null) {
             _decryptAES.notifyappend();
           }
-          if(event.bytesLoaded == event.bytesTotal) {
+        }
+
+        /** key load completed. **/
+        private function _fragCompleteHandler(event:Event):void {
+            _last_segment_size = _fragByteArray.length;
             Log.debug("loading completed");
             var _loading_duration:uint = (new Date().valueOf() - _frag_loading_start_time);
             Log.debug("Loading       duration/length/speed:"+_loading_duration+ "/" + _last_segment_size + "/" + ((8000*_last_segment_size/_loading_duration)/1024).toFixed(0) + " kb/s");
             _cancel_load = false;
             if(_decryptAES != null) {
-              _decryptAES.notifycomplete();
+               _decryptAES.notifycomplete();
             } else {
-              _fragDemux(_fragByteArray);
+               _fragDemux(_fragByteArray);
             }
-          }
         }
 
     private function _fragDecryptCompleteHandler(data:ByteArray):void {
@@ -504,6 +506,7 @@ package org.mangui.HLS.streaming {
                _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragErrorHandler);
                _fragstreamloader.addEventListener(ProgressEvent.PROGRESS,_fragProgressHandler);
                _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS,_fragHTTPStatusHandler);
+               _fragstreamloader.addEventListener(Event.COMPLETE, _fragCompleteHandler);
                _keystreamloader = (new urlStreamClass()) as URLStream;
                _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
                _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyErrorHandler);

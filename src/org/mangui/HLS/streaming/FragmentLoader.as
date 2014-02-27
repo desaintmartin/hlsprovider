@@ -21,6 +21,7 @@ package org.mangui.HLS.streaming {
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
+    import flash.utils.Timer;
 
     /** Class that fetches fragments. **/
     public class FragmentLoader {
@@ -115,6 +116,13 @@ package org.mangui.HLS.streaming {
         private var _audioTrackId:Number;
         public var startFromLowestLevel:Boolean=false;
 
+        /** Timer used to monitor/schedule fragment download. **/
+        private var _timer:Timer;
+        /** Store that a fragment load is in progress. **/
+        private var _fragment_loading:Boolean;
+        /** requested start position **/
+        private var _seek_position_requested:Number;
+
         /** Create the loader. **/
         public function FragmentLoader(hls:HLS):void {
             _hls = hls;
@@ -122,7 +130,51 @@ package org.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_UPDATED,_levelUpdatedHandler);
             _hls.addEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE,_altAudioTracksListChangedHandler);
+            _timer = new Timer(100,0);
+            _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
         };
+
+        /**  fragment loading Timer **/
+        private function _checkLoading(e:Event):void {
+            // check fragment loading status, try to load a new fragment if needed
+            if(_fragment_loading == false || _need_reload == true) {
+               var maxbuflen:Number = _hls.maxBufferLength;
+               // check if buffer full
+               if(maxbuflen == 0 || _hls.stream.bufferLength < maxbuflen) {
+                var loadstatus:Number;
+                if(_hls.stream.time == 0 && _hls.stream.bufferLength == 0) {
+                  // just after seek, load first fragment
+                  loadstatus = _loadfirstfragment(_seek_position_requested);
+                } else {
+                  loadstatus = _loadnextfragment();
+                }
+                if (loadstatus == 0) {
+                  // good, new fragment being loaded
+                  _fragment_loading = true;
+                } else  if (loadstatus < 0) {
+                  /* it means PTS requested is smaller than playlist start PTS.
+                     it could happen on live playlist :
+                     - if bandwidth available is lower than lowest quality needed bandwidth
+                     - after long pause
+                     seek to offset 0 to force a restart of the playback session  */
+                     Log.warn("long pause on live stream or bad network quality");
+                     _timer.stop();
+                     seek(0,_callback);
+                     return;
+                } else if(loadstatus > 0) {
+                  //seqnum not available in playlist
+                  _fragment_loading = false;
+                }
+               }
+            }
+        }
+
+        public function seek(position:Number,callback:Function):void {
+            _fragment_loading = false;
+            _callback = callback;
+            _seek_position_requested = position;
+            _timer.start();
+        }
 
         public function set audioTrack(num:Number):void {
             if (_audioTrackId != num) {
@@ -237,6 +289,8 @@ package org.mangui.HLS.streaming {
         }
 
     private function _fragDecryptCompleteHandler(data:ByteArray):void {
+      if (_cancel_load == true)
+        return;
       var decrypt_duration:Number = (new Date().valueOf() - _frag_decrypt_start_time);
       _decryptAES = null;
       Log.debug("Decrypted     duration/length/speed:"+decrypt_duration+ "/" + data.length + "/" + ((8000*data.length/decrypt_duration)/1024).toFixed(0) + " kb/s");
@@ -302,8 +356,8 @@ package org.mangui.HLS.streaming {
          }
       }
 
-		/** Kill any active load **/
-		public function clearLoader():void {
+		/** stop loading fragment **/
+		public function stop():void {
 			if(_fragstreamloader && _fragstreamloader.connected) {
 				_fragstreamloader.close();
 			}
@@ -317,6 +371,7 @@ package org.mangui.HLS.streaming {
 			_fragByteArray = null;
 			_cancel_load = true;
       _bIOError = false;
+      _timer.stop();
 		}
 
 
@@ -330,16 +385,12 @@ package org.mangui.HLS.streaming {
           _fraghandleIOError(event.text);
         };
 
-        public function needReload():Boolean {
-          return _need_reload;
-        };
-
         /** Get the current QOS metrics. **/
         public function get metrics():HLSMetrics {
             return new HLSMetrics(_level, _last_bandwidth, _width);
         };
 
-       private function updateLevel(buffer:Number):Number {
+       private function _updateLevel(buffer:Number):Number {
           var level:Number;
           if(_manifest_just_loaded) {
             level = _start_level;
@@ -366,13 +417,13 @@ package org.mangui.HLS.streaming {
           return level;
        }
 
-        public function loadfirstfragment(position:Number,callback:Function):Number {
+        private function _loadfirstfragment(position:Number):Number {
             Log.debug("loadfirstfragment(" + position + ")");
             // reset IO Error when loading first fragment
             _bIOError = false;
             _need_reload = false;
             _switchlevel = true;
-            updateLevel(0);
+            _updateLevel(0);
 
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
             if ((_levels[_level].fragments.length == 0) || 
@@ -402,7 +453,6 @@ package org.mangui.HLS.streaming {
                position = seek_position;
             }
             var seqnum:Number= _levels[_level].getSeqNumBeforePosition(position);
-            _callback = callback;
             _frag_loading_start_time = new Date().valueOf();
             var frag:Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
             _seqnum = seqnum;
@@ -415,15 +465,15 @@ package org.mangui.HLS.streaming {
         }
 
         /** Load a fragment **/
-        public function loadnextfragment(buffer:Number,callback:Function):Number {
-          Log.debug("loadnextfragment(buffer):(" + buffer+ ")");
+        private function _loadnextfragment():Number {
+          Log.debug("loadnextfragment()");
             // in case IO Error reload same fragment
             if(_bIOError) {
               _seqnum--;
             }
             _need_reload = false;
 
-            updateLevel(buffer);
+            _updateLevel(_hls.stream.bufferLength);
             // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
             if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
               // playlist not yet received
@@ -472,7 +522,9 @@ package org.mangui.HLS.streaming {
               // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
               if (_hls.type == HLSTypes.VOD)
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
-              return 1;
+                // stop loading timer as well, as no other fragments can be loaded
+                _timer.stop();
+                return 1;
               } else {
                 // if previous segment is not the last one, increment it to get new seqnum
                 new_seqnum = last_seqnum + 1;
@@ -495,7 +547,6 @@ package org.mangui.HLS.streaming {
               }
             }
             _seqnum = new_seqnum;
-            _callback = callback;
             _frag_loading_start_time = new Date().valueOf();
             frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
             Log.debug(log_prefix + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level);
@@ -682,6 +733,8 @@ package org.mangui.HLS.streaming {
 
     /** Handles the actual reading of the TS fragment **/
     private function _fragReadHandler(audioTags:Vector.<Tag>,videoTags:Vector.<Tag>,adif:ByteArray,avcc:ByteArray,audioPID:Number=-1,audioTrackList:Vector.<HLSAudioTrack>=null):void {
+      if (_cancel_load == true)
+        return;
       var _demux_duration:uint = (new Date().valueOf() - _frag_demux_start_time);
       Log.debug("Demux         duration/length/speed:"+_demux_duration+ "/" + _last_segment_size + "/" + ((8000*_last_segment_size/_demux_duration)/1024).toFixed(0) + " kb/s");
        var audio_index:Number;
@@ -802,9 +855,6 @@ package org.mangui.HLS.streaming {
         _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_ONLY));
       }
 
-      if (_cancel_load == true)
-        return;
-
       // Calculate bandwidth
       _last_process_duration = (new Date().valueOf() - _frag_loading_start_time);
       _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_process_duration);      
@@ -835,6 +885,7 @@ package org.mangui.HLS.streaming {
          Log.debug("Loaded        " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
          var start_offset:Number = _levels[_level].updateFragment(_seqnum,true,min_pts,max_pts);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED,_levels[_level].duration));
+         _fragment_loading = false;
          _callback(tags,min_pts,max_pts,_hasDiscontinuity,start_offset);
          _pts_loading_in_progress = false;
          _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));

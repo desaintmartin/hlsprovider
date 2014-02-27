@@ -19,8 +19,6 @@ package org.mangui.HLS.streaming {
         private var _buffer:Vector.<Tag>;
         /** The fragment loader. **/
         private var _fragmentLoader:FragmentLoader;
-        /** Store that a fragment load is in progress. **/
-        private var _fragment_loading:Boolean;
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reached_vod_end:Boolean;
         /** Timer used to check buffer and position. **/
@@ -87,36 +85,6 @@ package org.mangui.HLS.streaming {
                   _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME,new HLSMediatime(_playback_current_position, _playlist_duration, buffer)));
                }
             }
-            //Log.info("checkBuffer,loading,needReload,_reached_vod_end,buffer,maxBufferLength:"+ _fragment_loading + "/" + _fragmentLoader.needReload() + "/" + _reached_vod_end + "/" + buffer + "/" + _buffer_max_len);
-            // Load new tags from fragment,
-            if(_reached_vod_end == false &&                                         // if we have not reached the end of a VoD playlist AND
-               ((_buffer_max_len == 0) || (buffer < _buffer_max_len)) &&            // if the buffer is not full AND
-               ((!_fragment_loading) || _fragmentLoader.needReload() == true)) {    // ( if no fragment is being loaded currently OR if a fragment need to be reloaded
-                var loadstatus:Number;
-                if(super.time == 0 && _buffer.length == 0) {
-                // just after seek, load first fragment
-                  loadstatus = _fragmentLoader.loadfirstfragment(_seek_position_requested,_loaderCallback);
-                } else {
-                  loadstatus = _fragmentLoader.loadnextfragment(buffer,_loaderCallback);
-                }
-                if (loadstatus == 0) {
-                  // good, new fragment being loaded
-                  _fragment_loading = true;
-                } else  if (loadstatus < 0) {
-                  /* it means PTS requested is smaller than playlist start PTS.
-                     it could happen on live playlist :
-                     - if bandwidth available is lower than lowest quality needed bandwidth
-                     - after long pause
-                     seek to offset 0 to force a restart of the playback session  */
-                  Log.warn("long pause on live stream or bad network quality");
-                  seek(0);
-                  return;
-               } else if(loadstatus > 0) {
-                  //seqnum not available in playlist
-                  _fragment_loading = false;
-               }
-            }
-            
             // Set playback state
             // check low buffer condition
             if (super.bufferLength < _buffer_min_len) {
@@ -266,7 +234,6 @@ package org.mangui.HLS.streaming {
               }
             }
             Log.debug("Loaded offset/duration/sliding/discontinuity:"+start_offset.toFixed(2) + "/" +((max_pts-min_pts)/1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2)+ "/" + hasDiscontinuity );
-            _fragment_loading = false;
         };
 
 
@@ -403,9 +370,9 @@ package org.mangui.HLS.streaming {
         /** Start playing data in the buffer. **/
         override public function seek(position:Number):void {
                Log.info("HLSNetStream:seek("+position+")");
-               _fragmentLoader.clearLoader();
+               _fragmentLoader.stop();
+               _fragmentLoader.seek(position,_loaderCallback);
                _buffer = new Vector.<Tag>();
-               _fragment_loading = false;
                _buffer_current_index = 0;
                _buffer_start_pts = new Array();
                _buffer_last_pts = new Array();
@@ -431,7 +398,6 @@ package org.mangui.HLS.streaming {
         override public function close():void {
             Log.info("HLSNetStream:close");
             super.close();
-            _fragment_loading = false;
             _timer.stop();
             _setState(HLSStates.IDLE);
         };

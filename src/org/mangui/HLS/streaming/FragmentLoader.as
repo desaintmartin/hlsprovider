@@ -218,6 +218,12 @@ package org.mangui.HLS.streaming {
 
         /** key load completed. **/
         private function _fragCompleteHandler(event:Event):void {
+            if (_fragByteArray == null) {
+               Log.warn("fragment size is null, invalid it and load next one");
+               _levels[_level].updateFragment(_seqnum,false);
+               _need_reload = true;
+               return;
+            }
             _last_segment_size = _fragByteArray.length;
             Log.debug("loading completed");
             var _loading_duration:uint = (new Date().valueOf() - _frag_loading_start_time);
@@ -750,7 +756,7 @@ package org.mangui.HLS.streaming {
 
       /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
       if(_pts_loading_in_progress == true) {
-        _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
+        _levels[_level].updateFragment(_seqnum,true, min_pts,max_pts);
         Log.debug("analyzed  PTS " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
         /* check if fragment loaded for PTS analysis is the next one
             if this is the expected one, then continue and notify Buffer Manager with parsed content
@@ -827,7 +833,7 @@ package org.mangui.HLS.streaming {
          _last_segment_start_pts = min_pts;
 
          Log.debug("Loaded        " + _seqnum +  " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level "+ _level + " m/M PTS:" + min_pts +"/" + max_pts);
-         var start_offset:Number = _levels[_level].updatePTS(_seqnum,min_pts,max_pts);
+         var start_offset:Number = _levels[_level].updateFragment(_seqnum,true,min_pts,max_pts);
          _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED,_levels[_level].duration));
          _callback(tags,min_pts,max_pts,_hasDiscontinuity,start_offset);
          _pts_loading_in_progress = false;

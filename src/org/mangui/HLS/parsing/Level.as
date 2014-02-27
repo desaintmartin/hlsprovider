@@ -45,12 +45,12 @@ package org.mangui.HLS.parsing {
         /** Return the sequence number before a given time position. **/
         public function getSeqNumBeforePosition(position:Number):Number {
           
-          if(position < fragments[0].start_time)
+          if(fragments[0].valid && position < fragments[0].start_time)
             return start_seqnum;
          
             for(var i:Number = 0; i < fragments.length; i++) {
                   /* check whether fragment contains current position */
-                if(fragments[i].start_time<=position && fragments[i].start_time+fragments[i].duration>position) {
+                if(fragments[i].valid && fragments[i].start_time<=position && fragments[i].start_time+fragments[i].duration>position) {
                   return (start_seqnum+i);
                 }
             }
@@ -65,7 +65,7 @@ package org.mangui.HLS.parsing {
          
             for(var i:Number = 0; i < fragments.length; i++) {
                   /* check whether fragment contains current position */
-                if(fragments[i].program_date<=program_date && fragments[i].program_date+1000*fragments[i].duration>program_date) {
+                if(fragments[i].valid && fragments[i].program_date<=program_date && fragments[i].program_date+1000*fragments[i].duration>program_date) {
                   return (start_seqnum+i);
                 }
             }
@@ -73,7 +73,7 @@ package org.mangui.HLS.parsing {
         };
 
         /** Return the sequence number nearest a PTS **/
-        public function getSeqNumNearestPTS(pts:Number,continuity:Number):Number {         
+        public function getSeqNumNearestPTS(pts:Number,continuity:Number):Number {
           if(fragments.length == 0) 
             return -1;
           var firstIndex:Number = getFirstIndexfromContinuity(continuity);
@@ -83,7 +83,7 @@ package org.mangui.HLS.parsing {
         
           for(var i:Number= firstIndex; i<= lastIndex; i++) {
                 /* check nearest fragment */
-              if( Math.abs(fragments[i].start_pts_computed-pts) < Math.abs(fragments[i].start_pts_computed+1000*fragments[i].duration-pts)) {
+              if( fragments[i].valid && (Math.abs(fragments[i].start_pts_computed-pts) < Math.abs(fragments[i].start_pts_computed+1000*fragments[i].duration-pts))) {
                 return fragments[i].seqnum;
               }
           }
@@ -186,7 +186,7 @@ package org.mangui.HLS.parsing {
             
             if(idx_with_pts !=-1) {
               // if at least one fragment contains PTS info, recompute PTS information for all fragments
-              updatePTS(fragments[idx_with_pts].seqnum, fragments[idx_with_pts].start_pts,fragments[idx_with_pts].start_pts+1000*fragments[idx_with_pts].duration);
+              updateFragment(fragments[idx_with_pts].seqnum, true, fragments[idx_with_pts].start_pts,fragments[idx_with_pts].start_pts+1000*fragments[idx_with_pts].duration);
             } else {
               duration = _fragments[len-1].start_time + _fragments[len-1].duration;
             }
@@ -212,49 +212,57 @@ package org.mangui.HLS.parsing {
         }
       }
       
-      private function updateFragmentPTS(from_index:Number, to_index:Number):void {
+      private function _updatePTS(from_index:Number, to_index:Number):void {
         //Log.info("updateFragmentPTS from/to:" + from_index + "/" + to_index);
         var frag_from:Fragment = fragments[from_index];
         var frag_to:Fragment = fragments[to_index];
         
-        if (frag_to.start_pts != Number.NEGATIVE_INFINITY) {
-          // we know PTS[to_index]
-          frag_to.start_pts_computed = frag_to.start_pts;
-        // update duration to fix drifts between playlist and fragment
-              if(to_index > from_index)
-                frag_from.duration = (frag_to.start_pts -frag_from.start_pts_computed)/1000;
-              else
-                frag_to.duration = (frag_from.start_pts_computed -frag_to.start_pts)/1000;
-        } else {
-          // we dont know PTS[to_index]
-          if(to_index > from_index)
-            frag_to.start_pts_computed = frag_from.start_pts_computed + 1000*frag_from.duration;
-          else
-            frag_to.start_pts_computed = frag_from.start_pts_computed - 1000*frag_to.duration;
-          }
+        if(frag_from.valid && frag_to.valid) {
+            if (frag_to.start_pts != Number.NEGATIVE_INFINITY) {
+               // we know PTS[to_index]
+               frag_to.start_pts_computed = frag_to.start_pts;
+               // update duration to fix drifts between playlist and fragment
+               if(to_index > from_index)
+                  frag_from.duration = (frag_to.start_pts -frag_from.start_pts_computed)/1000;
+               else
+                  frag_to.duration = (frag_from.start_pts_computed -frag_to.start_pts)/1000;
+            } else {
+            // we dont know PTS[to_index]
+               if(to_index > from_index)
+                  frag_to.start_pts_computed = frag_from.start_pts_computed + 1000*frag_from.duration;
+               else
+                  frag_to.start_pts_computed = frag_from.start_pts_computed - 1000*frag_to.duration;
+            }
+        }
       }
-      
-      public function updatePTS(seqnum:Number, min_pts:Number,max_pts:Number) : Number {
+
+
+      public function updateFragment(seqnum:Number, valid:Boolean, min_pts:Number=0,max_pts:Number=0) : Number {
         //Log.info("updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
         // get fragment from seqnum
         var fragIdx:Number = getIndexfromSeqNum(seqnum);
         if (fragIdx!=-1) {
           var frag:Fragment = fragments[fragIdx];
           // update fragment start PTS + duration
-          frag.start_pts = min_pts;
-          frag.start_pts_computed = min_pts;
-          frag.duration = (max_pts-min_pts)/1000;
+          if(valid) {
+            frag.start_pts = min_pts;
+            frag.start_pts_computed = min_pts;
+            frag.duration = (max_pts-min_pts)/1000;
+          } else {
+            frag.duration = 0;
+          }
+          frag.valid = valid;
           //Log.info("SN["+fragments[fragIdx].seqnum+"]:pts/duration:" + fragments[fragIdx].start_pts_computed + "/" + fragments[fragIdx].duration);
 
           // adjust fragment PTS/duration from seqnum-1 to frag 0
           for(var i:Number = fragIdx ; i > 0 && fragments[i-1].continuity == frag.continuity; i--) {
-            updateFragmentPTS(i,i-1);
+            _updatePTS(i,i-1);
             //Log.info("SN["+fragments[i-1].seqnum+"]:pts/duration:" + fragments[i-1].start_pts_computed + "/" + fragments[i-1].duration);
           }
          
          // adjust fragment PTS/duration from seqnum to last frag
           for(i = fragIdx ; i < fragments.length-1 && fragments[i+1].continuity == frag.continuity; i++) {
-            updateFragmentPTS(i,i+1);
+            _updatePTS(i,i+1);
             //Log.info("SN["+fragments[i+1].seqnum+"]:pts/duration:" + fragments[i+1].start_pts_computed + "/" + fragments[i+1].duration);
           }
 

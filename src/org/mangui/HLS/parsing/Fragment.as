@@ -30,7 +30,8 @@ package org.mangui.HLS.parsing {
         public var byterange_start_offset:Number;
         /** byte range offset **/
         public var byterange_end_offset:Number;
-
+        /** valid fragment **/
+        public var valid:Boolean;
 
         /** Create the fragment. **/
         public function Fragment(url:String, duration:Number, seqnum:Number,start_time:Number,continuity:Number,program_date:Number,decrypt_url:String,decrypt_iv:ByteArray,byterange_start_offset:Number,byterange_end_offset:Number):void {
@@ -46,6 +47,7 @@ package org.mangui.HLS.parsing {
             this.byterange_end_offset = byterange_end_offset;
             this.start_pts = Number.NEGATIVE_INFINITY;
             this.start_pts_computed = Number.NEGATIVE_INFINITY;
+            this.valid = true;
             //Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
         };
     }

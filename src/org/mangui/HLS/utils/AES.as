@@ -28,7 +28,7 @@ package org.mangui.HLS.utils {
     /** Byte data to be decrypt **/
     private var _decrypteddata:ByteArray;
     /** read position **/
-    private var _read_position:Number;
+    private var _read_position:uint;
     /** chunk size to avoid blocking **/
     private static const CHUNK_SIZE:uint = 2048;
     /** is bytearray full ? **/

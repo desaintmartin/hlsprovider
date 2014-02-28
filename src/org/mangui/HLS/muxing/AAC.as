@@ -21,13 +21,12 @@ package org.mangui.HLS.muxing {
         public function AAC(data : ByteArray, callback : Function) : void {
             Log.debug("AAC: extracting AAC tags");
             var audioTags : Vector.<Tag> = new Vector.<Tag>();
-            var adif : ByteArray = new ByteArray();
             /* parse AAC, convert Elementary Streams to TAG */
             data.position = 0;
             var id3 : ID3 = new ID3(data);
             // AAC should contain ID3 tag filled with a timestamp
             var frames : Vector.<AudioFrame> = AAC.getFrames(data, data.position);
-            adif = getADIF(data, 0);
+            var adif : ByteArray = getADIF(data, 0);
             var audioTag : Tag;
             var stamp : Number;
             var i : Number = 0;

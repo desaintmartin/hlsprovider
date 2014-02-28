@@ -43,7 +43,7 @@ package org.mangui.HLS.utils {
             _INV_SUB_MIX_1 = new Vector.<uint>(256);
             _INV_SUB_MIX_2 = new Vector.<uint>(256);
             _INV_SUB_MIX_3 = new Vector.<uint>(256);
-            _RCON = new Vector.<uint>(11);
+            _RCON = new <uint>[0x0, 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36];
 
             // Compute double table
             var i : uint;
@@ -92,18 +92,6 @@ package org.mangui.HLS.utils {
                     xi ^= d[d[xi]];
                 }
             }
-            // push RCON
-            _RCON[0] = 0x0;
-            _RCON[1] = 0x1;
-            _RCON[2] = 0x2;
-            _RCON[3] = 0x4;
-            _RCON[4] = 0x8;
-            _RCON[5] = 0x10;
-            _RCON[6] = 0x20;
-            _RCON[7] = 0x40;
-            _RCON[8] = 0x80;
-            _RCON[9] = 0x1b;
-            _RCON[10] = 0x36;
         }
 
         public function FastAESKey(key : ByteArray) {

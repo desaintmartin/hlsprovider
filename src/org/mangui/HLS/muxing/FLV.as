@@ -16,6 +16,7 @@ package org.mangui.HLS.muxing {
         /** Get the FLV file header. **/
         public static function getHeader() : ByteArray {
             var flv : ByteArray = new ByteArray();
+            flv.length = 13;
             // "F" + "L" + "V".
             flv.writeByte(0x46);
             flv.writeByte(0x4C);
@@ -34,6 +35,7 @@ package org.mangui.HLS.muxing {
         /** Get an FLV Tag header (11 bytes). **/
         public static function getTagHeader(audio : Boolean, length : Number, stamp : Number) : ByteArray {
             var tag : ByteArray = new ByteArray();
+            tag.length = 11;
             // Audio (8) or Video (9) tag
             if (audio) {
                 tag.writeByte(8);

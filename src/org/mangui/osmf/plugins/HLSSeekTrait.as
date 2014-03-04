@@ -23,6 +23,7 @@ package org.mangui.osmf.plugins {
          */
         override protected function seekingChangeStart(newSeeking : Boolean, time : Number) : void {
             if (newSeeking) {
+                Log.info("HLSSeekTrait:seekingChangeStart(newSeeking/time):(" + newSeeking  + "/" + time + ")");
                 _hls.stream.seek(time);
             }
             super.seekingChangeStart(newSeeking, time);

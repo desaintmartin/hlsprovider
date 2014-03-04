@@ -514,10 +514,11 @@ package org.mangui.HLS.streaming {
             if (_pts_loading_in_progress == false) {
                 if (last_seqnum == _levels[_level].end_seqnum) {
                     // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
-                    if (_hls.type == HLSTypes.VOD)
+                    if (_hls.type == HLSTypes.VOD) {
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
-                    // stop loading timer as well, as no other fragments can be loaded
-                    _timer.stop();
+                        // stop loading timer as well, as no other fragments can be loaded
+                        _timer.stop();
+                    }
                     return 1;
                 } else {
                     // if previous segment is not the last one, increment it to get new seqnum

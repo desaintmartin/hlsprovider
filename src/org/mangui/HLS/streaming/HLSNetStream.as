@@ -14,8 +14,10 @@ package org.mangui.HLS.streaming {
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
         private var _hls : HLS;
-        /** The buffer with video tags. **/
-        private var _buffer : Vector.<Tag>;
+        /** FLV tags buffer vector **/
+        private var _flvTagBuffer : Vector.<Tag>;
+        /** FLV tags buffer duration **/
+        private var _flvTagBufferDuration : Number;
         /** The fragment loader. **/
         private var _fragmentLoader : FragmentLoader;
         /** means that last fragment of a VOD playlist has been loaded */
@@ -23,25 +25,25 @@ package org.mangui.HLS.streaming {
         /** Timer used to check buffer and position. **/
         private var _timer : Timer;
         /** requested start position **/
-        private var _seek_position_requested : Number = 0;
+        private var _seek_position_requested : Number;
         /** real start position , retrieved from first fragment **/
         private var _seek_position_real : Number;
-        /** initial seek offset, difference between real seek position and first fragment start time **/
-        private var _seek_offset : Number;
+        /** is a seek operation in progress ? **/
+        private var _seek_in_progress : Boolean;
         /** Current play position (relative position from beginning of sliding window) **/
         private var _playback_current_position : Number;
         /** playlist sliding (non null for live playlist) **/
         private var _playlist_sliding_duration : Number;
-        /** array of buffer start PTS (indexed by continuity) */
-        private var _buffer_start_pts : Array;
-        /** array of buffer last PTS (indexed by continuity) **/
-        private var _buffer_last_pts : Array;
+        /** total duration of buffered data before last discontinuity */
+        private var _buffered_before_last_continuity : Number;
+        /** buffer min PTS since last discontinuity  */
+        private var _buffer_cur_min_pts : Number;
+        /** buffer max PTS since last discontinuity  */
+        private var _buffer_cur_max_pts : Number;
         /** previous buffer time. **/
         private var _last_buffer : Number;
         /** Current playback state. **/
         private var _state : String;
-        /** The last tag that was appended to the buffer. **/
-        private var _buffer_current_index : Number;
         /** max buffer length (default 60s)**/
         private var _buffer_max_len : Number = 60;
         /** min buffer length (default 3s)**/
@@ -64,33 +66,37 @@ package org.mangui.HLS.streaming {
 
         /** Check the bufferlength. **/
         private function _checkBuffer(e : Event) : void {
-            var buffer : Number = 0;
+            var playback_absolute_position : Number;
+            var playback_relative_position : Number;
+            var buffer : Number = this.bufferLength;
             // Calculate the buffer and position.
-            if (_buffer.length) {
-                buffer = this.bufferLength;
+            if (_seek_in_progress) {
+                playback_relative_position = playback_absolute_position = _seek_position_requested;
+            } else {
                 /** Absolute playback position (start position + play time) **/
-                var playback_absolute_position : Number = (Math.round(super.time * 100 + _seek_position_real * 100) / 100);
+                playback_absolute_position = super.time + _seek_position_real;
                 /** Relative playback position (Absolute Position - playlist sliding, non null for Live Playlist) **/
-                var playback_relative_position : Number = playback_absolute_position - _playlist_sliding_duration;
-
-                // only send media time event if data has changed
-                if (playback_relative_position != _playback_current_position || buffer != _last_buffer) {
-                    if (playback_relative_position < 0) {
-                        playback_relative_position = 0;
-                    }
-                    _playback_current_position = playback_relative_position;
-                    _last_buffer = buffer;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer)));
-                }
+                playback_relative_position = playback_absolute_position - _playlist_sliding_duration;
             }
+            // only send media time event if data has changed
+            if (playback_relative_position != _playback_current_position || buffer != _last_buffer) {
+                if (playback_relative_position < 0) {
+                    playback_relative_position = 0;
+                }
+                _playback_current_position = playback_relative_position;
+                _last_buffer = buffer;
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer)));
+            }
+
             // Set playback state
             // check low buffer condition
-            if (super.bufferLength < _buffer_min_len) {
+            if (buffer < _buffer_min_len) {
                 if (_reached_vod_end) {
-                    if (super.bufferLength == 0) {
+                    if (buffer <= 0.1) {
                         // reach end of playlist + playback complete (as buffer is empty).
                         // stop timer, report event and switch to IDLE mode.
                         _timer.stop();
+                        Log.debug("reached end of VOD playlist, notify playback complete");
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
                         _setState(HLSStates.IDLE);
                     }
@@ -109,33 +115,51 @@ package org.mangui.HLS.streaming {
                     _setState(HLSStates.PAUSED);
                 }
             }
-
-            // try to append data into NetStream
-            // if we are already in PLAYING state, OR
-            if ((_state == HLSStates.PLAYING) ||
-            // if we are in Buffering State, with enough buffer data (at least _buffer_min_len seconds) OR at the end of a VOD playlist 
-            ((_state == HLSStates.PLAYING_BUFFERING || _state == HLSStates.PAUSED_BUFFERING) && (buffer > _buffer_min_len || _reached_vod_end))) {
+            // in case any data available in our FLV buffer, check if we can append into NetStream
+            if (_flvTagBuffer.length && ((buffer > _buffer_min_len) || (_flvTagBufferDuration > _buffer_min_len) || _reached_vod_end)) {
+                if (_seek_in_progress) {
+                    /* this is our first injection after seek(),
+                    let's flush netstream now
+                    this is to avoid black screen during seek command */
+                    super.close();
+                    super.play(null);
+                    super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
+                    /* now adjust NetStream state depending on HLS internal state.
+                     * if HLS was in idle or pause state, pause NetStream
+                     */
+                    switch(_state) {
+                        case HLSStates.IDLE:
+                        case HLSStates.PAUSED:
+                        case HLSStates.PAUSED_BUFFERING:
+                            super.pause();
+                            break;
+                        default:
+                            break;
+                    }
+                    _seek_in_progress = false;
+                }
                 // Log.debug("appending data into NetStream");
-                while (_buffer_current_index < _buffer.length && // append data until we drain our _buffer[] array AND 
-                super.bufferLength < 10) {
-                    // that NetStream Buffer contains at least 10 seconds
+                while (0 < _flvTagBuffer.length) {
+                    var tagBuffer : Tag = _flvTagBuffer.shift();
+                    // append data until we drain our _buffer
                     try {
-                        if (_buffer[_buffer_current_index].type == Tag.DISCONTINUITY) {
+                        if (tagBuffer.type == Tag.DISCONTINUITY) {
                             super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
                             super.appendBytes(FLV.getHeader());
                         } else {
-                            super.appendBytes(_buffer[_buffer_current_index].data);
+                            super.appendBytes(tagBuffer.data);
                         }
                     } catch (error : Error) {
-                        _errorHandler(new Error(_buffer[_buffer_current_index].type + ": " + error.message));
+                        _errorHandler(new Error(tagBuffer.type + ": " + error.message));
                     }
                     // Last tag done? Then append sequence end.
-                    if (_reached_vod_end && _buffer_current_index == _buffer.length - 1) {
+                    if (_reached_vod_end && _flvTagBuffer.length == 0) {
                         super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         super.appendBytes(new ByteArray());
                     }
-                    _buffer_current_index++;
                 }
+                // FLV tag buffer drained, reset its duration
+                _flvTagBufferDuration = 0;
             }
         };
 
@@ -155,98 +179,116 @@ package org.mangui.HLS.streaming {
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags : Vector.<Tag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_offset : Number) : void {
-            // flush already injected Tags and restart index from 0
-            _buffer = _buffer.slice(_buffer_current_index);
-            _buffer_current_index = 0;
+        private function _loaderCallback(tags : Vector.<Tag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number) : void {
+            /* PTS of first FLV tag that will be pushed into FLV tag buffer */
+            var first_pts : Number;
 
-            var seek_pts : Number = min_pts + (_seek_position_requested - start_offset) * 1000;
             if (_seek_position_real == Number.NEGATIVE_INFINITY) {
-                _seek_position_real = _seek_position_requested < start_offset ? start_offset : _seek_position_requested;
-                _seek_offset = _seek_position_real - start_offset;
+                /* 
+                 * compute r
+                 * 
+                 *    real seek       requested seek                 Frag 
+                 *     position           position                    End
+                 *        *------------------*-------------------------
+                 *        <------------------>
+                 *             seek_offset
+                 *
+                 * real seek position is the start offset of the first received fragment after seek command. (= fragment start offset).
+                 * seek offset is the diff between the requested seek position and the real seek position
+                 */
+                if (_seek_position_requested < start_position) {
+                    _seek_position_real = start_position;
+                    first_pts = min_pts;
+                } else {
+                    _seek_position_real = _seek_position_requested;
+                    first_pts = min_pts + 1000 * (_seek_position_real - start_position);
+                }
+                _playlist_sliding_duration = 0;
+            } else {
+                /* whole fragment will be injected */
+                first_pts = min_pts;
+                /* check live playlist sliding here :
+                _seek_position_real + getTotalBufferedDuration()  should be the start_position
+                 * /of the new fragment if the playlist was not sliding
+                => live playlist sliding is the difference between the new start position  and this previous value */
+                _playlist_sliding_duration = (_seek_position_real + getTotalBufferedDuration()) - start_position;
             }
-            /* check live playlist sliding here :
-            _seek_position_real + getTotalBufferedDuration()  should be the start_position of the new fragment if the
-            playlist is not sliding
-            => live playlist sliding is the difference between these values */
-            _playlist_sliding_duration = (_seek_position_real + getTotalBufferedDuration()) - start_offset - _seek_offset;
-
             /* if first fragment loaded, or if discontinuity, record discontinuity start PTS, and insert discontinuity TAG */
             if (hasDiscontinuity) {
-                _buffer_start_pts.push(min_pts);
-                _buffer_last_pts.push(max_pts);
-                _buffer.push(new Tag(Tag.DISCONTINUITY, min_pts, min_pts, false));
+                _buffered_before_last_continuity += (_buffer_cur_max_pts - _buffer_cur_min_pts);
+                _buffer_cur_min_pts = first_pts;
+                _buffer_cur_max_pts = max_pts;
+                _flvTagBuffer.push(new Tag(Tag.DISCONTINUITY, first_pts, first_pts, false));
             } else {
                 // same continuity than previously, update its max PTS
-                _buffer_last_pts[_buffer_last_pts.length - 1] = max_pts;
+                _buffer_cur_max_pts = max_pts;
             }
 
             tags.sort(_sortTagsbyDTS);
 
-            /* accurate seeking : 
-             * analyze fragment tags and look for last keyframe before seek position.
-             * in schema below, we seek at t=17s, in a fragment starting at t=10s, ending at t=20s
-             * this fragment contains 4 keyframes.
-             *  timestamp of the last keyframe before seek position is @ t=16s
-             * 
-             *                             seek_pts
-             *  K----------K------------K------*-----K---------|
-             *  10s       13s          16s    17s    18s      20s
-             *  
-             *  
-             */
-            var i : Number = 0;
-            var keyframe_pts : Number;
-            for (i = 0; i < tags.length; i++) {
-                // look for last keyframe with pts <= seek_pts
-                if (tags[i].keyframe == true && tags[i].pts <= seek_pts && tags[i].type.indexOf("AVC") != -1)
-                    keyframe_pts = tags[i].pts;
-            }
+            if (_seek_in_progress) {
+                /* accurate seeking : 
+                 * analyze fragment tags and look for last keyframe before seek position.
+                 * in schema below, we seek at t=17s, in a fragment starting at t=10s, ending at t=20s
+                 * this fragment contains 4 keyframes.
+                 *  timestamp of the last keyframe before seek position is @ t=16s
+                 * 
+                 *                             seek_pts
+                 *  K----------K------------K------*-----K---------|
+                 *  10s       13s          16s    17s    18s      20s
+                 *  
+                 *  
+                 */
+                var i : Number = 0;
+                var keyframe_pts : Number;
+                for (i = 0; i < tags.length; i++) {
+                    // look for last keyframe with pts <= seek_pts
+                    if (tags[i].keyframe == true && tags[i].pts <= first_pts && tags[i].type.indexOf("AVC") != -1)
+                        keyframe_pts = tags[i].pts;
+                }
 
-            for (i = 0; i < tags.length; i++) {
-                if (tags[i].pts >= seek_pts) {
-                    _buffer.push(tags[i]);
-                } else {
-                    switch(tags[i].type) {
-                        case Tag.AAC_HEADER:
-                        case Tag.AVC_HEADER:
-                            tags[i].pts = tags[i].dts = seek_pts;
-                            _buffer.push(tags[i]);
-                            break;
-                        case Tag.AVC_NALU:
-                            /* only append video tags starting from last keyframe before seek position to avoid playback artifacts
-                             *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
-                             *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
-                             *  */
-                            if (tags[i].pts >= keyframe_pts) {
-                                tags[i].pts = tags[i].dts = seek_pts;
-                                _buffer.push(tags[i]);
-                            }
-                            break;
-                        default:
-                            break;
+                for (i = 0; i < tags.length; i++) {
+                    if (tags[i].pts >= first_pts) {
+                        _flvTagBuffer.push(tags[i]);
+                    } else {
+                        switch(tags[i].type) {
+                            case Tag.AAC_HEADER:
+                            case Tag.AVC_HEADER:
+                                tags[i].pts = tags[i].dts = first_pts;
+                                _flvTagBuffer.push(tags[i]);
+                                break;
+                            case Tag.AVC_NALU:
+                                /* only append video tags starting from last keyframe before seek position to avoid playback artifacts
+                                 *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
+                                 *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
+                                 *  */
+                                if (tags[i].pts >= keyframe_pts) {
+                                    tags[i].pts = tags[i].dts = first_pts;
+                                    _flvTagBuffer.push(tags[i]);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
-            }
-            Log.debug("Loaded offset/duration/sliding/discontinuity:" + start_offset.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2) + "/" + hasDiscontinuity);
-        };
-
-        /** return total buffered duration since seek() call
-        needed to compute remaining buffer duration
-         */
-        private function getTotalBufferedDuration() : Number {
-            var bufSize : Number = 0;
-            if (_buffer_start_pts != null) {
-                /* duration of all the data already pushed into Buffer = sum of duration per continuity index */
-                for (var i : Number = 0; i < _buffer_start_pts.length; i++) {
-                    bufSize += _buffer_last_pts[i] - _buffer_start_pts[i];
+            } else {
+                // not after seek, push all FLV tags
+                for (i = 0; i < tags.length; i++) {
+                    _flvTagBuffer.push(tags[i]);
                 }
             }
-            bufSize /= 1000;
-            return bufSize;
+            _flvTagBufferDuration += (max_pts - first_pts) / 1000;
+            Log.debug("Loaded position/duration/sliding/discontinuity:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2) + "/" + hasDiscontinuity);
+        };
+
+        /** return total buffered duration since seek() call, needed to compute live playlist sliding  */
+        private function getTotalBufferedDuration() : Number {
+            return (_buffered_before_last_continuity + _buffer_cur_max_pts - _buffer_cur_min_pts) / 1000;
         }
 
         private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
+            Log.debug("last fragment loaded");
             _reached_vod_end = true;
         }
 
@@ -329,7 +371,11 @@ package org.mangui.HLS.streaming {
         /** get Buffer Length  **/
         override public function get bufferLength() : Number {
             /* remaining buffer is total duration buffered since beginning minus playback time */
-            return getTotalBufferedDuration() - super.time;
+            if (_seek_in_progress) {
+                return _flvTagBufferDuration;
+            } else {
+                return super.bufferLength+_flvTagBufferDuration;
+            }
         };
 
         /** get min Buffer Length  **/
@@ -361,24 +407,32 @@ package org.mangui.HLS.streaming {
             Log.info("HLSNetStream:seek(" + position + ")");
             _fragmentLoader.stop();
             _fragmentLoader.seek(position, _loaderCallback);
-            _buffer = new Vector.<Tag>();
-            _buffer_current_index = 0;
-            _buffer_start_pts = new Array();
-            _buffer_last_pts = new Array();
+            _flvTagBuffer = new Vector.<Tag>();
+            _flvTagBufferDuration = _buffered_before_last_continuity = _buffer_cur_min_pts = _buffer_cur_max_pts = 0;
             _seek_position_requested = position;
-            super.close();
-            super.play(null);
-            super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
-            _reached_vod_end = false;
             _seek_position_real = Number.NEGATIVE_INFINITY;
-            _last_buffer = 0;
-
-            if (_state == HLSStates.PAUSED || _state == HLSStates.PAUSED_BUFFERING) {
-                super.pause();
-                _setState(HLSStates.PAUSED_BUFFERING);
-            } else {
-                _setState(HLSStates.PLAYING_BUFFERING);
+            _seek_in_progress = true;
+            _reached_vod_end = false;
+            /* if HLS was in paused state before seeking, 
+             * switch to paused buffering state
+             * otherwise, switch to playing buffering state
+             */
+            switch(_state) {
+                case HLSStates.PAUSED:
+                case HLSStates.PAUSED_BUFFERING:
+                    _setState(HLSStates.PAUSED_BUFFERING);
+                    break;
+                case HLSStates.IDLE:
+                case HLSStates.PLAYING:
+                case HLSStates.PLAYING_BUFFERING:
+                default:
+                    _setState(HLSStates.PLAYING_BUFFERING);
+                    break;
             }
+            /* always pause NetStream while seeking, even if we are in play state
+             * in that case, NetStream will be resumed after first fragment loading
+             */
+            super.pause();
             _timer.start();
         };
 

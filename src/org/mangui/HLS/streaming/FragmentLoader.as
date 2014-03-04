@@ -115,6 +115,8 @@ package org.mangui.HLS.streaming {
         private var _fragment_loading : Boolean;
         /** requested start position **/
         private var _seek_position_requested : Number;
+        /** first fragment loaded ? **/
+        private var _fragment_first_loaded : Boolean;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS) : void {
@@ -131,33 +133,33 @@ package org.mangui.HLS.streaming {
         private function _checkLoading(e : Event) : void {
             // check fragment loading status, try to load a new fragment if needed
             if (_fragment_loading == false || _need_reload == true) {
-                var maxbuflen : Number = _hls.maxBufferLength;
-                // check if buffer full
-                if (maxbuflen == 0 || _hls.stream.bufferLength < maxbuflen) {
-                    var loadstatus : Number;
-                    if (_hls.stream.time == 0 && _hls.stream.bufferLength == 0) {
-                        // just after seek, load first fragment
-                        loadstatus = _loadfirstfragment(_seek_position_requested);
-                    } else {
-                        loadstatus = _loadnextfragment();
-                    }
-                    if (loadstatus == 0) {
-                        // good, new fragment being loaded
-                        _fragment_loading = true;
-                    } else if (loadstatus < 0) {
-                        /* it means PTS requested is smaller than playlist start PTS.
-                        it could happen on live playlist :
-                        - if bandwidth available is lower than lowest quality needed bandwidth
-                        - after long pause
-                        seek to offset 0 to force a restart of the playback session  */
-                        Log.warn("long pause on live stream or bad network quality");
-                        _timer.stop();
-                        seek(0, _callback);
-                        return;
-                    } else if (loadstatus > 0) {
-                        // seqnum not available in playlist
-                        _fragment_loading = false;
-                    }
+                var loadstatus : Number;
+                if (_fragment_first_loaded == false) {
+                    // just after seek, load first fragment
+                    loadstatus = _loadfirstfragment(_seek_position_requested);
+                    // check if we need to load next fragment, check if buffer is full
+                } else if (_hls.maxBufferLength == 0 || _hls.stream.bufferLength < _hls.maxBufferLength) {
+                    loadstatus = _loadnextfragment();
+                } else {
+                    // no need to load any new fragment, buffer is full already
+                    return;
+                }
+                if (loadstatus == 0) {
+                    // good, new fragment being loaded
+                    _fragment_loading = true;
+                } else if (loadstatus < 0) {
+                    /* it means PTS requested is smaller than playlist start PTS.
+                    it could happen on live playlist :
+                    - if bandwidth available is lower than lowest quality needed bandwidth
+                    - after long pause
+                    seek to offset 0 to force a restart of the playback session  */
+                    Log.warn("long pause on live stream or bad network quality");
+                    _timer.stop();
+                    seek(0, _callback);
+                    return;
+                } else if (loadstatus > 0) {
+                    // seqnum not available in playlist
+                    _fragment_loading = false;
                 }
             }
         }
@@ -166,6 +168,7 @@ package org.mangui.HLS.streaming {
             _fragment_loading = false;
             _callback = callback;
             _seek_position_requested = position;
+            _fragment_first_loaded = false;
             _timer.start();
         }
 
@@ -882,6 +885,7 @@ package org.mangui.HLS.streaming {
                 _callback(tags, min_pts, max_pts, _hasDiscontinuity, start_offset);
                 _pts_loading_in_progress = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));
+                _fragment_first_loaded = true;
             } catch (error : Error) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
             }

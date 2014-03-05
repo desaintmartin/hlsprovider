@@ -90,33 +90,44 @@ package org.mangui.HLS.streaming {
 
             // Set playback state
             // check low buffer condition
-            if (buffer < _buffer_min_len) {
-                if (_reached_vod_end) {
+            if (!_seek_in_progress) {
+                if (buffer < _buffer_min_len) {
                     if (buffer <= 0.1) {
-                        // reach end of playlist + playback complete (as buffer is empty).
-                        // stop timer, report event and switch to IDLE mode.
-                        _timer.stop();
-                        Log.debug("reached end of VOD playlist, notify playback complete");
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                        _setState(HLSStates.IDLE);
+                        if (_reached_vod_end) {
+                            // reach end of playlist + playback complete (as buffer is empty).
+                            // stop timer, report event and switch to IDLE mode.
+                            _timer.stop();
+                            Log.debug("reached end of VOD playlist, notify playback complete");
+                            _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                            _setState(HLSStates.IDLE);
+                            return;
+                        } else {
+                            // pause Netstream in really low buffer condition
+                            super.pause();
+                        }
                     }
-                } else if (_state == HLSStates.PLAYING) {
-                    // low buffer condition and play state. switch to play buffering state
-                    _setState(HLSStates.PLAYING_BUFFERING);
-                } else if (_state == HLSStates.PAUSED) {
-                    // low buffer condition and pause state. switch to paused buffering state
-                    _setState(HLSStates.PAUSED_BUFFERING);
-                }
-            } else {
-                // no more in low buffer state
-                if (_state == HLSStates.PLAYING_BUFFERING) {
-                    _setState(HLSStates.PLAYING);
-                } else if (_state == HLSStates.PAUSED_BUFFERING) {
-                    _setState(HLSStates.PAUSED);
+                    // dont switch to buffering state in case we reached end of a VOD playlist
+                    if (!_reached_vod_end) {
+                        if (_state == HLSStates.PLAYING) {
+                            // low buffer condition and play state. switch to play buffering state
+                            _setState(HLSStates.PLAYING_BUFFERING);
+                        } else if (_state == HLSStates.PAUSED) {
+                            // low buffer condition and pause state. switch to paused buffering state
+                            _setState(HLSStates.PAUSED_BUFFERING);
+                        }
+                    }
+                } else {
+                    // no more in low buffer state
+                    if (_state == HLSStates.PLAYING_BUFFERING) {
+                        super.resume();
+                        _setState(HLSStates.PLAYING);
+                    } else if (_state == HLSStates.PAUSED_BUFFERING) {
+                        _setState(HLSStates.PAUSED);
+                    }
                 }
             }
-            // in case any data available in our FLV buffer, check if we can append into NetStream
-            if (_flvTagBuffer.length && ((buffer > _buffer_min_len) || (_flvTagBufferDuration > _buffer_min_len) || _reached_vod_end)) {
+            // in case any data available in our FLV buffer, append into NetStream
+            if (_flvTagBuffer.length) {
                 if (_seek_in_progress) {
                     /* this is our first injection after seek(),
                     let's flush netstream now
@@ -124,18 +135,8 @@ package org.mangui.HLS.streaming {
                     super.close();
                     super.play(null);
                     super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
-                    /* now adjust NetStream state depending on HLS internal state.
-                     * if HLS was in idle or pause state, pause NetStream
-                     */
-                    switch(_state) {
-                        case HLSStates.IDLE:
-                        case HLSStates.PAUSED:
-                        case HLSStates.PAUSED_BUFFERING:
-                            super.pause();
-                            break;
-                        default:
-                            break;
-                    }
+                    // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
+                    super.pause();
                     _seek_in_progress = false;
                 }
                 // Log.debug("appending data into NetStream");
@@ -374,7 +375,7 @@ package org.mangui.HLS.streaming {
             if (_seek_in_progress) {
                 return _flvTagBufferDuration;
             } else {
-                return super.bufferLength+_flvTagBufferDuration;
+                return super.bufferLength + _flvTagBufferDuration;
             }
         };
 

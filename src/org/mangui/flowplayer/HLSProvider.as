@@ -87,7 +87,7 @@ package org.mangui.flowplayer {
         };
 
         private function _mediaTimeHandler(event : HLSEvent) : void {
-            _position = event.mediatime.position;
+            _position = Math.max(0,event.mediatime.position);
             _duration = event.mediatime.duration;
             _clip.duration = _duration;
             _bufferedTime = event.mediatime.buffer + event.mediatime.position;

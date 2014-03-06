@@ -27,7 +27,7 @@ package org.mangui.osmf.plugins {
 
         /** Update playback position/duration **/
         private function _mediaTimeHandler(event : HLSEvent) : void {
-            _position = event.mediatime.position;
+            _position = Math.max(0,event.mediatime.position);
             _duration = event.mediatime.duration;
         };
 

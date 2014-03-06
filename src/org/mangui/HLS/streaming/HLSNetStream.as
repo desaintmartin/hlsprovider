@@ -80,12 +80,9 @@ package org.mangui.HLS.streaming {
             }
             // only send media time event if data has changed
             if (playback_relative_position != _playback_current_position || buffer != _last_buffer) {
-                if (playback_relative_position < 0) {
-                    playback_relative_position = 0;
-                }
                 _playback_current_position = playback_relative_position;
                 _last_buffer = buffer;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer)));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer,_playlist_sliding_duration)));
             }
 
             // Set playback state. no need to check buffer status if first fragment not yet received

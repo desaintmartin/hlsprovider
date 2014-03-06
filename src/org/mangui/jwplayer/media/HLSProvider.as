@@ -80,7 +80,7 @@ package org.mangui.jwplayer.media {
             // only report position/duration/buffer for VOD playlist and live playlist with duration > _seekInLiveDurationThreshold
             if (_hls.type == HLSTypes.VOD || event.mediatime.duration > _seekInLiveDurationThreshold) {
                 item.duration = event.mediatime.duration;
-                _media_position = event.mediatime.position;
+                _media_position = Math.max(0,event.mediatime.position);
                 var _bufferPercent : Number = 100 * (_media_position + event.mediatime.buffer) / event.mediatime.duration;
                 sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_TIME, {bufferPercent:_bufferPercent, offset:0, position:_media_position, duration:event.mediatime.duration});
             }

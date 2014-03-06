@@ -51,8 +51,8 @@ package org.mangui.HLS.muxing {
         private var _timer : Timer;
         /** Byte data to be read **/
         private var _data : ByteArray;
-        /* last PES packet containing AVCC Frame (SPS/PPS) */
-        private var _lastAVCCFrame : PES = null;
+        /* video configuration data */
+        private static var _avcc : ByteArray;
         /* callback function upon read complete */
         private var _callback : Function;
         /* current audio PES */
@@ -87,6 +87,7 @@ package org.mangui.HLS.muxing {
             if (discontinuity) {
                 _curAudioPES = null;
                 _curVideoPES = null;
+                _avcc = new ByteArray();
             } else {
                 // in case there is no discontinuity, but audio PID change, flush any partially parsed audio PES packet
                 if (_audioExtract && audioPID != _audioId) {
@@ -171,7 +172,7 @@ package org.mangui.HLS.muxing {
                 Log.debug("TS: " + _videoTags.length + " video tags extracted");
             }
             Log.debug("TS: all tags extracted, callback demux");
-            _callback(_audioTags, _videoTags, _getADIF(), _getAVCC(), _audioId, audioList);
+            _callback(_audioTags, _videoTags, _getADIF(), _avcc, _audioId, audioList);
         }
 
         /** Get audio configuration data. **/
@@ -181,14 +182,6 @@ package org.mangui.HLS.muxing {
             } else {
                 return new ByteArray();
             }
-        };
-
-        /** Get video configuration data. **/
-        private function _getAVCC() : ByteArray {
-            if (_lastAVCCFrame == null) {
-                return new ByteArray();
-            }
-            return AVC.getAVCC(_lastAVCCFrame.data, _lastAVCCFrame.payload);
         };
 
         /** Read ADTS frames from audio PES streams. **/
@@ -241,6 +234,8 @@ package org.mangui.HLS.muxing {
 
         /** Read NALU frames from video PES streams. **/
         private function _readNALU() : void {
+            var sps : ByteArray = null;
+            var pps : ByteArray = null;
             var overflow : Number;
             var units : Vector.<VideoFrame>;
             for (var i : Number = 0; i < _videoPES.length; i++) {
@@ -275,12 +270,20 @@ package org.mangui.HLS.muxing {
                         }
                     } else if (units[j].type == 7) {
                         sps_found = true;
+                        sps = new ByteArray();
+                        _videoPES[i].data.position = units[j].start;
+                        _videoPES[i].data.readBytes(sps, 0, units[j].length);
+                        // Log.debug("found SPS, size=" + sps.length + "," + Hex.fromArray(sps));
                     } else if (units[j].type == 8) {
                         pps_found = true;
+                        pps = new ByteArray();
+                        _videoPES[i].data.position = units[j].start;
+                        _videoPES[i].data.readBytes(pps, 0, units[j].length);
+                        // Log.debug("found PPS, size=" + pps.length + "," + Hex.fromArray(pps));
                     }
                 }
-                if (_lastAVCCFrame == null && sps_found && pps_found) {
-                    _lastAVCCFrame = _videoPES[i];
+                if (_avcc.length == 0 && sps_found && pps_found) {
+                    _avcc = AVC.getAVCC(sps, pps);
                 }
             }
         };

@@ -828,6 +828,9 @@ package org.mangui.HLS.streaming {
             if (_switchlevel || _hasDiscontinuity) {
                 if (videoTags.length > 0) {
                     var avccTag : Tag = new Tag(Tag.AVC_HEADER, videoTags[0].pts, videoTags[0].dts, true);
+                    avcc.position=0;
+                    Log.debug("AVCC="+ Hex.fromArray(avcc));
+                    avcc.position=0;
                     avccTag.push(avcc, 0, avcc.length);
                     tags.push(avccTag);
                 }

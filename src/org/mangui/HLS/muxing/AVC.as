@@ -26,52 +26,36 @@ package org.mangui.HLS.muxing {
         /** Get Avcc header from AVC stream 
         See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
          **/
-        public static function getAVCC(nalu : ByteArray, position : Number) : ByteArray {
-            // Find SPS and PPS units in AVC stream.
-            var units : Vector.<VideoFrame> = AVC.getNALU(nalu, position);
-            var sps : Number = -1;
-            var pps : Number = -1;
-            for (var i : Number = 0; i < units.length; i++) {
-                if (units[i].type == 7 && sps == -1) {
-                    sps = i;
-                } else if (units[i].type == 8 && pps == -1) {
-                    pps = i;
-                }
-            }
-            // Throw errors if units not found.
-            if (sps == -1) {
-                throw new Error("No SPS NAL unit found in this stream.");
-            } else if (pps == -1) {
-                throw new Error("No PPS NAL unit found in this stream.");
-            }
+        public static function getAVCC(sps : ByteArray, pps:ByteArray) : ByteArray {
             // Write startbyte
             var avcc : ByteArray = new ByteArray();
             avcc.writeByte(0x01);
             // Write profile, compatibility and level.
-            avcc.writeBytes(nalu, units[sps].start + 1, 3);
+            avcc.writeBytes(sps, 1, 3);
             // reserved (6 bits), NALU length size - 1 (2 bits)
             avcc.writeByte(0xFC | 3);
             // reserved (3 bits), num of SPS (5 bits)
             avcc.writeByte(0xE0 | 1);
             // 2 bytes for length of SPS
-            avcc.writeShort(units[sps].length);
+            avcc.writeShort(sps.length);
             // data of SPS
-            avcc.writeBytes(nalu, units[sps].start, units[sps].length);
+            avcc.writeBytes(sps, 0, sps.length);
             // Number of PPS
             avcc.writeByte(0x01);
             // 2 bytes for length of PPS
-            avcc.writeShort(units[pps].length);
+            avcc.writeShort(pps.length);
             // data of PPS
-            avcc.writeBytes(nalu, units[pps].start, units[pps].length);
+            avcc.writeBytes(pps, 0, pps.length);
             // Grab profile/level
             avcc.position = 1;
-            var prf : Number = avcc.readByte();
+            var prf : Number = sps.readByte();
             avcc.position = 3;
-            var lvl : Number = avcc.readByte();
+            var lvl : Number = sps.readByte();
             Log.debug("AVC: " + PROFILES[prf] + ' level ' + lvl);
             avcc.position = 0;
             return avcc;
         };
+
 
         /** Return an array with NAL delimiter indexes. **/
         public static function getNALU(nalu : ByteArray, position : Number) : Vector.<VideoFrame> {

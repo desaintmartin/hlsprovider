@@ -54,7 +54,7 @@ package org.mangui.HLS.streaming {
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader) : void {
             super(connection);
-            super.bufferTime = _buffer_min_len;
+            super.bufferTime = 0.1;
             _hls = hls;
             _fragmentLoader = fragmentLoader;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
@@ -88,9 +88,9 @@ package org.mangui.HLS.streaming {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer)));
             }
 
-            // Set playback state
-            // check low buffer condition
+            // Set playback state. no need to check buffer status if first fragment not yet received
             if (!_seek_in_progress) {
+            // check low buffer condition
                 if (buffer < _buffer_min_len) {
                     if (buffer <= 0.1) {
                         if (_reached_vod_end) {
@@ -116,7 +116,9 @@ package org.mangui.HLS.streaming {
                             _setState(HLSStates.PAUSED_BUFFERING);
                         }
                     }
-                } else {
+                }
+                // in case buffer is full enough or if we have reached end of VOD playlist
+                if (buffer >= _buffer_min_len || _reached_vod_end) {
                     // no more in low buffer state
                     if (_state == HLSStates.PLAYING_BUFFERING) {
                         super.resume();
@@ -386,11 +388,10 @@ package org.mangui.HLS.streaming {
 
         /** set min Buffer Length  **/
         public function set minBufferLength(new_len : Number) : void {
-            if (new_len < 0) {
-                new_len = 0;
+            if (new_len < 0.1) {
+                new_len = 0.1;
             }
             _buffer_min_len = new_len;
-            super.bufferTime = new_len;
         };
 
         /** get max Buffer Length  **/

@@ -203,7 +203,6 @@ package org.mangui.HLS.streaming {
                     _seek_position_real = _seek_position_requested;
                     first_pts = min_pts + 1000 * (_seek_position_real - start_position);
                 }
-                _playlist_sliding_duration = 0;
             } else {
                 /* whole fragment will be injected */
                 first_pts = min_pts;
@@ -407,7 +406,7 @@ package org.mangui.HLS.streaming {
             _fragmentLoader.stop();
             _fragmentLoader.seek(position, _loaderCallback);
             _flvTagBuffer = new Vector.<Tag>();
-            _flvTagBufferDuration = _buffered_before_last_continuity = _buffer_cur_min_pts = _buffer_cur_max_pts = 0;
+            _flvTagBufferDuration = _buffered_before_last_continuity = _buffer_cur_min_pts = _buffer_cur_max_pts = _playlist_sliding_duration = 0;
             _seek_position_requested = position;
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;

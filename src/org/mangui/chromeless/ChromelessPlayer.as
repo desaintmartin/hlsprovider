@@ -117,7 +117,7 @@ package org.mangui.chromeless {
         private function _mediaTimeHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
                 _media_position = event.mediatime.position;
-                ExternalInterface.call("onPosition", event.mediatime.position, event.mediatime.duration);
+                ExternalInterface.call("onPosition", event.mediatime.position, event.mediatime.duration, event.mediatime.live_sliding);
             }
 
             var videoWidth : Number = _video ? _video.videoWidth : _stageVideo.videoWidth;

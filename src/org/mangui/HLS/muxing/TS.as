@@ -1,4 +1,6 @@
 package org.mangui.HLS.muxing {
+    import com.hurlant.util.Hex;
+
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.utils.Log;
     import org.mangui.HLS.HLSAudioTrack;
@@ -273,13 +275,17 @@ package org.mangui.HLS.muxing {
                         sps = new ByteArray();
                         _videoPES[i].data.position = units[j].start;
                         _videoPES[i].data.readBytes(sps, 0, units[j].length);
-                        // Log.debug("found SPS, size=" + sps.length + "," + Hex.fromArray(sps));
+                        if (Log.LOG_DEBUG2_ENABLED) {
+                            Log.debug2("found SPS, size=" + sps.length + "," + Hex.fromArray(sps));
+                        }
                     } else if (units[j].type == 8) {
                         pps_found = true;
                         pps = new ByteArray();
                         _videoPES[i].data.position = units[j].start;
                         _videoPES[i].data.readBytes(pps, 0, units[j].length);
-                        // Log.debug("found PPS, size=" + pps.length + "," + Hex.fromArray(pps));
+                        if (Log.LOG_DEBUG2_ENABLED) {
+                            Log.debug2("found PPS, size=" + pps.length + "," + Hex.fromArray(pps));
+                        }
                     }
                 }
                 if (_avcc.length == 0 && sps_found && pps_found) {

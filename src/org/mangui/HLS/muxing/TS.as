@@ -251,9 +251,13 @@ package org.mangui.HLS.muxing {
                 var sps_found : Boolean = false;
                 var pps_found : Boolean = false;
                 units = AVC.getNALU(_videoPES[i].data, _videoPES[i].payload);
-                // If there's no NAL unit, push all data in the previous tag.
+                // If there's no NAL unit, push all data in the previous tag, if any exists
                 if (!units.length) {
-                    _videoTags[_videoTags.length - 1].push(_videoPES[i].data, _videoPES[i].payload, _videoPES[i].data.length - _videoPES[i].payload);
+                    if (_videoTags.length > 0) {
+                        _videoTags[_videoTags.length - 1].push(_videoPES[i].data, _videoPES[i].payload, _videoPES[i].data.length - _videoPES[i].payload);
+                    } else {
+                        Log.warn("no NAL unit found in first video PES packet of segment, discarding data. possible segmentation issue ?");
+                    }
                     continue;
                 }
                 // If NAL units are offset, push preceding data into the previous tag.

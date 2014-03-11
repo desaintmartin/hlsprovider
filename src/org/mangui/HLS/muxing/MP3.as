@@ -37,7 +37,7 @@ package org.mangui.HLS.muxing {
             Log.debug("MP3: all tags extracted, callback demux");
             var audiotracks : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
             audiotracks.push(new HLSAudioTrack('MP3 ES', HLSAudioTrack.FROM_DEMUX, 0, true));
-            callback(audioTags, new Vector.<Tag>(), new ByteArray(), new ByteArray(), 0, audiotracks);
+            callback(audioTags, new Vector.<Tag>(), 0, audiotracks);
         };
 
         public static function probe(data : ByteArray) : Boolean {

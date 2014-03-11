@@ -727,7 +727,7 @@ package org.mangui.HLS.streaming {
         }
 
         /** Handles the actual reading of the TS fragment **/
-        private function _fragReadHandler(audioTags : Vector.<Tag>, videoTags : Vector.<Tag>, adif : ByteArray, avcc : ByteArray, audioPID : Number = -1, audioTrackList : Vector.<HLSAudioTrack>=null) : void {
+        private function _fragReadHandler(audioTags : Vector.<Tag>, videoTags : Vector.<Tag>, audioPID : Number = -1, audioTrackList : Vector.<HLSAudioTrack>=null) : void {
             if (_cancel_load == true)
                 return;
             var _demux_duration : uint = (new Date().valueOf() - _frag_demux_start_time);
@@ -824,24 +824,6 @@ package org.mangui.HLS.streaming {
             }
 
             var tags : Vector.<Tag> = new Vector.<Tag>();
-            // Push codecprivate tags only when switching.
-            if (_switchlevel || _hasDiscontinuity) {
-                if (videoTags.length > 0) {
-                    var avccTag : Tag = new Tag(Tag.AVC_HEADER, videoTags[0].pts, videoTags[0].dts, true);
-                    avcc.position=0;
-                    Log.debug("AVCC="+ Hex.fromArray(avcc));
-                    avcc.position=0;
-                    avccTag.push(avcc, 0, avcc.length);
-                    tags.push(avccTag);
-                }
-                if (audioTags.length > 0) {
-                    if (audioTags[0].type == Tag.AAC_RAW) {
-                        var adifTag : Tag = new Tag(Tag.AAC_HEADER, audioTags[0].pts, audioTags[0].dts, true);
-                        adifTag.push(adif, 0, 2);
-                        tags.push(adifTag);
-                    }
-                }
-            }
             // Push regular tags into buffer.
             for (var i : Number = 0; i < videoTags.length; i++) {
                 tags.push(videoTags[i]);

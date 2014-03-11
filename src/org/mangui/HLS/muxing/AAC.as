@@ -27,6 +27,10 @@ package org.mangui.HLS.muxing {
             // AAC should contain ID3 tag filled with a timestamp
             var frames : Vector.<AudioFrame> = AAC.getFrames(data, data.position);
             var adif : ByteArray = getADIF(data, 0);
+            var adifTag : Tag = new Tag(Tag.AAC_HEADER, id3.timestamp, id3.timestamp, true);
+            adifTag.push(adif, 0, adif.length);
+            audioTags.push(adifTag);
+
             var audioTag : Tag;
             var stamp : Number;
             var i : Number = 0;
@@ -45,7 +49,7 @@ package org.mangui.HLS.muxing {
             var audiotracks : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
             audiotracks.push(new HLSAudioTrack('AAC ES', HLSAudioTrack.FROM_DEMUX, 0, true));
             Log.debug("AAC: all tags extracted, callback demux");
-            callback(audioTags, new Vector.<Tag>(), adif, new ByteArray(), 0, audiotracks);
+            callback(audioTags, new Vector.<Tag>(), 0, audiotracks);
         };
 
         public static function probe(data : ByteArray) : Boolean {

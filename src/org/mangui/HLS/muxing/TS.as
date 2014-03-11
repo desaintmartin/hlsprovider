@@ -53,8 +53,6 @@ package org.mangui.HLS.muxing {
         private var _timer : Timer;
         /** Byte data to be read **/
         private var _data : ByteArray;
-        /* video configuration data */
-        private static var _avcc : ByteArray;
         /* callback function upon read complete */
         private var _callback : Function;
         /* current audio PES */
@@ -89,7 +87,6 @@ package org.mangui.HLS.muxing {
             if (discontinuity) {
                 _curAudioPES = null;
                 _curVideoPES = null;
-                _avcc = new ByteArray();
             } else {
                 // in case there is no discontinuity, but audio PID change, flush any partially parsed audio PES packet
                 if (_audioExtract && audioPID != _audioId) {
@@ -174,17 +171,8 @@ package org.mangui.HLS.muxing {
                 Log.debug("TS: " + _videoTags.length + " video tags extracted");
             }
             Log.debug("TS: all tags extracted, callback demux");
-            _callback(_audioTags, _videoTags, _getADIF(), _avcc, _audioId, audioList);
+            _callback(_audioTags, _videoTags, _audioId, audioList);
         }
-
-        /** Get audio configuration data. **/
-        private function _getADIF() : ByteArray {
-            if (_audioId > 0 && _audioIsAAC && _audioTags.length > 0) {
-                return AAC.getADIF(_audioPES[0].data, _audioPES[0].payload);
-            } else {
-                return new ByteArray();
-            }
-        };
 
         /** Read ADTS frames from audio PES streams. **/
         private function _readADTS() : void {
@@ -195,6 +183,15 @@ package org.mangui.HLS.muxing {
             for (var i : Number = 0; i < _audioPES.length; i++) {
                 // Parse the PES headers.
                 _audioPES[i].parse();
+
+                // insert ADIF TAG at the beginning
+                if (i == 0) {
+                    var adifTag : Tag = new Tag(Tag.AAC_HEADER, _audioPES[0].pts, _audioPES[0].dts, true);
+                    var adif : ByteArray = AAC.getADIF(_audioPES[0].data, _audioPES[0].payload);
+                    adifTag.push(adif, 0, adif.length);
+                    _audioTags.push(adifTag);
+                }
+
                 // Correct for Segmenter's "optimize", which cuts frames in half.
                 if (overflow > 0) {
                     _audioPES[i - 1].data.position = _audioPES[i - 1].data.length;
@@ -239,7 +236,7 @@ package org.mangui.HLS.muxing {
             var sps : ByteArray = null;
             var pps : ByteArray = null;
             var overflow : Number;
-            var tag:Tag;
+            var tag : Tag;
             var units : Vector.<VideoFrame>;
             for (var i : Number = 0; i < _videoPES.length; i++) {
                 // Parse the PES headers and NAL units.
@@ -293,8 +290,11 @@ package org.mangui.HLS.muxing {
                         }
                     }
                 }
-                if (_avcc.length == 0 && sps_found && pps_found) {
-                    _avcc = AVC.getAVCC(sps, pps);
+                if (sps_found && pps_found) {
+                    var avcc : ByteArray = AVC.getAVCC(sps, pps);
+                    var avccTag : Tag = new Tag(Tag.AVC_HEADER, _videoPES[i].pts, _videoPES[i].dts, true);
+                    avccTag.push(avcc, 0, avcc.length);
+                    _videoTags.push(avccTag);
                 }
                 _videoTags.push(tag);
             }

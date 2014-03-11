@@ -239,6 +239,7 @@ package org.mangui.HLS.muxing {
             var sps : ByteArray = null;
             var pps : ByteArray = null;
             var overflow : Number;
+            var tag:Tag;
             var units : Vector.<VideoFrame>;
             for (var i : Number = 0; i < _videoPES.length; i++) {
                 // Parse the PES headers and NAL units.
@@ -253,8 +254,8 @@ package org.mangui.HLS.muxing {
                 units = AVC.getNALU(_videoPES[i].data, _videoPES[i].payload);
                 // If there's no NAL unit, push all data in the previous tag, if any exists
                 if (!units.length) {
-                    if (_videoTags.length > 0) {
-                        _videoTags[_videoTags.length - 1].push(_videoPES[i].data, _videoPES[i].payload, _videoPES[i].data.length - _videoPES[i].payload);
+                    if (tag) {
+                        tag.push(_videoPES[i].data, _videoPES[i].payload, _videoPES[i].data.length - _videoPES[i].payload);
                     } else {
                         Log.warn("no NAL unit found in first video PES packet of segment, discarding data. possible segmentation issue ?");
                     }
@@ -262,17 +263,17 @@ package org.mangui.HLS.muxing {
                 }
                 // If NAL units are offset, push preceding data into the previous tag.
                 overflow = units[0].start - units[0].header - _videoPES[i].payload;
-                if (overflow && _videoTags.length > 0) {
-                    _videoTags[_videoTags.length - 1].push(_videoPES[i].data, _videoPES[i].payload, overflow);
+                if (overflow && tag) {
+                    tag.push(_videoPES[i].data, _videoPES[i].payload, overflow);
                 }
-                _videoTags.push(new Tag(Tag.AVC_NALU, _videoPES[i].pts, _videoPES[i].dts, false));
+                tag = new Tag(Tag.AVC_NALU, _videoPES[i].pts, _videoPES[i].dts, false);
                 // Only push NAL units 1 to 5 into tag.
                 for (var j : Number = 0; j < units.length; j++) {
                     if (units[j].type < 6) {
-                        _videoTags[_videoTags.length - 1].push(_videoPES[i].data, units[j].start, units[j].length);
+                        tag.push(_videoPES[i].data, units[j].start, units[j].length);
                         // Unit type 5 indicates a keyframe.
                         if (units[j].type == 5) {
-                            _videoTags[_videoTags.length - 1].keyframe = true;
+                            tag.keyframe = true;
                         }
                     } else if (units[j].type == 7) {
                         sps_found = true;
@@ -295,6 +296,7 @@ package org.mangui.HLS.muxing {
                 if (_avcc.length == 0 && sps_found && pps_found) {
                     _avcc = AVC.getAVCC(sps, pps);
                 }
+                _videoTags.push(tag);
             }
         };
 

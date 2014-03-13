@@ -181,9 +181,6 @@ package org.mangui.HLS.muxing {
             var tag : Tag;
             var stamp : Number;
             for (var i : Number = 0; i < _audioPES.length; i++) {
-                // Parse the PES headers.
-                _audioPES[i].parse();
-
                 // insert ADIF TAG at the beginning
                 if (i == 0) {
                     var adifTag : Tag = new Tag(Tag.AAC_HEADER, _audioPES[0].pts, _audioPES[0].dts, true);
@@ -224,7 +221,6 @@ package org.mangui.HLS.muxing {
         private function _readMPEG() : void {
             var tag : Tag;
             for (var i : Number = 0; i < _audioPES.length; i++) {
-                _audioPES[i].parse();
                 tag = new Tag(Tag.MP3_RAW, _audioPES[i].pts, _audioPES[i].dts, false);
                 tag.push(_audioPES[i].data, _audioPES[i].payload, _audioPES[i].data.length - _audioPES[i].payload);
                 _audioTags.push(tag);
@@ -239,13 +235,6 @@ package org.mangui.HLS.muxing {
             var tag : Tag;
             var units : Vector.<VideoFrame>;
             for (var i : Number = 0; i < _videoPES.length; i++) {
-                // Parse the PES headers and NAL units.
-                try {
-                    _videoPES[i].parse();
-                } catch (error : Error) {
-                    Log.error(error.message);
-                    continue;
-                }
                 var sps_found : Boolean = false;
                 var pps_found : Boolean = false;
                 units = AVC.getNALU(_videoPES[i].data, _videoPES[i].payload);

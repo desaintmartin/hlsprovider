@@ -20,15 +20,11 @@ package org.mangui.HLS.muxing {
         public function PES(dat : ByteArray, aud : Boolean) {
             data = dat;
             audio = aud;
-        };
-
-        /** Append PES data from additional TS packets. **/
-        public function append(dat : ByteArray) : void {
-            data.writeBytes(dat, 0, 0);
+            parse();
         };
 
         /** When all data is appended, parse the PES headers. **/
-        public function parse() : void {
+        private function parse() : void {
             data.position = 0;
             // Start code prefix and packet ID.
             var prefix : Number = data.readUnsignedInt();

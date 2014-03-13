@@ -343,6 +343,7 @@ package org.mangui.chromeless {
                 _video.smoothing = true;
                 _video.attachNetStream(_hls.stream);
             }
+            stage.removeEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
         };
 
         private function _onStageResize(event : Event) : void {

@@ -1,6 +1,4 @@
 package org.mangui.HLS.muxing {
-    import com.hurlant.util.Hex;
-
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.utils.Log;
     import org.mangui.HLS.HLSAudioTrack;
@@ -41,10 +39,6 @@ package org.mangui.HLS.muxing {
         /** List of AAC and MP3 audio PIDs */
         private var _aacIds : Vector.<uint> = new Vector.<uint>();
         private var _mp3Ids : Vector.<uint> = new Vector.<uint>();
-        /** List of packetized elementary streams with AAC. **/
-        private var _audioPES : Vector.<PES> = new Vector.<PES>();
-        /** List of packetized elementary streams with AVC. **/
-        private var _videoPES : Vector.<PES> = new Vector.<PES>();
         /** List with audio frames. **/
         private var _audioTags : Vector.<Tag> = new Vector.<Tag>();
         /** List with video frames. **/
@@ -55,10 +49,16 @@ package org.mangui.HLS.muxing {
         private var _data : ByteArray;
         /* callback function upon read complete */
         private var _callback : Function;
-        /* current audio PES */
-        private static var _curAudioPES : ByteArray = null;
-        /* current video PES */
-        private static var _curVideoPES : ByteArray = null;
+        /* current audio binary data */
+        private static var _curAudioData : ByteArray = null;
+        /* current video binary data */
+        private static var _curVideoData : ByteArray = null;
+        /* current Audio Tag */
+        private var _curAudioTag : Tag;
+        /* current AVC Tag */
+        private var _curVideoTag : Tag;
+        /* ADTS frame overflow */
+        private var _adts_overflow : Number = 0;
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : Number = data.position;
@@ -85,12 +85,12 @@ package org.mangui.HLS.muxing {
         public function TS(data : ByteArray, callback : Function, discontinuity : Boolean, audioExtract : Boolean, audioPID : Number) {
             // in case of discontinuity, flush any partially parsed audio/video PES packet
             if (discontinuity) {
-                _curAudioPES = null;
-                _curVideoPES = null;
+                _curAudioData = null;
+                _curVideoData = null;
             } else {
                 // in case there is no discontinuity, but audio PID change, flush any partially parsed audio PES packet
                 if (_audioExtract && audioPID != _audioId) {
-                    _curAudioPES = null;
+                    _curAudioData = null;
                 }
             }
             // Extract the elementary streams.
@@ -119,38 +119,46 @@ package org.mangui.HLS.muxing {
             if (!_data.bytesAvailable) {
                 // first check if TS parsing was successful
                 if (_pmtParsed == false) {
-                    // if parsing not successful, try to reparse segment will fallback A/V PIDs if any
                     Log.error("TS: no PMT found, report parsing error");
                     _callback(null, null, null, null);
                 } else {
                     _timer.stop();
-                    if (_videoPES.length == 0 && _audioPES.length == 0 ) {
-                        Log.error("No audio or video streams found.");
-                        _callback(null, null, null, null);
-                    } else {
-                        _extractFrames();
-                    }
+                    _parsingEnd();
                 }
             }
         }
 
-        /** setup the video and audio tag vectors from the read data **/
-        private function _extractFrames() : void {
+        /** notify end of parsing **/
+        private function _parsingEnd() : void {
+            // check whether last parsed audio PES is complete
+            if (_curAudioData && _curAudioData.length > 14) {
+                var pes : PES = new PES(TS._curAudioData, true);
+                if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
+                    Log.debug("complete Audio PES found at end of segment, parse it");
+                    // complete PES, parse and push into the queue
+                    if (_audioIsAAC) {
+                        _parseADTSPES(pes);
+                    } else {
+                        _parseMPEGPES(pes);
+                    }
+                     _curAudioData = null;
+                }
+            }
+            // check whether last parsed video PES is complete
+            if (_curVideoData && _curVideoData.length > 14) {
+                pes = new PES(TS._curVideoData, false);
+                if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
+                    Log.debug("complete AVC PES found at end of segment, parse it");
+                    // complete PES, parse and push into the queue
+                    _parseAVCPES(pes);
+                    _curVideoData = null;
+                }
+            }
             Log.debug("TS: successfully parsed");
             // report current audio track and audio track list
             var audioList : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
-            // Extract the ADTS or MP3 audio frames (transform PES packets into audio tags)
             if (_audioId > 0) {
-                if (_audioIsAAC) {
-                    Log.debug("TS: extracting AAC tags");
-                    _readADTS();
-                } else {
-                    Log.debug("TS: extracting MP3 tags");
-                    _readMPEG();
-                }
-
                 var isDefault : Boolean = true;
-
                 for (var i : Number = 0; i < _aacIds.length; ++i) {
                     audioList.push(new HLSAudioTrack('TS/AAC ' + i, HLSAudioTrack.FROM_DEMUX, _aacIds[i], isDefault));
                     if (isDefault)
@@ -162,132 +170,105 @@ package org.mangui.HLS.muxing {
                         isDefault = false;
                 }
             }
+            Log.debug("TS: " + _videoTags.length + " video tags extracted");
             Log.debug("TS: " + _audioTags.length + " audio tags extracted");
-
-            // Extract the NALU video frames (transform PES packets into video tags)
-            if (_avcId > 0) {
-                Log.debug("TS: extracting AVC tags");
-                _readNALU();
-                Log.debug("TS: " + _videoTags.length + " video tags extracted");
-            }
-            Log.debug("TS: all tags extracted, callback demux");
             _callback(_audioTags, _videoTags, _audioId, audioList);
         }
 
-        /** Read ADTS frames from audio PES streams. **/
-        private function _readADTS() : void {
-            var frames : Vector.<AudioFrame>;
-            var overflow : Number = 0;
-            var tag : Tag;
+        /** parse ADTS audio PES packet **/
+        private function _parseADTSPES(pes : PES) : void {
             var stamp : Number;
-            for (var i : Number = 0; i < _audioPES.length; i++) {
-                // insert ADIF TAG at the beginning
-                if (i == 0) {
-                    var adifTag : Tag = new Tag(Tag.AAC_HEADER, _audioPES[0].pts, _audioPES[0].dts, true);
-                    var adif : ByteArray = AAC.getADIF(_audioPES[0].data, _audioPES[0].payload);
-                    adifTag.push(adif, 0, adif.length);
-                    _audioTags.push(adifTag);
-                }
+            // insert ADIF TAG at the beginning
+            if (_audioTags.length == 0) {
+                var adifTag : Tag = new Tag(Tag.AAC_HEADER, pes.pts, pes.dts, true);
+                var adif : ByteArray = AAC.getADIF(pes.data, pes.payload);
+                adifTag.push(adif, 0, adif.length);
+                _audioTags.push(adifTag);
+            }
 
-                // Correct for Segmenter's "optimize", which cuts frames in half.
-                if (overflow > 0) {
-                    _audioPES[i - 1].data.position = _audioPES[i - 1].data.length;
-                    _audioPES[i - 1].data.writeBytes(_audioPES[i].data, _audioPES[i].payload, overflow);
-                    _audioPES[i].payload += overflow;
-                }
-                // Store ADTS frames in array.
-                frames = AAC.getFrames(_audioPES[i].data, _audioPES[i].payload);
-                for (var j : Number = 0; j < frames.length; j++) {
-                    // Increment the timestamp of subsequent frames.
-                    stamp = Math.round(_audioPES[i].pts + j * 1024 * 1000 / frames[j].rate);
-                    tag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
-                    if (i == _audioPES.length - 1 && j == frames.length - 1) {
-                        if ((_audioPES[i].data.length - frames[j].start) > 0) {
-                            tag.push(_audioPES[i].data, frames[j].start, _audioPES[i].data.length - frames[j].start);
-                        }
-                    } else {
-                        tag.push(_audioPES[i].data, frames[j].start, frames[j].length);
-                    }
-                    _audioTags.push(tag);
-                }
-                if (frames.length) {
-                    // Correct for Segmenter's "optimize", which cuts frames in half.
-                    overflow = frames[frames.length - 1].start + frames[frames.length - 1].length - _audioPES[i].data.length;
+            // check if previous ADTS frame is overflowing.
+            if (_adts_overflow && _curAudioTag) {
+                // retrieve overflowing part by reading beginning of new PES packet
+                _curAudioTag.push(pes.data, pes.payload, _adts_overflow);
+                pes.payload += _adts_overflow;
+            }
+            // Store ADTS frames in array.
+            var frames : Vector.<AudioFrame> = AAC.getFrames(pes.data, pes.payload);
+            var frame : AudioFrame;
+            for (var j : Number = 0; j < frames.length; j++) {
+                frame = frames[j];
+                // Increment the timestamp of subsequent frames.
+                stamp = Math.round(pes.pts + j * 1024 * 1000 / frame.rate);
+                _curAudioTag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
+                _curAudioTag.push(pes.data, frame.start, frame.length);
+                _audioTags.push(_curAudioTag);
+            }
+            if (frame) {
+                // check if last ADTS frame is overflowing on next PES packet
+                _adts_overflow = frame.expected_length - frame.length;
+                if (_adts_overflow) {
+                    Log.debug("ADTS frame overflow (real len/expected len):" + frame.length + "/" + frame.expected_length);
                 }
             }
         };
 
-        /** Read MPEG data from audio PES streams. **/
-        private function _readMPEG() : void {
-            var tag : Tag;
-            for (var i : Number = 0; i < _audioPES.length; i++) {
-                tag = new Tag(Tag.MP3_RAW, _audioPES[i].pts, _audioPES[i].dts, false);
-                tag.push(_audioPES[i].data, _audioPES[i].payload, _audioPES[i].data.length - _audioPES[i].payload);
-                _audioTags.push(tag);
-            }
+        /** parse MPEG audio PES packet **/
+        private function _parseMPEGPES(pes : PES) : void {
+            var tag : Tag = new Tag(Tag.MP3_RAW, pes.pts, pes.dts, false);
+            tag.push(pes.data, pes.payload, pes.data.length - pes.payload);
+            _audioTags.push(tag);
         };
 
-        /** Read NALU frames from video PES streams. **/
-        private function _readNALU() : void {
-            var sps : ByteArray = null;
-            var pps : ByteArray = null;
-            var overflow : Number;
-            var tag : Tag;
-            var units : Vector.<VideoFrame>;
-            for (var i : Number = 0; i < _videoPES.length; i++) {
-                var sps_found : Boolean = false;
-                var pps_found : Boolean = false;
-                units = AVC.getNALU(_videoPES[i].data, _videoPES[i].payload);
-                // If there's no NAL unit, push all data in the previous tag, if any exists
-                if (!units.length) {
-                    if (tag) {
-                        tag.push(_videoPES[i].data, _videoPES[i].payload, _videoPES[i].data.length - _videoPES[i].payload);
-                    } else {
-                        Log.warn("no NAL unit found in first video PES packet of segment, discarding data. possible segmentation issue ?");
-                    }
-                    continue;
+        /** parse AVC PES packet **/
+        private function _parseAVCPES(pes : PES) : void {
+            var sps : ByteArray;
+            var pps : ByteArray;
+            var sps_found : Boolean = false;
+            var pps_found : Boolean = false;
+            var units : Vector.<VideoFrame> = AVC.getNALU(pes.data, pes.payload);
+            // If there's no NAL unit, push all data in the previous tag, if any exists
+            if (!units.length) {
+                if (_curVideoTag) {
+                    _curVideoTag.push(pes.data, pes.payload, pes.data.length - pes.payload);
+                } else {
+                    Log.warn("no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
                 }
-                // If NAL units are offset, push preceding data into the previous tag.
-                overflow = units[0].start - units[0].header - _videoPES[i].payload;
-                if (overflow && tag) {
-                    tag.push(_videoPES[i].data, _videoPES[i].payload, overflow);
-                }
-                tag = new Tag(Tag.AVC_NALU, _videoPES[i].pts, _videoPES[i].dts, false);
-                // Only push NAL units 1 to 5 into tag.
-                for (var j : Number = 0; j < units.length; j++) {
-                    if (units[j].type < 6) {
-                        tag.push(_videoPES[i].data, units[j].start, units[j].length);
-                        // Unit type 5 indicates a keyframe.
-                        if (units[j].type == 5) {
-                            tag.keyframe = true;
-                        }
-                    } else if (units[j].type == 7) {
-                        sps_found = true;
-                        sps = new ByteArray();
-                        _videoPES[i].data.position = units[j].start;
-                        _videoPES[i].data.readBytes(sps, 0, units[j].length);
-                        if (Log.LOG_DEBUG2_ENABLED) {
-                            Log.debug2("found SPS, size=" + sps.length + "," + Hex.fromArray(sps));
-                        }
-                    } else if (units[j].type == 8) {
-                        pps_found = true;
-                        pps = new ByteArray();
-                        _videoPES[i].data.position = units[j].start;
-                        _videoPES[i].data.readBytes(pps, 0, units[j].length);
-                        if (Log.LOG_DEBUG2_ENABLED) {
-                            Log.debug2("found PPS, size=" + pps.length + "," + Hex.fromArray(pps));
-                        }
-                    }
-                }
-                if (sps_found && pps_found) {
-                    var avcc : ByteArray = AVC.getAVCC(sps, pps);
-                    var avccTag : Tag = new Tag(Tag.AVC_HEADER, _videoPES[i].pts, _videoPES[i].dts, true);
-                    avccTag.push(avcc, 0, avcc.length);
-                    _videoTags.push(avccTag);
-                }
-                _videoTags.push(tag);
+                return;
             }
-        };
+            // If NAL units are not starting right at the beginning of the PES packet, push preceding data into the previous tag.
+            var overflow : Number = units[0].start - units[0].header - pes.payload;
+            if (overflow && _curVideoTag) {
+                _curVideoTag.push(pes.data, pes.payload, overflow);
+            }
+            _curVideoTag = new Tag(Tag.AVC_NALU, pes.pts, pes.dts, false);
+            // Only push NAL units 1 to 5 into tag.
+            for (var j : Number = 0; j < units.length; j++) {
+                if (units[j].type < 6) {
+                    _curVideoTag.push(pes.data, units[j].start, units[j].length);
+                    // Unit type 5 indicates a keyframe.
+                    if (units[j].type == 5) {
+                        _curVideoTag.keyframe = true;
+                    }
+                } else if (units[j].type == 7) {
+                    sps_found = true;
+                    sps = new ByteArray();
+                    pes.data.position = units[j].start;
+                    pes.data.readBytes(sps, 0, units[j].length);
+                } else if (units[j].type == 8) {
+                    pps_found = true;
+                    pps = new ByteArray();
+                    pes.data.position = units[j].start;
+                    pes.data.readBytes(pps, 0, units[j].length);
+                }
+            }
+            if (sps_found && pps_found) {
+                var avcc : ByteArray = AVC.getAVCC(sps, pps);
+                var avccTag : Tag = new Tag(Tag.AVC_HEADER, pes.pts, pes.dts, true);
+                avccTag.push(avcc, 0, avcc.length);
+                _videoTags.push(avccTag);
+            }
+            _videoTags.push(_curVideoTag);
+        }
 
         /** Read TS packet. **/
         private function _readPacket() : void {
@@ -356,28 +337,30 @@ package org.mangui.HLS.muxing {
                     break;
                 case _audioId:
                     if (stt) {
-                        if (_curAudioPES) {
-                            // TODO: ensure pes is complete
-                            _audioPES.push(new PES(_curAudioPES, true));
+                        if (_curAudioData) {
+                            if (_audioIsAAC) {
+                                _parseADTSPES(new PES(_curAudioData, true));
+                            } else {
+                                _parseMPEGPES(new PES(_curAudioData, true));
+                            }
                         }
-                        _curAudioPES = new ByteArray();
+                        _curAudioData = new ByteArray();
                     }
-                    if (_curAudioPES) {
-                        _curAudioPES.writeBytes(_data, _data.position, todo);
+                    if (_curAudioData) {
+                        _curAudioData.writeBytes(_data, _data.position, todo);
                     } else {
                         Log.warn("Discarding TS audio packet with id " + pid);
                     }
                     break;
                 case _avcId:
                     if (stt) {
-                        if (_curVideoPES) {
-                            // TODO: ensure pes is complete
-                            _videoPES.push(new PES(_curVideoPES, false));
+                        if (_curVideoData) {
+                            _parseAVCPES(new PES(_curVideoData, false));
                         }
-                        _curVideoPES = new ByteArray();
+                        _curVideoData = new ByteArray();
                     }
-                    if (_curVideoPES) {
-                        _curVideoPES.writeBytes(_data, _data.position, todo);
+                    if (_curVideoData) {
+                        _curVideoData.writeBytes(_data, _data.position, todo);
                     } else {
                         Log.warn("Discarding TS video packet with id " + pid + " bad TS segmentation ?");
                     }

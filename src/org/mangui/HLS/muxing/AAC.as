@@ -111,7 +111,7 @@ package org.mangui.HLS.muxing {
         };
 
         /** Get a list with AAC frames from ADTS stream. **/
-        public static function getFrames(adts : ByteArray, position : Number = 0) : Vector.<AudioFrame> {
+        public static function getFrames(adts : ByteArray, position : Number) : Vector.<AudioFrame> {
             var frames : Vector.<AudioFrame> = new Vector.<AudioFrame>();
             var frame_start : uint;
             var frame_length : uint;
@@ -125,14 +125,14 @@ package org.mangui.HLS.muxing {
                 // Check for ADTS header
                 var short : uint = adts.readUnsignedShort();
                 if (short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
-                    // Store samplerate for ofsetting timestamps.
+                    // Store samplerate for offsetting timestamps.
                     if (!samplerate) {
                         samplerate = RATES[(adts.readByte() & 0x3C) >> 2];
                         adts.position--;
                     }
                     // Store raw AAC preceding this header.
                     if (frame_start) {
-                        frames.push(new AudioFrame(frame_start, frame_length, samplerate));
+                        frames.push(new AudioFrame(frame_start, frame_length, frame_length, samplerate));
                     }
                     if (short == SYNCWORD_3) {
                         // ADTS header is 9 bytes.
@@ -152,7 +152,7 @@ package org.mangui.HLS.muxing {
             }
             // Write raw AAC after last header.
             if (frame_start) {
-                frames.push(new AudioFrame(frame_start, frame_length, samplerate));
+                frames.push(new AudioFrame(frame_start, Math.min(frame_length,adts.length-frame_start), frame_length, samplerate));
                 Log.debug2("AAC: " + frames.length + " ADTS frames");
             } else {
                 Log.warn("No ADTS headers found in this stream.");

@@ -84,7 +84,7 @@ package org.mangui.HLS.muxing {
                     frame_length = (SAMPLES_PER_FRAME / 8) * bitrate / samplerate + padbit;
                     frame_length = Math.round(frame_length);
                     data.position = data.position + (frame_length - 3);
-                    frames.push(new AudioFrame(frame_start, frame_length, samplerate));
+                    frames.push(new AudioFrame(frame_start, frame_length, frame_length, samplerate));
                 } else {
                     data.position = data.position - 1;
                 }

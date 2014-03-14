@@ -15,6 +15,10 @@ package org.mangui.HLS.muxing {
         public var pts : Number;
         /** Timestamp from the DTS header. **/
         public var dts : Number;
+        /** PES packet len **/
+        public var len : Number;
+        /** PES packet len **/
+        public var payload_len : Number;
 
         /** Save the first chunk of PES data. **/
         public function PES(dat : ByteArray, aud : Boolean) {
@@ -30,13 +34,15 @@ package org.mangui.HLS.muxing {
             var prefix : Number = data.readUnsignedInt();
             /*Audio streams (0x1C0-0x1DF)
             Video streams (0x1E0-0x1EF)
-            0x1BD is special case, could be audio or video (ffmpeg\libavformat\mpeg.c)            
+            0x1BD is special case, could be audio or video (ffmpeg\libavformat\mpeg.c)
              */
             if ((audio && (prefix > 0x1df || prefix < 0x1c0 && prefix != 0x1bd)) || (!audio && prefix != 0x1e0 && prefix != 0x1ea && prefix != 0x1bd)) {
                 throw new Error("PES start code not found or not AAC/AVC: " + prefix);
             }
-            // Ignore packet length and marker bits.
-            data.position += 3;
+            // read len
+            len = data.readUnsignedShort();
+            // Ignore marker bits.
+            data.position += 1;
             // Check for PTS
             var flags : uint = (data.readUnsignedByte() & 192) >> 6;
             // Check PES header length
@@ -63,6 +69,11 @@ package org.mangui.HLS.muxing {
             // Skip other header data and parse payload.
             data.position += length;
             payload = data.position;
+            if(len) {
+                payload_len = len - data.position + 6;
+            } else {
+                payload_len = 0;
+            }
         };
     }
 }

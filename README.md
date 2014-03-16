@@ -1,6 +1,6 @@
 #HLSprovider
 
-**HLSProvider** is an open-source HLS Flash plugin/player that allows you to play HLS streams and that is integrated with the following players :
+**HLSProvider** is an open-source HLS Flash plugin/player that allows you to play HLS streams. It is integrated with the following players :
 
 * a home made **Chromeless** Flash Player, with js controls.
 * **JWPlayer** free edition version **5.x**

@@ -27,7 +27,7 @@ package org.mangui.osmf.plugins {
         public static function canHandle(resource : MediaResourceBase) : Boolean {
             if (resource !== null && resource is URLResource) {
                 var urlResource : URLResource = URLResource(resource);
-                if (urlResource.url.search(/(https?|file)\:\/\/.*?\.m3u8(\?.*)?/i) !== -1) {
+                if (urlResource.url.search(/(https?|file)\:\/\/.*?\m3u8(\?.*)?/i) !== -1) {
                     return true;
                 }
 

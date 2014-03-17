@@ -192,6 +192,10 @@ package org.mangui.HLS.muxing {
                 _curAudioTag.push(pes.data, pes.payload, _adts_overflow);
                 pes.payload += _adts_overflow;
             }
+            if (isNaN(pes.pts)) {
+                Log.warn("no PTS info in this AAC PES packet,discarding it");
+                return;
+            }            
             // Store ADTS frames in array.
             var frames : Vector.<AudioFrame> = AAC.getFrames(pes.data, pes.payload);
             var frame : AudioFrame;
@@ -214,6 +218,10 @@ package org.mangui.HLS.muxing {
 
         /** parse MPEG audio PES packet **/
         private function _parseMPEGPES(pes : PES) : void {
+            if (isNaN(pes.pts)) {
+                Log.warn("no PTS info in this MP3 PES packet,discarding it");
+                return;
+            }
             var tag : Tag = new Tag(Tag.MP3_RAW, pes.pts, pes.dts, false);
             tag.push(pes.data, pes.payload, pes.data.length - pes.payload);
             _audioTags.push(tag);
@@ -239,6 +247,10 @@ package org.mangui.HLS.muxing {
             var overflow : Number = units[0].start - units[0].header - pes.payload;
             if (overflow && _curVideoTag) {
                 _curVideoTag.push(pes.data, pes.payload, overflow);
+            }
+            if (isNaN(pes.pts)) {
+                Log.warn("no PTS info in this AVC PES packet,discarding it");
+                return;
             }
             _curVideoTag = new Tag(Tag.AVC_NALU, pes.pts, pes.dts, false);
             // Only push NAL units 1 to 5 into tag.

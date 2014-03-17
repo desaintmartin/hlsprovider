@@ -1,8 +1,6 @@
 package org.mangui.HLS.muxing {
     import flash.utils.ByteArray;
 
-    import org.mangui.HLS.utils.Log;
-
     /** Representation of a Packetized Elementary Stream. **/
     public class PES {
         /** Is it AAC audio or AVC video. **/
@@ -63,8 +61,6 @@ package org.mangui.HLS.muxing {
                 pts = Math.round(_pts / 90);
                 dts = Math.round(_dts / 90);
                 // Log.info("pts/dts: " + pts + "/"+ dts);
-            } else {
-                Log.warn("No PTS in PES packet !");
             }
             // Skip other header data and parse payload.
             data.position += length;

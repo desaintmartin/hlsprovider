@@ -141,7 +141,7 @@ package org.mangui.HLS.muxing {
                     } else {
                         _parseMPEGPES(pes);
                     }
-                     _curAudioData = null;
+                    _curAudioData = null;
                 }
             }
             // check whether last parsed video PES is complete
@@ -430,6 +430,10 @@ package org.mangui.HLS.muxing {
                 if (typ == 0x0F) {
                     // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
                     _aacIds.push(sid);
+                    if (sid == _audioId) {
+                        audioFound = true;
+                        _audioIsAAC = true;
+                    }
                 } else if (typ == 0x1B) {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
                     _avcId = sid;
@@ -437,12 +441,8 @@ package org.mangui.HLS.muxing {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
                     // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
                     _mp3Ids.push(sid);
-                }
-                if (sid == _audioId) {
-                    audioFound = true;
-                    if (typ == 0x0F) {
-                        // AAC
-                        _audioIsAAC = true;
+                    if (sid == _audioId) {
+                        audioFound = true;
                     }
                 }
                 // es_info_length

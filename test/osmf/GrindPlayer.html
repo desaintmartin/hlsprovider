@@ -127,17 +127,19 @@
                             
                             var linkingCode = "";
                             var links = [
-                                {link: "http://edge-1.2gzr.com/5178d5fe531a484b777dacf1.m3u8", name: "Simple HLS stream"},
-                                {link: "http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8", name: "Multi-bitrate HLS stream"},
-                                {link: "http://m4stv.inqb8r.tv/studentTV/studentTV.stream_360p/playlist.m3u8", name: "Live HLS stream"},
-                                {link: "http://www.codecomposer.net/hls/playlist.m3u8", name: "Discontinuity stream"}
+                            {link: "http://wams.edgesuite.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=m3u8-aapl)", name: "Azure 2"},
+                            {link: "http://mariinsky.tv/online/20110928/archive-m3u8-aapl.ism/Manifest(format=m3u8-aapl)", name: "IIS"},
+                            {link: "http://edge-1.2gzr.com/5178d5fe531a484b777dacf1.m3u8", name: "Simple HLS stream"},
+                            {link: "http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8", name: "Multi-bitrate HLS stream"},
+                            {link: "http://m4stv.inqb8r.tv/studentTV/studentTV.stream_360p/playlist.m3u8", name: "Live HLS stream"},
+                            {link: "http://www.codecomposer.net/hls/playlist.m3u8", name: "Discontinuity stream"}
                             ];
                             
                             for (var i = 0; i < links.length; i++) {
                                 var link = links[i];
                                 linkingCode = linkingCode +
                                 '<a href="GrindPlayer.html?src=' +
-                                encodeURI(link['link']) +
+                                encodeURIComponent(link['link']) +
                                 '">' +
                                 link['name'] +
                                 '</a><br/>';

@@ -82,12 +82,12 @@ package org.mangui.HLS.streaming {
             if (playback_relative_position != _playback_current_position || buffer != _last_buffer) {
                 _playback_current_position = playback_relative_position;
                 _last_buffer = buffer;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer,_playlist_sliding_duration)));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration)));
             }
 
             // Set playback state. no need to check buffer status if first fragment not yet received
             if (!_seek_in_progress) {
-            // check low buffer condition
+                // check low buffer condition
                 if (buffer < _buffer_min_len) {
                     if (buffer <= 0.1) {
                         if (_reached_vod_end) {
@@ -362,7 +362,7 @@ package org.mangui.HLS.streaming {
                 super.resume();
                 _setState(HLSStates.PLAYING);
             } else if (_state == HLSStates.PAUSED_BUFFERING) {
-                super.resume();
+                // dont resume NetStream here, it will be resumed by Timer. this avoids resuming playback while seeking is in progress
                 _setState(HLSStates.PLAYING_BUFFERING);
             }
         };

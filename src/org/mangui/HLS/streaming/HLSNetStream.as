@@ -196,7 +196,8 @@ package org.mangui.HLS.streaming {
                  * real seek position is the start offset of the first received fragment after seek command. (= fragment start offset).
                  * seek offset is the diff between the requested seek position and the real seek position
                  */
-                if (_seek_position_requested < start_position) {
+                if (_seek_position_requested < start_position ||
+                    _seek_position_requested >= start_position+ ((max_pts-min_pts)/1000)) {
                     _seek_position_real = start_position;
                     first_pts = min_pts;
                 } else {

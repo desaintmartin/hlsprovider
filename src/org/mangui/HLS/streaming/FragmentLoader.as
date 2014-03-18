@@ -249,7 +249,7 @@ package org.mangui.HLS.streaming {
                 if (_last_segment_decrypt_key_url != null) {
                     _frag_decrypt_start_time = new Date().valueOf();
                     _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url], _last_segment_decrypt_iv);
-                    _decryptAES.decrypt(_fragByteArray, _fragDecryptCompleteHandler);
+                    _decryptAES.decrypt(_fragByteArray, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                 } else {
                     _decryptAES = null;
                 }
@@ -282,6 +282,9 @@ package org.mangui.HLS.streaming {
             } else {
                 _fragDemux(_fragByteArray);
             }
+        }
+
+        private function _fragDecryptProgressHandler(data : ByteArray) : void {
         }
 
         private function _fragDecryptCompleteHandler(data : ByteArray) : void {

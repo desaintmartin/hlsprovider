@@ -18,8 +18,10 @@ package org.mangui.HLS.utils {
         private var _key : FastAESKey;
         private var _mode : ICipher;
         private var _iv : ByteArray;
-        /* callback function upon read complete */
-        private var _callback : Function;
+        /* callback function upon decrypt progress */
+        private var _progress : Function;
+        /* callback function upon decrypt complete */
+        private var _complete : Function;
         /** Timer for decrypting packets **/
         private var _timer : Timer;
         /** Byte data to be decrypt **/
@@ -45,11 +47,12 @@ package org.mangui.HLS.utils {
             }
         }
 
-        public function decrypt(data : ByteArray, callback : Function) : void {
+        public function decrypt(data : ByteArray, notifyprogress: Function, notifycomplete: Function) : void {
             Log.debug("AES:async decrypt starting");
             _data = data;
             _data_complete = false;
-            _callback = callback;
+            _progress = notifyprogress;
+            _complete = notifycomplete;
             _decrypteddata = new ByteArray();
             _read_position = 0;
             _timer = new Timer(0, 0);
@@ -121,7 +124,7 @@ package org.mangui.HLS.utils {
                 _mode.decrypt(dumpByteArray);
                 // Log.info("after decrypt");
                 _decrypteddata.writeBytes(dumpByteArray);
-
+                _progress(dumpByteArray);
                 // switch IV to new one in case more bytes are available
                 if (newIv) {
                     _iv = newIv;
@@ -133,7 +136,7 @@ package org.mangui.HLS.utils {
                     Log.debug("AES:data+decrypt completed, callback");
                     // callback
                     _decrypteddata.position = 0;
-                    _callback(_decrypteddata);
+                    _complete(_decrypteddata);
                 }
             }
         }

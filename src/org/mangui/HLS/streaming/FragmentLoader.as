@@ -311,7 +311,7 @@ package org.mangui.HLS.streaming {
                 Log.debug("MPEG2-TS found");
                 var audio_pid : Number;
                 var audio_extract : Boolean;
-                if (_audioTrackId == -1 || _audioTracks.length > _audioTrackId) {
+                if (_audioTrackId == -1 || (_audioTrackId + 1) > _audioTracks.length) {
                     // unknown, will be retrieved from demux
                     audio_pid = -1;
                     audio_extract = true;

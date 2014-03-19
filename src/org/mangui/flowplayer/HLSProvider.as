@@ -62,6 +62,46 @@ package org.mangui.flowplayer {
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
             _hls.addEventListener(HLSEvent.STATE, _stateHandler);
+            
+            var cfg:Object = _model.config;
+            var value : Object;
+
+            // parse configuration parameters
+            value = cfg.hls_debug;
+            if (value != null) {
+                Log.info("hls_debug:" + value);
+                Log.LOG_DEBUG_ENABLED = value as Boolean;
+            }
+
+            value = cfg.hls_debug2;
+            if (value != null) {
+                Log.info("hls_debug2:" + value);
+                Log.LOG_DEBUG2_ENABLED = value as Boolean;
+            }
+
+            value = cfg.hls_minbufferlength;
+            if (value != null) {
+                Log.info("hls_minbufferlength:" + value);
+                _hls.minBufferLength = value as Number;
+            }
+
+            value = cfg.hls_maxbufferlength;
+            if (value != null) {
+                Log.info("hls_maxbufferlength:" + value);
+                _hls.maxBufferLength = value as Number;
+            }
+
+            value = cfg.hls_startfromlowestlevel;
+            if (value != null) {
+                Log.info("hls_startfromlowestlevel:" + value);
+                _hls.startFromLowestLevel = value as Boolean;
+            }
+
+            value = cfg.hls_live_flushurlcache;
+            if (value != null) {
+                Log.info("hls_live_flushurlcache:" + value);
+                _hls.flushLiveURLCache = value as Boolean;
+            }
             _model.dispatchOnLoad();
         }
 
@@ -87,7 +127,7 @@ package org.mangui.flowplayer {
         };
 
         private function _mediaTimeHandler(event : HLSEvent) : void {
-            _position = Math.max(0,event.mediatime.position);
+            _position = Math.max(0, event.mediatime.position);
             _duration = event.mediatime.duration;
             _clip.duration = _duration;
             _bufferedTime = event.mediatime.buffer + event.mediatime.position;

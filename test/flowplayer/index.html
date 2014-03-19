@@ -24,7 +24,13 @@ flowplayer("player", "flowplayer.swf", {
 wmode: 'direct',
 plugins: {
 httpstreaming: {
-url: 'HLSProviderFlowPlayer.swf'
+url: 'HLSProviderFlowPlayer.swf',
+hls_debug : false,
+hls_debug2 : false,
+hls_minbufferlength : 3,
+hls_maxbufferlength : 60,
+hls_startfromlowestlevel : false,
+hls_live_flushurlcache : false
 }
 },
 clip: {

@@ -93,6 +93,7 @@ package org.mangui.HLS.parsing {
             // fragment start time (in sec)
             var start_time : Number = 0;
             var program_date : Number = 0;
+            var program_date_defined : Boolean = false;
             /* URL of decryption key */
             var decrypt_url : String = null;
             /* Initialization Vector */
@@ -190,6 +191,7 @@ package org.mangui.HLS.parsing {
                     var minutes : Number = parseInt(line.substr(39, 2));
                     var seconds : Number = parseInt(line.substr(42, 2));
                     program_date = new Date(year, month, day, hour, minutes, seconds).getTime();
+                    program_date_defined = true;
                 } else if (line.indexOf(DISCONTINUITY) == 0) {
                     continuity_index++;
                 } else if (line.indexOf(FRAGMENT) == 0) {
@@ -217,7 +219,9 @@ package org.mangui.HLS.parsing {
                     }
                     fragments.push(new Fragment(url, duration, seqnum++, start_time, continuity_index, program_date, decrypt_url, fragment_decrypt_iv, byterange_start_offset, byterange_end_offset));
                     start_time += duration;
-                    program_date = 0;
+                    if (program_date_defined) {
+                        program_date += 1000*duration;
+                    }
                     extinf_found = false;
                     byterange_start_offset = -1;
                 }

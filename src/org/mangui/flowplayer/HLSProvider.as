@@ -116,6 +116,7 @@ package org.mangui.flowplayer {
             _duration = event.levels[0].duration;
             _isManifestLoaded = true;
             _clip.duration = _duration;
+            _clip.dispatch(ClipEventType.METADATA);
             if (_hls.type == HLSTypes.LIVE) {
                 _seekable = false;
             } else {
@@ -142,6 +143,7 @@ package org.mangui.flowplayer {
                     _clip.originalWidth = videoWidth;
                     _clip.originalHeight = videoHeight;
                     _clip.dispatch(ClipEventType.START);
+                    _clip.dispatch(ClipEventType.METADATA_CHANGED);
                 }
             }
         };
@@ -261,6 +263,7 @@ package org.mangui.flowplayer {
             _hls.stream.seek(seconds);
             _position = seconds;
             _bufferedTime = seconds;
+            _clip.dispatch(ClipEventType.SEEK);
             return;
         }
 

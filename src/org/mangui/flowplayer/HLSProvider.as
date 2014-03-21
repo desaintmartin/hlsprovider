@@ -117,11 +117,12 @@ package org.mangui.flowplayer {
             _isManifestLoaded = true;
             _clip.duration = _duration;
             _clip.dispatch(ClipEventType.METADATA);
-            if (_hls.type == HLSTypes.LIVE) {
-                _seekable = false;
-            } else {
-                _seekable = true;
-            }
+            _seekable = true;
+            //if (_hls.type == HLSTypes.LIVE) {
+            //    _seekable = false;
+            //} else {
+            //    _seekable = true;
+            //}
             if (_pauseAfterStart == false) {
                 _hls.stream.play();
             }

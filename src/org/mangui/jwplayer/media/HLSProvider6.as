@@ -16,7 +16,11 @@ package org.mangui.jwplayer.media {
             if (level.name) {
                 return level.name;
             } else {
-                return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
+                if (level.height) {
+                    return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
+                } else {
+                    return(Math.round(level.bitrate / 1024) + 'kb');
+                }
             }
         }
 

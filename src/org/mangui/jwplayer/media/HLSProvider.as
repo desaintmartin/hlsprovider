@@ -57,7 +57,7 @@ package org.mangui.jwplayer.media {
         /** Forward QOS metrics on fragment load. **/
         protected function _fragmentHandler(event : HLSEvent) : void {
             _level = event.metrics.level;
-            sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_META, {metadata:{bandwidth:Math.round(event.metrics.bandwidth / 1024), droppedFrames:0, currentLevel:(_level + 1) + ' of ' + _levels.length + ' (' + Math.round(_levels[_level].bitrate / 1024) + 'kbps, ' + _levels[_level].width + 'px)', width:_width}});
+            sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_META, {metadata:{bandwidth:Math.round(event.metrics.bandwidth / 1024), droppedFrames:_hls.stream.info.droppedFrames, currentLevel:(_level + 1) + ' of ' + _levels.length + ' (' + Math.round(_levels[_level].bitrate / 1024) + 'kbps, ' + _levels[_level].width + 'px)', width:_videoWidth}});
         };
 
         /** Update video A/R on manifest load. **/

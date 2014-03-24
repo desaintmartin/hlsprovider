@@ -31,10 +31,7 @@ package org.mangui.HLS.parsing {
         public var audio_stream_id : String;
 
         /** Create the quality level. **/
-        public function Level(bitrate : Number = 150000, height : Number = 90, width : Number = 160) : void {
-            this.bitrate = bitrate;
-            this.height = height;
-            this.width = width;
+        public function Level() : void {
             this.fragments = new Vector.<Fragment>();
         };
 

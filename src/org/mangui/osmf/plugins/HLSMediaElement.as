@@ -120,7 +120,11 @@ package org.mangui.osmf.plugins {
                 var streamItems : Vector.<DynamicStreamingItem> = new Vector.<DynamicStreamingItem>();
 
                 for (var i : Number = 0; i < nbLevel; i++) {
-                    streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024, levels[i].width, levels[i].height));
+                    if (levels[i].width) {
+                        streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024, levels[i].width, levels[i].height));
+                    } else {
+                        streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024));
+                    }
                 }
                 dynamicRes.streamItems = streamItems;
                 dynamicRes.initialIndex = 0;
@@ -154,7 +158,11 @@ package org.mangui.osmf.plugins {
             if (level.name) {
                 return level.name;
             } else {
-                return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
+                if (level.height) {
+                    return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
+                } else {
+                    return(Math.round(level.bitrate / 1024) + 'kb');
+                }
             }
         }
     }

@@ -131,6 +131,10 @@ package org.mangui.HLS.streaming {
 
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
+            // dont try to load any fragment if _level is not defined (should be the case if manifest not yet loaded for example
+            if (isNaN(_level)) {
+                return;
+            }
             // check fragment loading status, try to load a new fragment if needed
             if (_fragment_loading == false || _need_reload == true) {
                 var loadstatus : Number;

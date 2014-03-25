@@ -59,6 +59,7 @@ package org.mangui.HLS.muxing {
         private var _curVideoTag : Tag;
         /* ADTS frame overflow */
         private var _adts_overflow : Number = 0;
+        private var _adtsOverflowData : ByteArray;
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : Number = data.position;
@@ -185,12 +186,14 @@ package org.mangui.HLS.muxing {
                 adifTag.push(adif, 0, adif.length);
                 _audioTags.push(adifTag);
             }
-
-            // check if previous ADTS frame is overflowing.
-            if (_adts_overflow && _curAudioTag) {
-                // retrieve overflowing part by reading beginning of new PES packet
-                _curAudioTag.push(pes.data, pes.payload, _adts_overflow);
-                pes.payload += _adts_overflow;
+            // check if previous ADTS frame was overflowing.
+            if (_adts_overflow) {
+                // if overflowing, append remaining data from previous frame at the beginning of PES packet
+                var ba:ByteArray = new ByteArray();
+                ba.writeBytes(_adtsOverflowData);
+                ba.writeBytes(pes.data,pes.payload);
+                pes.data = ba;
+                pes.payload = 0;
             }
             if (isNaN(pes.pts)) {
                 Log.warn("no PTS info in this AAC PES packet,discarding it");
@@ -209,9 +212,11 @@ package org.mangui.HLS.muxing {
             }
             if (frame) {
                 // check if last ADTS frame is overflowing on next PES packet
-                _adts_overflow = frame.expected_length - frame.length;
+                _adts_overflow = pes.data.length - (frame.start + frame.length);
                 if (_adts_overflow) {
-                    Log.debug("ADTS frame overflow (real len/expected len):" + frame.length + "/" + frame.expected_length);
+                    _adtsOverflowData = new ByteArray();
+                    _adtsOverflowData.writeBytes(pes.data,frame.start + frame.length);
+                    Log.debug("ADTS frame overflow:" + _adts_overflow);
                 }
             }
         };

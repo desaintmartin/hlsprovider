@@ -150,11 +150,16 @@ package org.mangui.HLS.muxing {
                     adts.position--;
                 }
             }
-            // Write raw AAC after last header.
             if (frame_start) {
-                frames.push(new AudioFrame(frame_start, Math.min(frame_length,adts.length-frame_start), frame_length, samplerate));
-                Log.debug2("AAC: " + frames.length + " ADTS frames");
-            } else {
+                // check if we have a complete frame available at the end, i.e. last found frame is fitting in this PES packet
+                var overflow : Number = frame_start + frame_length - adts.length;
+                if (overflow <= 0 ) {
+                    // no overflow, Write raw AAC after last header.
+                    frames.push(new AudioFrame(frame_start, frame_length, frame_length, samplerate));
+                } else {
+                    Log.debug2("ADTS overflow at the end of PES packet, missing " + overflow + " bytes to complete the ADTS frame");
+                }
+            } else if (frames.length == 0) {
                 Log.warn("No ADTS headers found in this stream.");
             }
             adts.position = position;

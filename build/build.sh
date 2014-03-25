@@ -43,6 +43,16 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
 	-default-size 480 270 \
 	-default-background-color=0x000000
 
+
+//echo "Compiling HLSProviderBasic.swf"
+//$FLEXPATH/bin/mxmlc ../src/org/mangui/basic/Player.as \
+//	-source-path ../src \
+//	-o ../test/chromeless/HLSProviderBasic.swf \
+//	$COMMON_OPT \
+//	-target-player="11.1" \
+//	-default-size 640 480 \
+//	-default-background-color=0x000000
+
 echo "Compiling HLSProviderFlowPlayer.swf"
 $FLEXPATH/bin/mxmlc ../src/org/mangui/flowplayer/HLSPluginFactory.as \
 	-source-path ../src -o ../test/flowplayer/HLSProviderFlowPlayer.swf \

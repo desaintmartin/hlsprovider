@@ -74,6 +74,36 @@ from zip, extract test/osmf folder, and get inspired by index.html
 ###FlowPlayer based setup:
 from zip, extract test/flowplayer folder, and get inspired by index.html
 
+
+###Flowplayer customization parameters:
+
+functional behavior can be tweaked by adding configuration keys :
+
+	flowplayer("player", "flowplayer.swf", {
+	// configure the required plugins
+	wmode: 'direct',
+	plugins: {
+	httpstreaming: {
+	url: 'HLSProviderFlowPlayer.swf',
+	hls_debug : false,
+	hls_debug2 : false,
+	hls_minbufferlength : 3,
+	hls_maxbufferlength : 60,
+	hls_startfromlowestlevel : false,
+	hls_live_flushurlcache : false
+	}
+	},
+	clip: {
+	...
+
+
+* hls_debug (true/default false) : toggle debug traces
+* hls_debug2 (true/default false) : toggle more verbose debug traces
+* hls_minbufferlength (default 3s) : set minimum buffer length before playback can start
+* hls_maxbufferlength (default 60s) : set maximum buffer length (0 means infinite buffering)
+* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level. if set to false, playback will start from level matching download bandwidth.
+* hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)
+
 ###jwplayer5 based setup:
 from zip, extract test/jwplayer5 folder, and get inspired by example.html
 
@@ -131,6 +161,38 @@ functional behavior can be tweaked by adding configuration keys :
 * hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level. if set to false, playback will start from level matching download bandwidth.
 * hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)  
 * hls\_live\_seekdurationthreshold (true/default 60s) : allow seeking in live playlist if playlist duration is greater than a certain threshold. by default, live playlists with duration greater than 60s are seekable.
+
+### write your own HLS flash player in less than 30 lines of code !
+
+working example below, also provided as source code,  refer to HLSProvider/src/org/mangui/basic/Player.as
+
+	package org.mangui.basic {
+    import flash.display.Sprite;
+    import flash.media.Video;
+
+    import org.mangui.HLS.*;
+
+    public class Player extends Sprite {
+        private var hls : HLS = null;
+        private var video : Video = null;
+
+        public function Player() : void {
+            hls = new HLS();
+
+            video = new Video(640, 480);
+            addChild(video);
+            video.x = 0;
+            video.y = 0;
+            video.smoothing = true;
+            video.attachNetStream(hls.stream);
+            hls.addEventListener(HLSEvent.MANIFEST_LOADED, manifestHandler);
+            hls.load("http://domain.com/hls/m1.m3u8");
+        }
+
+        public function manifestHandler(event : HLSEvent) : void {
+            hls.stream.play();
+        };
+    }
 
 
 ###License

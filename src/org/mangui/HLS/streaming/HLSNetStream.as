@@ -1,4 +1,5 @@
 package org.mangui.HLS.streaming {
+    import flash.events.NetStatusEvent;
     import flash.events.Event;
     import flash.events.TimerEvent;
 
@@ -137,6 +138,8 @@ package org.mangui.HLS.streaming {
                     // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
                     super.pause();
                     _seek_in_progress = false;
+                    // dispatch event to mimic NetStream behaviour
+                    dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
                 }
                 // Log.debug("appending data into NetStream");
                 while (0 < _flvTagBuffer.length) {

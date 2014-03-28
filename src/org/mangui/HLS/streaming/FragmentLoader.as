@@ -117,6 +117,11 @@ package org.mangui.HLS.streaming {
         private var _seek_position_requested : Number;
         /** first fragment loaded ? **/
         private var _fragment_first_loaded : Boolean;
+        /* PTS / DTS value needed to track PTS looping */
+        private var _prev_audio_pts : Number;
+        private var _prev_audio_dts : Number;
+        private var _prev_video_pts : Number;
+        private var _prev_video_dts : Number;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS) : void {
@@ -784,10 +789,34 @@ package org.mangui.HLS.streaming {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error_txt));
             }
             var k : Number;
+            // Audio PTS/DTS normalization + min/max computation
             if (audioTags.length > 0) {
+                var cur_audio_pts : Number;
+                var cur_audio_dts : Number;
+                if (_hasDiscontinuity) {
+                    _prev_audio_pts = NaN;
+                    _prev_audio_dts = NaN;
+                }
                 for (k = 0; k < audioTags.length; k++) {
-                    min_audio_pts = Math.min(min_audio_pts, audioTags[k].pts);
-                    max_audio_pts = Math.max(max_audio_pts, audioTags[k].pts);
+                    cur_audio_pts = audioTags[k].pts;
+                    cur_audio_dts = audioTags[k].dts;
+                    // 2^32 / 90
+                    while (!isNaN(_prev_audio_pts) && (Math.abs(cur_audio_pts - _prev_audio_pts) > 47721858)) {
+                        // + 2^33/90
+                        // Log.info("cur_audio_pts/prev_audio_pts:" + cur_audio_pts + "/" + prev_audio_pts);
+                        cur_audio_pts += 95443717;
+                        // Log.info("cur_audio_pts:" + cur_audio_pts);
+                        audioTags[k].pts = cur_audio_pts;
+                    }
+                    while (!isNaN(_prev_audio_dts) && Math.abs(cur_audio_dts - _prev_audio_dts) > 47721858) {
+                        // + 2^33/90
+                        cur_audio_dts += 95443717;
+                        audioTags[k].dts = cur_audio_dts;
+                    }
+                    min_audio_pts = Math.min(min_audio_pts, cur_audio_pts);
+                    max_audio_pts = Math.max(max_audio_pts, cur_audio_pts);
+                    _prev_audio_pts = cur_audio_pts;
+                    _prev_audio_dts = cur_audio_dts;
                 }
                 ptsTags = audioTags;
                 min_pts = min_audio_pts;
@@ -795,10 +824,33 @@ package org.mangui.HLS.streaming {
                 Log.debug("m/M audio PTS:" + min_pts + "/" + max_pts);
             }
 
+            // Video PTS/DTS normalization + min/max computation
             if (videoTags.length > 0) {
+                var cur_video_pts : Number;
+                var cur_video_dts : Number;
+                if (_hasDiscontinuity) {
+                    _prev_video_pts = NaN;
+                    _prev_video_dts = NaN;
+                }
                 for (k = 0; k < videoTags.length; k++) {
-                    min_video_pts = Math.min(min_video_pts, videoTags[k].pts);
-                    max_video_pts = Math.max(max_video_pts, videoTags[k].pts);
+                    cur_video_pts = videoTags[k].pts;
+                    cur_video_dts = videoTags[k].dts;
+                    // 2^32 / 90
+                    while (!isNaN(_prev_video_pts) && Math.abs(cur_video_pts - _prev_video_pts) > 47721858) {
+                        // + 2^33/90
+                        cur_video_pts += 95443717;
+                        videoTags[k].pts = cur_video_pts;
+                    }
+                    // 2^32 / 90
+                    while (!isNaN(_prev_video_dts) && Math.abs(cur_video_dts - _prev_video_dts) > 47721858) {
+                        // + 2^33/90
+                        cur_video_dts += 95443717;
+                        videoTags[k].dts = cur_video_dts;
+                    }
+                    min_video_pts = Math.min(min_video_pts, cur_video_pts);
+                    max_video_pts = Math.max(max_video_pts, cur_video_pts);
+                    _prev_video_pts = cur_video_pts;
+                    _prev_video_dts = cur_video_dts;
                 }
                 Log.debug("m/M video PTS:" + min_video_pts + "/" + max_video_pts);
                 if (audioTags.length == 0) {

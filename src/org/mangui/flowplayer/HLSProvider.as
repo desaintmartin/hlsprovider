@@ -97,6 +97,12 @@ package org.mangui.flowplayer {
                 _hls.startFromLowestLevel = value as Boolean;
             }
 
+            value = cfg.hls_seekfromlowestlevel;
+            if (value != null) {
+                Log.info("hls_seekfromlowestlevel:" + value);
+                _hls.seekFromLowestLevel = value as Boolean;
+            }
+
             value = cfg.hls_live_flushurlcache;
             if (value != null) {
                 Log.info("hls_live_flushurlcache:" + value);

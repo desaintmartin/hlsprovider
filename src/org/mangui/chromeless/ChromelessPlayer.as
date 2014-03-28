@@ -59,6 +59,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getLogDebug2", _getLogDebug2);
             ExternalInterface.addCallback("getflushLiveURLCache", _getflushLiveURLCache);
             ExternalInterface.addCallback("getstartFromLowestLevel", _getstartFromLowestLevel);
+            ExternalInterface.addCallback("getseekFromLowestLevel", _getseekFromLowestLevel);
             ExternalInterface.addCallback("getJSURLStream", _getJSURLStream);
             ExternalInterface.addCallback("getPlayerVersion", _getPlayerVersion);
             ExternalInterface.addCallback("getAudioTrackList", _getAudioTrackList);
@@ -76,6 +77,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetminBufferLength", _setminBufferLength);
             ExternalInterface.addCallback("playerSetflushLiveURLCache", _setflushLiveURLCache);
             ExternalInterface.addCallback("playerSetstartFromLowestLevel", _setstartFromLowestLevel);
+            ExternalInterface.addCallback("playerSetseekFromLowestLevel", _setseekFromLowestLevel);
             ExternalInterface.addCallback("playerSetLogDebug", _setLogDebug);
             ExternalInterface.addCallback("playerSetLogDebug2", _setLogDebug2);
             ExternalInterface.addCallback("playerSetAudioTrack", _setAudioTrack);
@@ -204,6 +206,10 @@ package org.mangui.chromeless {
         private function _getstartFromLowestLevel() : Boolean {
             return _hls.startFromLowestLevel;
         };
+        
+        private function _getseekFromLowestLevel() : Boolean {
+            return _hls.seekFromLowestLevel;
+        };
 
         private function _getLogDebug() : Boolean {
             return Log.LOG_DEBUG_ENABLED;
@@ -284,6 +290,10 @@ package org.mangui.chromeless {
 
         private function _setstartFromLowestLevel(startFromLowestLevel : Boolean) : void {
             _hls.startFromLowestLevel = startFromLowestLevel;
+        };
+
+        private function _setseekFromLowestLevel(seekFromLowestLevel : Boolean) : void {
+            _hls.seekFromLowestLevel = seekFromLowestLevel;
         };
 
         private function _setLogDebug(debug : Boolean) : void {

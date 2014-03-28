@@ -90,6 +90,7 @@ functional behavior can be tweaked by adding configuration keys :
 	hls_minbufferlength : 3,
 	hls_maxbufferlength : 60,
 	hls_startfromlowestlevel : false,
+	hls_seekfromlowestlevel : false,
 	hls_live_flushurlcache : false
 	}
 	},
@@ -101,7 +102,8 @@ functional behavior can be tweaked by adding configuration keys :
 * hls_debug2 (true/default false) : toggle more verbose debug traces
 * hls_minbufferlength (default 3s) : set minimum buffer length before playback can start
 * hls_maxbufferlength (default 60s) : set maximum buffer length (0 means infinite buffering)
-* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level. if set to false, playback will start from level matching download bandwidth.
+* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
+* hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
 * hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)
 
 ###jwplayer5 based setup:
@@ -149,6 +151,7 @@ functional behavior can be tweaked by adding configuration keys :
 	hls_minbufferlength : 3,
 	hls_maxbufferlength : 60,
 	hls_startfromlowestlevel : true,
+	hls_seekfromlowestlevel : true,
 	hls_live_flushurlcache : false,
 	hls_live_seekdurationthreshold : 60,
 	...
@@ -158,7 +161,8 @@ functional behavior can be tweaked by adding configuration keys :
 * hls_debug2 (true/default false) : toggle more verbose debug traces
 * hls_minbufferlength (default 3s) : set minimum buffer length before playback can start
 * hls_maxbufferlength (default 60s) : set maximum buffer length (0 means infinite buffering)
-* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level. if set to false, playback will start from level matching download bandwidth.
+* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
+* hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
 * hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)  
 * hls\_live\_seekdurationthreshold (true/default 60s) : allow seeking in live playlist if playlist duration is greater than a certain threshold. by default, live playlists with duration greater than 60s are seekable.
 

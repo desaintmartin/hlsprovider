@@ -109,6 +109,7 @@ package org.mangui.HLS.streaming {
         /** current audio track id **/
         private var _audioTrackId : Number;
         public var startFromLowestLevel : Boolean = false;
+        public var seekFromLowestLevel : Boolean = false;
         /** Timer used to monitor/schedule fragment download. **/
         private var _timer : Timer;
         /** Store that a fragment load is in progress. **/
@@ -399,7 +400,7 @@ package org.mangui.HLS.streaming {
 
         private function _updateLevel(buffer : Number) : Number {
             var level : Number;
-            if (_manifest_just_loaded) {
+            if (_manifest_just_loaded || (_fragment_first_loaded == false && seekFromLowestLevel)) {
                 level = _start_level;
             } else if (_bIOError == true) {
                 /* in case IO Error has been raised, stick to same level */

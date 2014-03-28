@@ -38,7 +38,7 @@ a:visited {
 </header>
 
 Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
-<input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Play</button><br>
+<input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Load</button><br>
 
 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
  codebase="" id="mymoviename" width="640" height="360">
@@ -80,7 +80,8 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <th colspan="1"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></th>
     <th colspan="1"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></th>
     <th colspan="1"><button onclick="toggleStartFromLowestLevel()">Toggle start From Lowest Level</button></th>
-    <th colspan="2"><button onclick="toggleJSURLStream()">Use JS URL Stream Loader</button></th>
+    <th colspan="1"><button onclick="toggleSeekFromLowestLevel()">Toggle seek From Lowest Level</button></th>    
+    <th colspan="1"><button onclick="toggleJSURLStream()">Use JS URL Stream Loader</button></th>
   </tr>
   <tr><td>state</td>
       <td>Relative Position</td>
@@ -94,6 +95,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
       <td>Log debug2</td>
       <td>Flush Live URL</td>
       <td>Start From Lowest Level</td>
+      <td>Seek From Lowest Level</td>
       <td>Use JS Stream Loader</td>
       <td>Live Playlist Sliding</td>
   </tr>
@@ -106,6 +108,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td>0</td>
     <td>0</td>
     <td>0</td>
+    <td>false</td>
     <td>false</td>
     <td>false</td>
     <td>false</td>
@@ -195,7 +198,7 @@ function load(url) {
     document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[2].cells[13].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[14].innerHTML =  0;
   }
 }
 
@@ -339,6 +342,17 @@ function toggleStartFromLowestLevel() {
   }
 }
 
+function toggleSeekFromLowestLevel() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getseekFromLowestLevel();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[12].innerHTML =  state;
+    obj.playerSetseekFromLowestLevel(state);
+    appendLog("toggle seek from lowest level to:" + state);
+  }
+}
+
 function toggleJSURLStream() {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
@@ -416,7 +430,7 @@ function onPosition(position,duration,live_sliding) {
   document.getElementById('mediaInfo').rows[2].cells[3].innerHTML = getMinBufferLength().toFixed(2);
   document.getElementById('mediaInfo').rows[2].cells[4].innerHTML =  getbufferLength().toFixed(2);
   document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  getMaxBufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[13].innerHTML =  live_sliding.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[14].innerHTML =  live_sliding.toFixed(2);
 }
 
 function onState(newState) {

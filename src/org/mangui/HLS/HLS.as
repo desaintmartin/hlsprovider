@@ -153,7 +153,7 @@ package org.mangui.HLS {
             return _manifestLoader.flushLiveURLCache;
         }
 
-        /* if set to true, playback will start from lowest non-audio level. (default is false) */
+        /* if set to true, playback will start from lowest non-audio level after manifest loading. (default is false) */
         public function set startFromLowestLevel(val : Boolean) : void {
             _fragmentLoader.startFromLowestLevel = val;
         }
@@ -162,6 +162,17 @@ package org.mangui.HLS {
         public function get startFromLowestLevel() : Boolean {
             return _fragmentLoader.startFromLowestLevel;
         }
+
+        /* if set to true, playback will start from lowest non-audio level after any seek operation. (default is false) */
+        public function set seekFromLowestLevel(val : Boolean) : void {
+            _fragmentLoader.seekFromLowestLevel = val;
+        }
+
+        /* retrieve seek level logic (default false) */
+        public function get seekFromLowestLevel() : Boolean {
+            return _fragmentLoader.seekFromLowestLevel;
+        }
+
 
         /* set URL stream loader */
         public function set URLstream(urlstream : Class) : void {

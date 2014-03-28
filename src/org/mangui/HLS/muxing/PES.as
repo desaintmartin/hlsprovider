@@ -53,9 +53,8 @@ package org.mangui.HLS.muxing {
                 var _pts : Number = Number((data.readUnsignedByte() & 0x0e)) * Number(1 << 29) + Number((data.readUnsignedShort() >> 1) << 15) + Number((data.readUnsignedShort() >> 1));
                 // check if greater than 2^32 -1
                 if (_pts > 4294967295) {
-                    // if greater, it is a negative timestamp, compute 2 complement (XOR with 2^32 - 1), then add 1
-                    _pts ^= 4294967295;
-                    _pts = -(_pts+1); 
+                    // decrement 2^33
+                    _pts -= 8589934592;
                 }
                 length -= 5;
                 var _dts : Number = _pts;
@@ -64,9 +63,8 @@ package org.mangui.HLS.muxing {
                     _dts = Number((data.readUnsignedByte() & 0x0e)) * Number(1 << 29) + Number((data.readUnsignedShort() >> 1) << 15) + Number((data.readUnsignedShort() >> 1));
                     // check if greater than 2^32 -1
                     if (_dts > 4294967295) {
-                        // if greater, it is a negative timestamp, compute 2 complement (XOR with 2^32 - 1), then add 1
-                        _dts ^= 4294967295;
-                        _dts = -(_dts+1);
+                        // decrement 2^33
+                        _dts -= 8589934592;
                     }
                     length -= 5;
                 }

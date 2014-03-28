@@ -135,7 +135,7 @@ package org.mangui.HLS.muxing {
             if (_curAudioData && _curAudioData.length > 14) {
                 var pes : PES = new PES(TS._curAudioData, true);
                 if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
-                    Log.debug("complete Audio PES found at end of segment, parse it");
+                    Log.debug2("complete Audio PES found at end of segment, parse it");
                     // complete PES, parse and push into the queue
                     if (_audioIsAAC) {
                         _parseADTSPES(pes);
@@ -149,7 +149,7 @@ package org.mangui.HLS.muxing {
             if (_curVideoData && _curVideoData.length > 14) {
                 pes = new PES(TS._curVideoData, false);
                 if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
-                    Log.debug("complete AVC PES found at end of segment, parse it");
+                    Log.debug2("complete AVC PES found at end of segment, parse it");
                     // complete PES, parse and push into the queue
                     _parseAVCPES(pes);
                     _curVideoData = null;

@@ -3,16 +3,6 @@ package org.mangui.HLS.muxing {
 
     /** Helpers for the FLV file format. **/
     public class FLV {
-        /** Return an EOS Video tag (16 bytes). **/
-        public static function getEosTag(stamp : Number) : ByteArray {
-            var tag : ByteArray = FLV.getTagHeader(false, 5, stamp);
-            // AVC Keyframe.
-            tag.writeByte(0x17);
-            // Sequence end, composition time
-            tag.writeUnsignedInt(0x02000000);
-            return tag;
-        };
-
         /** Get the FLV file header. **/
         public static function getHeader() : ByteArray {
             var flv : ByteArray = new ByteArray();

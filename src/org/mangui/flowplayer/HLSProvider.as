@@ -8,7 +8,6 @@ package org.mangui.flowplayer {
     import org.mangui.HLS.HLS;
     import org.mangui.HLS.HLSEvent;
     import org.mangui.HLS.HLSStates;
-    import org.mangui.HLS.HLSTypes;
     import org.mangui.HLS.utils.Log;
     import org.flowplayer.model.Plugin;
     import org.flowplayer.model.PluginModel;

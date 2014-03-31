@@ -1,4 +1,5 @@
 package org.mangui.osmf.plugins {
+    import org.osmf.traits.DVRTrait;
     import flash.net.NetStream;
     import flash.media.Video;
 
@@ -134,10 +135,15 @@ package org.mangui.osmf.plugins {
                 addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
             }
 
-            // set Live/Recorded mode
+            // set DVR/Recorded mode
             var streamUrlRes : StreamingURLResource = resource as StreamingURLResource;
             if (_hls.type == HLSTypes.LIVE) {
-                streamUrlRes.streamType = StreamType.LIVE;
+                // add DvrTrait for live stream only
+                var dvrTrait:DVRTrait = new DVRTrait(true);
+                addTrait(MediaTraitType.DVR,dvrTrait);
+                // report live stream as DVR stream (allow to pause/resume/seek in live window
+                // refer to http://osmf.org/dev/osmf/specpdfs/DVRSupportSpecification.pdf
+                streamUrlRes.streamType = StreamType.DVR;
             } else {
                 streamUrlRes.streamType = StreamType.RECORDED;
             }

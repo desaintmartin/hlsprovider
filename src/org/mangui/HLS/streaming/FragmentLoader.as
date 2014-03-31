@@ -258,23 +258,25 @@ package org.mangui.HLS.streaming {
                 // decrypt data if needed
                 if (_last_segment_decrypt_key_url != null) {
                     _frag_decrypt_start_time = new Date().valueOf();
-                    _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url], _last_segment_decrypt_iv);
-                    _decryptAES.decrypt(_fragByteArray, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
+                    _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url], _last_segment_decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                 } else {
                     _decryptAES = null;
                 }
             }
-            // append new bytes into fragByteArray
-            _fragByteArray.position = _fragWritePosition;
-            _fragstreamloader.readBytes(_fragByteArray, _fragWritePosition, 0);
-            _fragWritePosition = _fragByteArray.length;
-            Log.debug2("bytesLoaded/bytesTotal:" + event.bytesLoaded + "/" + event.bytesTotal);
-            if (_decryptAES != null) {
-                _decryptAES.notifyappend();
+            if (event.bytesLoaded > _fragWritePosition) {
+                var data : ByteArray = new ByteArray();
+                _fragstreamloader.readBytes(data);
+                _fragWritePosition += data.length;
+                Log.debug2("bytesLoaded/bytesTotal:" + event.bytesLoaded + "/" + event.bytesTotal);
+                if (_decryptAES != null) {
+                    _decryptAES.append(data);
+                } else {
+                    _fragDecryptProgressHandler(data);
+                }
             }
         }
 
-        /** key load completed. **/
+        /** frag load completed. **/
         private function _fragCompleteHandler(event : Event) : void {
             if (_fragByteArray == null) {
                 Log.warn("fragment size is null, invalid it and load next one");
@@ -295,15 +297,16 @@ package org.mangui.HLS.streaming {
         }
 
         private function _fragDecryptProgressHandler(data : ByteArray) : void {
+            _fragByteArray.writeBytes(data);
         }
 
-        private function _fragDecryptCompleteHandler(data : ByteArray) : void {
+        private function _fragDecryptCompleteHandler() : void {
             if (_cancel_load == true)
                 return;
             var decrypt_duration : Number = (new Date().valueOf() - _frag_decrypt_start_time);
             _decryptAES = null;
-            Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + data.length + "/" + ((8000 * data.length / decrypt_duration) / 1024).toFixed(0) + " kb/s");
-            _fragDemux(data);
+            Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + _fragByteArray.length + "/" + ((8000 * _fragByteArray.length / decrypt_duration) / 1024).toFixed(0) + " kb/s");
+            _fragDemux(_fragByteArray);
         }
 
         private function _fragDemux(data : ByteArray) : void {

@@ -120,9 +120,9 @@ package org.mangui.chromeless {
         };
 
         private function _mediaTimeHandler(event : HLSEvent) : void {
+            _duration = event.mediatime.duration;
+            _media_position = event.mediatime.position;
             if (ExternalInterface.available) {
-                _duration = event.mediatime.duration;
-                _media_position = event.mediatime.position;
                 ExternalInterface.call("onPosition", event.mediatime.position, event.mediatime.duration, event.mediatime.live_sliding);
             }
 
@@ -180,7 +180,7 @@ package org.mangui.chromeless {
         };
 
         private function _getDuration() : Number {
-          return _duration;
+            return _duration;
         };
 
         private function _getPosition() : Number {

@@ -15,6 +15,7 @@ HLSProvider could be used as library to build a custom flash player using a simp
 **HLSProvider** supports the following features :
 
 * VOD/live playlists
+	* live playlist are also seekable (also known as DVR playlist support)
 * adaptive streaming (multiple bitrate)
 	* manual or automatic quality switching, using serial segment fetching method from [http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf](http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf)
 * accurate seeking (seek to exact position,not to fragment boundary) in VoD and live

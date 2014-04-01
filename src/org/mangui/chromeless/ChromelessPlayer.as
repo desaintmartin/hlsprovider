@@ -29,6 +29,7 @@ package org.mangui.chromeless {
         private var _videoHeight : Number = 0;
         /** current media position */
         private var _media_position : Number;
+        private var _duration : Number;
 
         /** Initialization. **/
         public function ChromelessPlayer() : void {
@@ -49,6 +50,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getLevel", _getLevel);
             ExternalInterface.addCallback("getLevels", _getLevels);
             ExternalInterface.addCallback("getMetrics", _getMetrics);
+            ExternalInterface.addCallback("getDuration", _getDuration);
             ExternalInterface.addCallback("getPosition", _getPosition);
             ExternalInterface.addCallback("getState", _getState);
             ExternalInterface.addCallback("getType", _getType);
@@ -111,6 +113,7 @@ package org.mangui.chromeless {
         };
 
         private function _manifestHandler(event : HLSEvent) : void {
+            _duration = event.levels[0].duration;
             if (ExternalInterface.available) {
                 ExternalInterface.call("onManifest", event.levels[0].duration);
             }
@@ -175,6 +178,10 @@ package org.mangui.chromeless {
             return _hls.metrics;
         };
 
+        private function _getDuration() : Number {
+          return _duration;
+        };
+
         private function _getPosition() : Number {
             return _hls.position;
         };
@@ -206,7 +213,7 @@ package org.mangui.chromeless {
         private function _getstartFromLowestLevel() : Boolean {
             return _hls.startFromLowestLevel;
         };
-        
+
         private function _getseekFromLowestLevel() : Boolean {
             return _hls.seekFromLowestLevel;
         };

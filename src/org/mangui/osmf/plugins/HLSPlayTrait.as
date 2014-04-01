@@ -20,7 +20,7 @@ package org.mangui.osmf.plugins {
             switch(newPlayState) {
                 case PlayState.PLAYING:
                     if (streamStarted == false) {
-                        _hls.stream.seek(0);
+                        _hls.stream.play();
                         streamStarted = true;
                     } else {
                         _hls.stream.resume();

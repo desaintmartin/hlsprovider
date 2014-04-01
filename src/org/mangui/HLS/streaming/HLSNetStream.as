@@ -336,7 +336,7 @@ package org.mangui.HLS.streaming {
             if (args.length >= 2) {
                 _playStart = Number(args[1]);
             } else {
-                _playStart = 0;
+                _playStart = -1;
             }
             Log.info("HLSNetStream:play(" + _playStart + ")");
             seek(_playStart);
@@ -411,7 +411,7 @@ package org.mangui.HLS.streaming {
             _fragmentLoader.seek(position, _loaderCallback);
             _flvTagBuffer = new Vector.<Tag>();
             _flvTagBufferDuration = _buffered_before_last_continuity = _buffer_cur_min_pts = _buffer_cur_max_pts = _playlist_sliding_duration = 0;
-            _seek_position_requested = position;
+            _seek_position_requested = Math.max(position,0);
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
             _reached_vod_end = false;

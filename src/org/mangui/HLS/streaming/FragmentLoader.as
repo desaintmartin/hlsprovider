@@ -165,7 +165,7 @@ package org.mangui.HLS.streaming {
                     seek to offset 0 to force a restart of the playback session  */
                     Log.warn("long pause on live stream or bad network quality");
                     _timer.stop();
-                    seek(0, _callback);
+                    seek(-1, _callback);
                     return;
                 } else if (loadstatus > 0) {
                     // seqnum not available in playlist
@@ -443,8 +443,8 @@ package org.mangui.HLS.streaming {
                 return 1;
             }
 
+            var seek_position : Number;
             if (_hls.type == HLSTypes.LIVE) {
-                var seek_position : Number;
                 /* follow HLS spec :
                 If the EXT-X-ENDLIST tag is not present
                 and the client intends to play the media regularly (i.e. in playlist
@@ -452,15 +452,18 @@ package org.mangui.HLS.streaming {
                 choose a segment which starts less than three target durations from
                 the end of the Playlist file */
                 var maxLivePosition : Number = Math.max(0, _levels[_level].duration - 3 * _levels[_level].averageduration);
-                if (position == 0) {
+                if (position == -1) {
                     // seek 3 fragments from end
                     seek_position = maxLivePosition;
                 } else {
                     seek_position = Math.min(position, maxLivePosition);
                 }
-                Log.debug("loadfirstfragment : requested position:" + position + ",seek position:" + seek_position);
-                position = seek_position;
+            } else {
+                seek_position = Math.max(position, 0);
             }
+            Log.debug("loadfirstfragment : requested position:" + position + ",seek position:" + seek_position);
+            position = seek_position;
+
             var seqnum : Number = _levels[_level].getSeqNumBeforePosition(position);
             _frag_loading_start_time = new Date().valueOf();
             var frag : Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);

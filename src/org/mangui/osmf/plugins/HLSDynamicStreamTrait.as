@@ -36,10 +36,12 @@ package org.mangui.osmf.plugins {
 
         override protected function autoSwitchChangeStart(value : Boolean) : void {
             Log.debug("HLSDynamicStreamTrait:autoSwitchChangeStart:" + value);
-            // only seek if we are not in autoswitch mode already
             if (value == true && _hls.autolevel == false) {
                 _hls.level = -1;
-                _hls.stream.seek(_hls.position);
+                // only seek if position is set
+                if (!isNaN(_hls.position)) {
+                    _hls.stream.seek(_hls.position);
+                }
             }
         }
 

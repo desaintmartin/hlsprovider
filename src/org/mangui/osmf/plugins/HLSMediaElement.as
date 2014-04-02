@@ -1,5 +1,6 @@
 package org.mangui.osmf.plugins {
     import org.osmf.traits.DVRTrait;
+
     import flash.net.NetStream;
     import flash.media.Video;
 
@@ -115,6 +116,17 @@ package org.mangui.osmf.plugins {
 
             var levels : Vector.<Level> = _hls.levels;
             var nbLevel : Number = levels.length;
+
+            // retrieve stream type
+            var streamType : String = (resource as StreamingURLResource).streamType;
+            if (streamType == null || streamType == StreamType.LIVE_OR_RECORDED) {
+                if (_hls.type == HLSTypes.LIVE) {
+                    streamType = StreamType.LIVE;
+                } else {
+                    streamType = StreamType.RECORDED;
+                }
+            }
+
             if (nbLevel > 1) {
                 var urlRes : URLResource = resource as URLResource;
                 var dynamicRes : DynamicStreamingResource = new DynamicStreamingResource(urlRes.url);
@@ -135,24 +147,17 @@ package org.mangui.osmf.plugins {
                 addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
             }
 
-            // set DVR/Recorded mode
+            // set Stream Type
             var streamUrlRes : StreamingURLResource = resource as StreamingURLResource;
-            if (_hls.type == HLSTypes.LIVE) {
-                // add DvrTrait for live stream only
-                var dvrTrait:DVRTrait = new DVRTrait(true);
-                addTrait(MediaTraitType.DVR,dvrTrait);
-                // report live stream as DVR stream (allow to pause/resume/seek in live window
-                // refer to http://osmf.org/dev/osmf/specpdfs/DVRSupportSpecification.pdf
-                streamUrlRes.streamType = StreamType.DVR;
-            } else {
-                streamUrlRes.streamType = StreamType.RECORDED;
+            streamUrlRes.streamType = streamType;
+            if (streamType == StreamType.DVR) {
+                // add DvrTrait
+                var dvrTrait : DVRTrait = new DVRTrait(true);
+                addTrait(MediaTraitType.DVR, dvrTrait);
             }
 
             // setup drm trait
             // addTrait(MediaTraitType.DRM, drmTrait);
-
-            // setup DVR trait
-            // addTrait(MediaTraitType.DVR, dvrTrait);
 
             // setup alternative audio trait
             Log.debug("HLSMediaElement:AlternativeAudioTrait");

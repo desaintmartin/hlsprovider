@@ -143,6 +143,8 @@ package org.mangui.HLS.muxing {
                         _parseMPEGPES(pes);
                     }
                     _curAudioData = null;
+                } else {
+                    _curAudioData.position = _curAudioData.length;
                 }
             }
             // check whether last parsed video PES is complete

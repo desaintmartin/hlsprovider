@@ -155,6 +155,8 @@ package org.mangui.HLS.muxing {
                     // complete PES, parse and push into the queue
                     _parseAVCPES(pes);
                     _curVideoData = null;
+                }  else {
+                    _curVideoData.position = _curVideoData.length;
                 }
             }
             Log.debug("TS: successfully parsed");

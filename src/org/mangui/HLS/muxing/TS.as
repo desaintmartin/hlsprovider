@@ -53,13 +53,11 @@ package org.mangui.HLS.muxing {
         private static var _curAudioData : ByteArray = null;
         /* current video binary data */
         private static var _curVideoData : ByteArray = null;
-        /* current Audio Tag */
-        private var _curAudioTag : Tag;
+        /* ADTS overflowing data */
+        private static var _adtsOverflowData : ByteArray = null;
         /* current AVC Tag */
         private var _curVideoTag : Tag;
-        /* ADTS frame overflow */
-        private var _adts_overflow : Number = 0;
-        private var _adtsOverflowData : ByteArray;
+
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : Number = data.position;
@@ -88,10 +86,12 @@ package org.mangui.HLS.muxing {
             if (discontinuity) {
                 _curAudioData = null;
                 _curVideoData = null;
+                _adtsOverflowData = null;
             } else {
                 // in case there is no discontinuity, but audio PID change, flush any partially parsed audio PES packet
                 if (_audioExtract && audioPID != _audioId) {
                     _curAudioData = null;
+                    _adtsOverflowData = null;
                 }
             }
             // Extract the elementary streams.
@@ -144,6 +144,7 @@ package org.mangui.HLS.muxing {
                     }
                     _curAudioData = null;
                 } else {
+                    Log.debug("partial AAC PES at end of segment");
                     _curAudioData.position = _curAudioData.length;
                 }
             }
@@ -155,7 +156,8 @@ package org.mangui.HLS.muxing {
                     // complete PES, parse and push into the queue
                     _parseAVCPES(pes);
                     _curVideoData = null;
-                }  else {
+                } else {
+                    Log.debug("partial AVC PES at end of segment");
                     _curVideoData.position = _curVideoData.length;
                 }
             }
@@ -183,26 +185,29 @@ package org.mangui.HLS.muxing {
         /** parse ADTS audio PES packet **/
         private function _parseADTSPES(pes : PES) : void {
             var stamp : Number;
+            // check if previous ADTS frame was overflowing.
+            if (_adtsOverflowData && _adtsOverflowData.length) {
+                // if overflowing, append remaining data from previous frame at the beginning of PES packet
+                Log.debug("AAC:append overflowing " + _adtsOverflowData.length + " bytes to beginning of new PES packet");
+                var ba : ByteArray = new ByteArray();
+                ba.writeBytes(_adtsOverflowData);
+                ba.writeBytes(pes.data, pes.payload);
+                pes.data = ba;
+                pes.payload = 0;
+                _adtsOverflowData = null;
+            }
+            if (isNaN(pes.pts)) {
+                Log.warn("AAC:no PTS info in this PES packet,discarding it");
+                return;
+            }
             // insert ADIF TAG at the beginning
             if (_audioTags.length == 0) {
                 var adifTag : Tag = new Tag(Tag.AAC_HEADER, pes.pts, pes.dts, true);
                 var adif : ByteArray = AAC.getADIF(pes.data, pes.payload);
+                Log.debug("AAC: insert ADIF TAG");
                 adifTag.push(adif, 0, adif.length);
                 _audioTags.push(adifTag);
             }
-            // check if previous ADTS frame was overflowing.
-            if (_adts_overflow) {
-                // if overflowing, append remaining data from previous frame at the beginning of PES packet
-                var ba:ByteArray = new ByteArray();
-                ba.writeBytes(_adtsOverflowData);
-                ba.writeBytes(pes.data,pes.payload);
-                pes.data = ba;
-                pes.payload = 0;
-            }
-            if (isNaN(pes.pts)) {
-                Log.warn("no PTS info in this AAC PES packet,discarding it");
-                return;
-            }            
             // Store ADTS frames in array.
             var frames : Vector.<AudioFrame> = AAC.getFrames(pes.data, pes.payload);
             var frame : AudioFrame;
@@ -210,17 +215,17 @@ package org.mangui.HLS.muxing {
                 frame = frames[j];
                 // Increment the timestamp of subsequent frames.
                 stamp = Math.round(pes.pts + j * 1024 * 1000 / frame.rate);
-                _curAudioTag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
-                _curAudioTag.push(pes.data, frame.start, frame.length);
-                _audioTags.push(_curAudioTag);
+                var curAudioTag : Tag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
+                curAudioTag.push(pes.data, frame.start, frame.length);
+                _audioTags.push(curAudioTag);
             }
             if (frame) {
                 // check if last ADTS frame is overflowing on next PES packet
-                _adts_overflow = pes.data.length - (frame.start + frame.length);
-                if (_adts_overflow) {
+                var adts_overflow:Number = pes.data.length - (frame.start + frame.length);
+                if (adts_overflow) {
                     _adtsOverflowData = new ByteArray();
-                    _adtsOverflowData.writeBytes(pes.data,frame.start + frame.length);
-                    Log.debug("ADTS frame overflow:" + _adts_overflow);
+                    _adtsOverflowData.writeBytes(pes.data, frame.start + frame.length);
+                    Log.debug("AAC:ADTS frame overflow:" + adts_overflow);
                 }
             }
         };
@@ -357,6 +362,9 @@ package org.mangui.HLS.muxing {
                     }
                     break;
                 case _audioId:
+                    if (_pmtParsed == false) {
+                        break;
+                    }
                     if (stt) {
                         if (_curAudioData) {
                             if (_audioIsAAC) {
@@ -374,6 +382,9 @@ package org.mangui.HLS.muxing {
                     }
                     break;
                 case _avcId:
+                    if (_pmtParsed == false) {
+                        break;
+                    }
                     if (stt) {
                         if (_curVideoData) {
                             _parseAVCPES(new PES(_curVideoData, false));

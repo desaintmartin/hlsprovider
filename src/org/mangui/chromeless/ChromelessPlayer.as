@@ -278,9 +278,11 @@ package org.mangui.chromeless {
         };
 
         private function _setLevel(level : Number) : void {
-            _hls.level = level;
-            if (!isNaN(_media_position)) {
-                _hls.stream.seek(_media_position);
+            if (level != _hls.level) {
+                _hls.level = level;
+                if (!isNaN(_media_position) && level != -1) {
+                    _hls.stream.seek(_media_position);
+                }
             }
         };
 

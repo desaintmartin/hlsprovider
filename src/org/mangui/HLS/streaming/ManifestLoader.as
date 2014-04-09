@@ -27,8 +27,8 @@ package org.mangui.HLS.streaming {
         private var _reload_playlists_timer : uint;
         /** current level **/
         private var _current_level : Number;
-        /** current level **/
-        private var _load_in_progress : Boolean = false;
+        /** reference to manifest being loaded **/
+        private var _manifest_loading : Manifest;
         /** flush live URL cache **/
         private var _flushLiveURLCache : Boolean = false;
 
@@ -71,6 +71,7 @@ package org.mangui.HLS.streaming {
 
         /** Load the manifest file. **/
         public function load(url : String) : void {
+            _close();
             _url = url;
             _levels = new Vector.<Level>();
             _current_level = 0;
@@ -113,7 +114,7 @@ package org.mangui.HLS.streaming {
                 }
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_UPDATED, index));
-            _load_in_progress = false;
+            _manifest_loading = null;
         };
 
         /** Parse First Level Playlist **/
@@ -147,10 +148,10 @@ package org.mangui.HLS.streaming {
 
         /** load/reload active M3U8 playlist **/
         private function _loadActiveLevelPlaylist() : void {
-            _load_in_progress = true;
             _reload_playlists_timer = getTimer();
             // load active M3U8 playlist only
-            new Manifest().loadPlaylist(_levels[_current_level].url, _parseLevelPlaylist, _errorHandler, _current_level, _type, _flushLiveURLCache);
+            _manifest_loading = new Manifest();
+            _manifest_loading.loadPlaylist(_levels[_current_level].url, _parseLevelPlaylist, _errorHandler, _current_level, _type, _flushLiveURLCache);
         };
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
@@ -166,10 +167,22 @@ package org.mangui.HLS.streaming {
             }
         };
 
-        /** When the framework idles out, reloading is cancelled. **/
+        private function _close() : void {
+            Log.debug("cancel any manifest load in progress");
+            clearTimeout(_timeoutID);
+            try {
+                _urlloader.close();
+                if (_manifest_loading) {
+                    _manifest_loading.close();
+                }
+            } catch(e : Error) {
+            }
+        }
+
+        /** When the framework idles out, stop reloading manifest **/
         private function _stateHandler(event : HLSEvent) : void {
             if (event.state == HLSStates.IDLE) {
-                clearTimeout(_timeoutID);
+                _close();
             }
         };
 

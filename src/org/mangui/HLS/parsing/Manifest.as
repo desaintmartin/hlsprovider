@@ -71,6 +71,14 @@ package org.mangui.HLS.parsing {
             _urlloader.load(new URLRequest(url));
         };
 
+        /* cancel loading in progress */
+        public function close() : void {
+            try {
+                _urlloader.close();
+            } catch(e : Error) {
+            }
+        }
+
         /** The M3U8 playlist was loaded. **/
         private function _loaderHandler(event : Event) : void {
             var loader : URLLoader = URLLoader(event.target);

@@ -75,6 +75,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerStop", _stop);
             ExternalInterface.addCallback("playerVolume", _volume);
             ExternalInterface.addCallback("playerSetLevel", _setLevel);
+            ExternalInterface.addCallback("playerSmoothSetLevel", _smoothSetLevel);
             ExternalInterface.addCallback("playerSetmaxBufferLength", _setmaxBufferLength);
             ExternalInterface.addCallback("playerSetminBufferLength", _setminBufferLength);
             ExternalInterface.addCallback("playerSetflushLiveURLCache", _setflushLiveURLCache);
@@ -278,11 +279,15 @@ package org.mangui.chromeless {
         };
 
         private function _setLevel(level : Number) : void {
+            _smoothSetLevel(level);
+            if (!isNaN(_media_position) && level != -1) {
+                _hls.stream.seek(_media_position);
+            }
+        };
+
+        private function _smoothSetLevel(level: Number) : void {
             if (level != _hls.level) {
-                _hls.level = level;
-                if (!isNaN(_media_position) && level != -1) {
-                    _hls.stream.seek(_media_position);
-                }
+              _hls.level = level;
             }
         };
 

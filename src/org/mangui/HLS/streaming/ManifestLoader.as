@@ -154,7 +154,7 @@ package org.mangui.HLS.streaming {
         };
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
-        public function _levelSwitchHandler(event : HLSEvent) : void {
+        private function _levelSwitchHandler(event : HLSEvent) : void {
             if (_current_level != event.level) {
                 _current_level = event.level;
                 Log.debug("switch to level " + _current_level);
@@ -167,7 +167,7 @@ package org.mangui.HLS.streaming {
         };
 
         /** When the framework idles out, reloading is cancelled. **/
-        public function _stateHandler(event : HLSEvent) : void {
+        private function _stateHandler(event : HLSEvent) : void {
             if (event.state == HLSStates.IDLE) {
                 clearTimeout(_timeoutID);
             }

@@ -54,6 +54,28 @@ package org.mangui.osmf.plugins {
             return _loadTrait;
         }
 
+        override protected function processLoadingState() : void {
+            Log.debug("HLSMediaElement:processLoadingState");
+        }
+
+        override protected function processReadyState() : void {
+            Log.debug("HLSMediaElement:processReadyState");
+        }
+
+        override protected function processUnloadingState() : void {
+            Log.debug("HLSMediaElement:processUnloadingState");
+            removeTrait(MediaTraitType.AUDIO);
+            removeTrait(MediaTraitType.BUFFER);
+            removeTrait(MediaTraitType.TIME);
+            removeTrait(MediaTraitType.DISPLAY_OBJECT);
+            removeTrait(MediaTraitType.PLAY);
+            removeTrait(MediaTraitType.SEEK);
+            removeTrait(MediaTraitType.DYNAMIC_STREAM);
+            removeTrait(MediaTraitType.DVR);
+            removeTrait(MediaTraitType.ALTERNATIVE_AUDIO);
+            removeTrait(MediaTraitType.DVR);
+        }
+
         /**
          * Specifies whether the video should be smoothed (interpolated) when it is scaled.
          * For smoothing to work, the runtime must be in high-quality mode (the default).
@@ -89,28 +111,22 @@ package org.mangui.osmf.plugins {
             videoSurface.width = videoSurface.height = 0;
             videoSurface.attachNetStream(_stream);
 
-            Log.debug("HLSMediaElement:audioTrait");
             var audioTrait : AudioTrait = new NetStreamAudioTrait(_stream);
             addTrait(MediaTraitType.AUDIO, audioTrait);
 
-            Log.debug("HLSMediaElement:BufferTrait");
             var bufferTrait : BufferTrait = new HLSBufferTrait(_hls);
             addTrait(MediaTraitType.BUFFER, bufferTrait);
 
-            Log.debug("HLSMediaElement:TimeTrait");
             var timeTrait : TimeTrait = new HLSTimeTrait(_hls, _defaultduration);
             addTrait(MediaTraitType.TIME, timeTrait);
 
-            Log.debug("HLSMediaElement:DisplayObjectTrait");
             var displayObjectTrait : HLSDisplayObjectTrait = new HLSDisplayObjectTrait(videoSurface, NaN, NaN);
             addTrait(MediaTraitType.DISPLAY_OBJECT, displayObjectTrait);
 
-            Log.debug("HLSMediaElement:PlayTrait");
             var playTrait : PlayTrait = new HLSPlayTrait(_hls);
             addTrait(MediaTraitType.PLAY, playTrait);
 
             // setup seek trait
-            Log.debug("HLSMediaElement:SeekTrait");
             var seekTrait : SeekTrait = new HLSSeekTrait(_hls, timeTrait);
             addTrait(MediaTraitType.SEEK, seekTrait);
 
@@ -160,7 +176,6 @@ package org.mangui.osmf.plugins {
             // addTrait(MediaTraitType.DRM, drmTrait);
 
             // setup alternative audio trait
-            Log.debug("HLSMediaElement:AlternativeAudioTrait");
             var alternateAudioTrait : HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls, this as MediaElement);
             addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
         }

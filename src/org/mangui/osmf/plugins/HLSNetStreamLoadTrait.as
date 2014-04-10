@@ -1,4 +1,5 @@
 package org.mangui.osmf.plugins {
+    import org.mangui.HLS.utils.Log;
     import org.osmf.net.NetStreamLoadTrait;
     import org.osmf.traits.LoaderBase;
     import org.osmf.media.MediaResourceBase;
@@ -11,12 +12,19 @@ package org.mangui.osmf.plugins {
         private var _time_total : Number;
 
         public function HLSNetStreamLoadTrait(hls : HLS, duration : Number, loader : LoaderBase, resource : MediaResourceBase) {
+            Log.debug("HLSNetStreamLoadTrait()");
             super(loader, resource);
             _hls = hls;
             _time_loaded = 0;
             _time_total = duration;
             super.netStream = _hls.stream;
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
+        }
+
+        override public function dispose() : void {
+            Log.debug("HLSNetStreamLoadTrait:dispose");
+            _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
+            super.dispose();
         }
 
         override public function get bytesLoaded() : Number {

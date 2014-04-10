@@ -8,11 +8,18 @@ package org.mangui.osmf.plugins {
 
     public class HLSDisplayObjectTrait extends DisplayObjectTrait {
         public function HLSDisplayObjectTrait(videoSurface : DisplayObject, mediaWidth : Number = 0, mediaHeight : Number = 0) {
+            Log.debug("HLSDisplayObjectTrait()");
             super(videoSurface, mediaWidth, mediaHeight);
             this.videoSurface = videoSurface as VideoSurface;
 
             if (this.videoSurface is VideoSurface)
                 this.videoSurface.addEventListener(Event.ADDED_TO_STAGE, onStage);
+        }
+
+        override public function dispose() : void {
+            Log.debug("HLSDisplayObjectTrait:dispose");
+            videoSurface.removeEventListener(Event.ENTER_FRAME, onFrame);
+            super.dispose();
         }
 
         private function onStage(event : Event) : void {

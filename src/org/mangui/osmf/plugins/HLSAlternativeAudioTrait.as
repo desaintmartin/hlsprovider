@@ -19,12 +19,20 @@ package org.mangui.osmf.plugins {
         private var _lastTransitionIndex : int = INVALID_TRANSITION_INDEX;
 
         public function HLSAlternativeAudioTrait(hls : HLS, media : MediaElement) {
+            Log.debug("HLSAlternativeAudioTrait()");
             super(0);
             _numAlternativeAudioStreams = 0;
             _hls = hls;
             _media = media;
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_CHANGE, _audioTrackChangedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
+        }
+        
+        override public function dispose() : void {
+            Log.debug("HLSAlternativeAudioTrait:dispose");
+            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_CHANGE, _audioTrackChangedHandler);
+            _hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
+            super.dispose();
         }
 
         override public function get numAlternativeAudioStreams() : int {

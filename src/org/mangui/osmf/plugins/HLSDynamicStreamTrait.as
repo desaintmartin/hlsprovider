@@ -9,9 +9,16 @@ package org.mangui.osmf.plugins {
         private var _hls : HLS;
 
         public function HLSDynamicStreamTrait(hls : HLS) {
+            Log.debug("HLSDynamicStreamTrait()");
             _hls = hls;
             _hls.addEventListener(HLSEvent.QUALITY_SWITCH, _qualitySwitchHandler);
             super(true, 0, hls.levels.length);
+        }
+
+        override public function dispose() : void {
+            Log.debug("HLSDynamicStreamTrait:dispose");
+            _hls.removeEventListener(HLSEvent.QUALITY_SWITCH, _qualitySwitchHandler);
+            super.dispose();
         }
 
         override public function getBitrateForIndex(index : int) : Number {

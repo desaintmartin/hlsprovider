@@ -9,9 +9,16 @@ package org.mangui.osmf.plugins {
         private var _hls : HLS;
 
         public function HLSBufferTrait(hls : HLS) {
+            Log.debug("HLSBufferTrait()");
             super();
             _hls = hls;
             _hls.addEventListener(HLSEvent.STATE, _stateChangedHandler);
+        }
+
+        override public function dispose() : void {
+            Log.debug("HLSBufferTrait:dispose");
+            _hls.removeEventListener(HLSEvent.STATE, _stateChangedHandler);
+            super.dispose();
         }
 
         override public function get bufferLength() : Number {

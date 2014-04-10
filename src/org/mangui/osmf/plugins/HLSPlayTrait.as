@@ -10,9 +10,16 @@ package org.mangui.osmf.plugins {
         private var streamStarted : Boolean = false;
 
         public function HLSPlayTrait(hls : HLS) {
+            Log.debug("HLSPlayTrait()");
             super();
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+        }
+
+        override public function dispose() : void {
+            Log.debug("HLSPlayTrait:dispose");
+            _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+            super.dispose();
         }
 
         override protected function playStateChangeStart(newPlayState : String) : void {

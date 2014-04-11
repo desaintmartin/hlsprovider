@@ -212,9 +212,9 @@ package org.mangui.HLS.parsing {
                     frag_to.start_pts_computed = frag_to.start_pts;
                     // update duration to fix drifts between playlist and fragment
                     if (to_index > from_index)
-                        frag_from.duration = Math.max(0,(frag_to.start_pts - frag_from.start_pts_computed) / 1000);
+                        frag_from.duration = (frag_to.start_pts - frag_from.start_pts_computed) / 1000;
                     else
-                        frag_to.duration = Math.max(0,(frag_from.start_pts_computed - frag_to.start_pts) / 1000);
+                        frag_to.duration = (frag_from.start_pts_computed - frag_to.start_pts) / 1000;
                 } else {
                     // we dont know PTS[to_index]
                     if (to_index > from_index)

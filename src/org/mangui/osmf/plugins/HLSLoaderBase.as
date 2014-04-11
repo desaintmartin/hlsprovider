@@ -1,4 +1,13 @@
 package org.mangui.osmf.plugins {
+    import org.mangui.HLS.HLSTypes;
+    import org.osmf.net.StreamType;
+    import org.osmf.net.StreamingURLResource;
+    import org.mangui.HLS.parsing.Level;
+    import org.osmf.net.DynamicStreamingItem;
+    import org.osmf.net.DynamicStreamingResource;
+    import org.osmf.events.LoadEvent;
+    import org.osmf.events.LoaderEvent;
+    import org.mangui.HLS.utils.Log;
     import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
     import org.osmf.events.MediaError;
     import org.osmf.events.MediaErrorEvent;
@@ -46,10 +55,6 @@ package org.mangui.osmf.plugins {
             return false;
         }
 
-        public static function get hls() : HLS {
-            return _hls;
-        }
-
         override public function canHandleResource(resource : MediaResourceBase) : Boolean {
             return canHandle(resource);
         }
@@ -73,15 +78,56 @@ package org.mangui.osmf.plugins {
         private function _manifestHandler(event : HLSEvent) : void {
             var resource : MediaResourceBase = URLResource(_loadTrait.resource);
 
+            // retrieve stream type
+            var streamType : String = (resource as StreamingURLResource).streamType;
+            if (streamType == null || streamType == StreamType.LIVE_OR_RECORDED) {
+                if (_hls.type == HLSTypes.LIVE) {
+                    streamType = StreamType.LIVE;
+                } else {
+                    streamType = StreamType.RECORDED;
+                }
+            }
+
+            var levels : Vector.<Level> = _hls.levels;
+            var nbLevel : Number = levels.length;
+            var urlRes : URLResource = resource as URLResource;
+            var dynamicRes : DynamicStreamingResource = new DynamicStreamingResource(urlRes.url);
+            var streamItems : Vector.<DynamicStreamingItem> = new Vector.<DynamicStreamingItem>();
+
+            for (var i : Number = 0; i < nbLevel; i++) {
+                if (levels[i].width) {
+                    streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024, levels[i].width, levels[i].height));
+                } else {
+                    streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024));
+                }
+            }
+            dynamicRes.streamItems = streamItems;
+            dynamicRes.initialIndex = 0;
+            resource = dynamicRes;
+            // set Stream Type
+            var streamUrlRes : StreamingURLResource = resource as StreamingURLResource;
+            streamUrlRes.streamType = streamType;
             try {
                 var loadedElem : MediaElement = new HLSMediaElement(resource, _hls, event.levels[0].duration);
                 LoadFromDocumentLoadTrait(_loadTrait).mediaElement = loadedElem;
-
+                updateLoadTrait(_loadTrait, LoadState.LOADING);
                 updateLoadTrait(_loadTrait, LoadState.READY);
             } catch(e : Error) {
                 updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);
                 _loadTrait.dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(e.errorID, e.message)));
             }
         };
+
+        private function level2label(level : Level) : String {
+            if (level.name) {
+                return level.name;
+            } else {
+                if (level.height) {
+                    return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
+                } else {
+                    return(Math.round(level.bitrate / 1024) + 'kb');
+                }
+            }
+        }
     }
 }

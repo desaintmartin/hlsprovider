@@ -4,15 +4,12 @@ package org.mangui.osmf.plugins {
     import flash.net.NetStream;
     import flash.media.Video;
 
-    import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.HLS;
     import org.mangui.HLS.utils.Log;
-    import org.mangui.HLS.HLSTypes;
     import org.osmf.media.LoadableElementBase;
     import org.osmf.media.MediaElement;
     import org.osmf.media.videoClasses.VideoSurface;
     import org.osmf.media.MediaResourceBase;
-    import org.osmf.media.URLResource;
     import org.osmf.traits.AudioTrait;
     import org.osmf.traits.BufferTrait;
     import org.osmf.traits.LoadTrait;
@@ -22,8 +19,6 @@ package org.mangui.osmf.plugins {
     import org.osmf.traits.SeekTrait;
     import org.osmf.traits.TimeTrait;
     import org.osmf.utils.OSMFSettings;
-    import org.osmf.net.DynamicStreamingResource;
-    import org.osmf.net.DynamicStreamingItem;
     import org.osmf.net.NetStreamAudioTrait;
     import org.osmf.net.StreamType;
     import org.osmf.net.StreamingURLResource;
@@ -34,13 +29,11 @@ package org.mangui.osmf.plugins {
         private var _defaultduration : Number;
         private var videoSurface : VideoSurface;
         private var _smoothing : Boolean;
-        private var _loadTrait : HLSNetStreamLoadTrait;
 
         public function HLSMediaElement(resource : MediaResourceBase, hls : HLS, duration : Number) {
             _hls = hls;
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
-            initTraits();
         }
 
         protected function createVideo() : Video {
@@ -48,10 +41,7 @@ package org.mangui.osmf.plugins {
         }
 
         override protected function createLoadTrait(resource : MediaResourceBase, loader : LoaderBase) : LoadTrait {
-            if (_loadTrait == null) {
-                _loadTrait = new HLSNetStreamLoadTrait(_hls, _defaultduration, loader, resource);
-            }
-            return _loadTrait;
+            return new HLSNetStreamLoadTrait(_hls, _defaultduration, loader, resource);
         }
 
         override protected function processLoadingState() : void {
@@ -60,6 +50,7 @@ package org.mangui.osmf.plugins {
 
         override protected function processReadyState() : void {
             Log.debug("HLSMediaElement:processReadyState");
+            initTraits();
         }
 
         override protected function processUnloadingState() : void {
@@ -130,42 +121,14 @@ package org.mangui.osmf.plugins {
             var seekTrait : SeekTrait = new HLSSeekTrait(_hls, timeTrait);
             addTrait(MediaTraitType.SEEK, seekTrait);
 
-            var levels : Vector.<Level> = _hls.levels;
-            var nbLevel : Number = levels.length;
-
-            // retrieve stream type
-            var streamType : String = (resource as StreamingURLResource).streamType;
-            if (streamType == null || streamType == StreamType.LIVE_OR_RECORDED) {
-                if (_hls.type == HLSTypes.LIVE) {
-                    streamType = StreamType.LIVE;
-                } else {
-                    streamType = StreamType.RECORDED;
-                }
-            }
-
-            if (nbLevel > 1) {
-                var urlRes : URLResource = resource as URLResource;
-                var dynamicRes : DynamicStreamingResource = new DynamicStreamingResource(urlRes.url);
-                var streamItems : Vector.<DynamicStreamingItem> = new Vector.<DynamicStreamingItem>();
-
-                for (var i : Number = 0; i < nbLevel; i++) {
-                    if (levels[i].width) {
-                        streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024, levels[i].width, levels[i].height));
-                    } else {
-                        streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024));
-                    }
-                }
-                dynamicRes.streamItems = streamItems;
-                dynamicRes.initialIndex = 0;
-                resource = dynamicRes;
+            if (_hls.levels.length > 1) {
                 // setup dynamic stream trait
                 var dsTrait : HLSDynamicStreamTrait = new HLSDynamicStreamTrait(_hls);
                 addTrait(MediaTraitType.DYNAMIC_STREAM, dsTrait);
             }
 
-            // set Stream Type
-            var streamUrlRes : StreamingURLResource = resource as StreamingURLResource;
-            streamUrlRes.streamType = streamType;
+            // retrieve stream type
+            var streamType : String = (resource as StreamingURLResource).streamType;
             if (streamType == StreamType.DVR) {
                 // add DvrTrait
                 var dvrTrait : DVRTrait = new DVRTrait(true);
@@ -178,18 +141,6 @@ package org.mangui.osmf.plugins {
             // setup alternative audio trait
             var alternateAudioTrait : HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls, this as MediaElement);
             addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
-        }
-
-        private function level2label(level : Level) : String {
-            if (level.name) {
-                return level.name;
-            } else {
-                if (level.height) {
-                    return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
-                } else {
-                    return(Math.round(level.bitrate / 1024) + 'kb');
-                }
-            }
         }
     }
 }

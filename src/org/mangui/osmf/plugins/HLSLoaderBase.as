@@ -110,7 +110,12 @@ package org.mangui.osmf.plugins {
             try {
                 var loadedElem : MediaElement = new HLSMediaElement(resource, _hls, event.levels[0].duration);
                 LoadFromDocumentLoadTrait(_loadTrait).mediaElement = loadedElem;
+                /* workaround for load trait state not changing when loading a new URL
+                 * we force state to loading first ...
+                 */
+                if (_loadTrait.loadState == LoadState.READY) {
                 updateLoadTrait(_loadTrait, LoadState.LOADING);
+                }
                 updateLoadTrait(_loadTrait, LoadState.READY);
             } catch(e : Error) {
                 updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);

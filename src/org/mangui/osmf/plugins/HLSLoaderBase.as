@@ -5,9 +5,6 @@ package org.mangui.osmf.plugins {
     import org.mangui.HLS.parsing.Level;
     import org.osmf.net.DynamicStreamingItem;
     import org.osmf.net.DynamicStreamingResource;
-    import org.osmf.events.LoadEvent;
-    import org.osmf.events.LoaderEvent;
-    import org.mangui.HLS.utils.Log;
     import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
     import org.osmf.events.MediaError;
     import org.osmf.events.MediaErrorEvent;
@@ -114,7 +111,7 @@ package org.mangui.osmf.plugins {
                  * we force state to loading first ...
                  */
                 if (_loadTrait.loadState == LoadState.READY) {
-                updateLoadTrait(_loadTrait, LoadState.LOADING);
+                    updateLoadTrait(_loadTrait, LoadState.LOADING);
                 }
                 updateLoadTrait(_loadTrait, LoadState.READY);
             } catch(e : Error) {

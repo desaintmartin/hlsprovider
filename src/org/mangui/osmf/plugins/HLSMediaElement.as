@@ -64,7 +64,10 @@ package org.mangui.osmf.plugins {
             removeTrait(MediaTraitType.DYNAMIC_STREAM);
             removeTrait(MediaTraitType.DVR);
             removeTrait(MediaTraitType.ALTERNATIVE_AUDIO);
-            removeTrait(MediaTraitType.DVR);
+            if (videoSurface != null) {
+                videoSurface.attachNetStream(null);
+                videoSurface = null;
+            }
         }
 
         /**

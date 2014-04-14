@@ -21,10 +21,38 @@
         </script>
         <script type="text/javascript" src="lib/ParsedQueryString.js">
         </script>
+        <script type="text/javascript" src="../../../playlists/streams.js">
+        </script>
         <script type="text/javascript">
 
+var player = null;
+
+function loadStream(url) {
+  player.setMediaResourceURL(url);
+}
+
+function getlink(url) {
+  return "GrindPlayer.html?src=" + encodeURIComponent(url);
+}
+
+function listStreams(list, container) {
+  for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
+    entry.innerHTML = "<a href=" + getlink(list[i].file) + ">" +list[i].title+"</a>";
+    //entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";	
+    document.getElementById(container).appendChild(entry);
+  }
+  //loadStream(list[0].file);
+}
+
+
         function jsbridge(playerId, event, data) {
+          if (player == null) {
+            player = document.getElementById(playerId);
+          }
           switch(event) {
+            case "onJavaScriptBridgeCreated":
+              listStreams(teststreams,"streamlist");
+              break;
              case "timeChange":
              case "timeupdate":
              case "progress":
@@ -114,42 +142,19 @@
                     </div>
                 </td>
             </tr>
-            <tr>
-                <td>
-                    <p>
-                        Click on one of the links below to have it loaded
-                    </p>
-                    <p>
-                        <script type="text/javascript">
-                            
-                            // Construct the HTML required to reload with any of the
-                            // listed media links:
-                            
-                            var linkingCode = "";
-                            var links = [
-                            {link: "http://wams.edgesuite.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=m3u8-aapl)", name: "Azure 2"},
-                            {link: "http://mariinsky.tv/online/20110928/archive-m3u8-aapl.ism/Manifest(format=m3u8-aapl)", name: "IIS"},
-                            {link: "http://edge-1.2gzr.com/5178d5fe531a484b777dacf1.m3u8", name: "Simple HLS stream"},
-                            {link: "http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8", name: "Multi-bitrate HLS stream"},
-                            {link: "http://m4stv.inqb8r.tv/studentTV/studentTV.stream_360p/playlist.m3u8", name: "Live HLS stream"},
-                            {link: "http://www.codecomposer.net/hls/playlist.m3u8", name: "Discontinuity stream"}
-                            ];
-                            
-                            for (var i = 0; i < links.length; i++) {
-                                var link = links[i];
-                                linkingCode = linkingCode +
-                                '<a href="GrindPlayer.html?src=' +
-                                encodeURIComponent(link['link']) +
-                                '">' +
-                                link['name'] +
-                                '</a><br/>';
-                            }
-                            
-                            document.write(linkingCode);
-                        </script>
-                    </p>
-                </td>
-            </tr>
         </table>
+Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
+<input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Play</button><br>
+<p>
+  
+<script type="text/javascript">
+function userSubmit() {
+  window.location = getlink(document.getElementById('userInput').value);
+}
+</script>
+<div> The following videos should stream correctly. Each time an
+issue is reported with a sample playlist, it will be added in the list
+and verified after bugfixing </div>
+<ul id="streamlist"></ul>
     </body>
 </html>

@@ -200,6 +200,10 @@ package org.mangui.HLS.streaming {
             return _audioTracks;
         }
 
+        public function get altAudioTracks() : Vector.<AltAudioTrack> {
+            return _altAudioTrackLists;
+        }
+
         /** key load completed. **/
         private function _keyCompleteHandler(event : Event) : void {
             Log.debug("key loading completed");

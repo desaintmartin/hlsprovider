@@ -1,4 +1,5 @@
 package org.mangui.HLS {
+    import org.mangui.HLS.parsing.AltAudioTrack;
     import flash.net.URLStream;
 
     import org.mangui.HLS.parsing.Level;
@@ -129,6 +130,11 @@ package org.mangui.HLS {
         /** get audio tracks list**/
         public function get audioTracks() : Vector.<HLSAudioTrack> {
             return _fragmentLoader.audioTracks;
+        };
+
+        /** get alternate audio tracks list from playlist **/
+        public function get altAudioTracks() : Vector.<AltAudioTrack> {
+            return _fragmentLoader.altAudioTracks;
         };
 
         /** get index of the selected audio track (index in audio track lists) **/

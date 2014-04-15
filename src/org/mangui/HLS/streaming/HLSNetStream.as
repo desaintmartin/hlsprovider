@@ -47,8 +47,15 @@ package org.mangui.HLS.streaming {
         private var _state : String;
         /** max buffer length (default 60s)**/
         private var _buffer_max_len : Number = 60;
-        /** min buffer length (default 3s)**/
-        private var _buffer_min_len : Number = 3;
+        /** min buffer length (default 8s)**/
+        private var _buffer_min_len : Number = 8;
+        /** low buffer length (default 3s). if buffer is less than this value, HLS will enter into buffering state**/
+        private var _buffer_low_len : Number = 3;
+        /** threshold to get out of buffering state
+         * by default it is set to _buffer_low_len
+         * however if buffer gets empty, its value is moved to _buffer_min_len
+         */
+        private var _buffer_threshold : Number;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
 
@@ -89,7 +96,7 @@ package org.mangui.HLS.streaming {
             // Set playback state. no need to check buffer status if first fragment not yet received
             if (!_seek_in_progress) {
                 // check low buffer condition
-                if (buffer < _buffer_min_len) {
+                if (buffer < _buffer_low_len) {
                     if (buffer <= 0.1) {
                         if (_reached_vod_end) {
                             // reach end of playlist + playback complete (as buffer is empty).
@@ -102,6 +109,7 @@ package org.mangui.HLS.streaming {
                         } else {
                             // pause Netstream in really low buffer condition
                             super.pause();
+                            _buffer_threshold = _buffer_min_len;
                         }
                     }
                     // dont switch to buffering state in case we reached end of a VOD playlist
@@ -116,7 +124,12 @@ package org.mangui.HLS.streaming {
                     }
                 }
                 // in case buffer is full enough or if we have reached end of VOD playlist
-                if (buffer >= _buffer_min_len || _reached_vod_end) {
+                if (buffer >= _buffer_threshold || _reached_vod_end) {
+                    /* after we reach back threshold value, set it buffer low value to avoid
+                     * reporting buffering state to often. using different values for low buffer / min buffer
+                     * allow to fine tune this 
+                    */
+                    _buffer_threshold = _buffer_low_len;
                     // no more in low buffer state
                     if (_state == HLSStates.PLAYING_BUFFERING) {
                         super.resume();
@@ -404,6 +417,16 @@ package org.mangui.HLS.streaming {
             _buffer_max_len = new_len;
         };
 
+        /** get low Buffer Length  **/
+        public function get lowBufferLength() : Number {
+            return _buffer_low_len;
+        };
+
+        /** set low Buffer Length  **/
+        public function set lowBufferLength(new_len : Number) : void {
+            _buffer_low_len = new_len;
+        };
+
         /** Start playing data in the buffer. **/
         override public function seek(position : Number) : void {
             Log.info("HLSNetStream:seek(" + position + ")");
@@ -411,10 +434,11 @@ package org.mangui.HLS.streaming {
             _fragmentLoader.seek(position, _loaderCallback);
             _flvTagBuffer = new Vector.<Tag>();
             _flvTagBufferDuration = _buffered_before_last_continuity = _buffer_cur_min_pts = _buffer_cur_max_pts = _playlist_sliding_duration = 0;
-            _seek_position_requested = Math.max(position,0);
+            _seek_position_requested = Math.max(position, 0);
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
             _reached_vod_end = false;
+            _buffer_threshold = _buffer_min_len;
             /* if HLS was in paused state before seeking, 
              * switch to paused buffering state
              * otherwise, switch to playing buffering state

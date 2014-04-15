@@ -56,6 +56,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getType", _getType);
             ExternalInterface.addCallback("getmaxBufferLength", _getmaxBufferLength);
             ExternalInterface.addCallback("getminBufferLength", _getminBufferLength);
+            ExternalInterface.addCallback("getlowBufferLength", _getlowBufferLength);
             ExternalInterface.addCallback("getbufferLength", _getbufferLength);
             ExternalInterface.addCallback("getLogDebug", _getLogDebug);
             ExternalInterface.addCallback("getLogDebug2", _getLogDebug2);
@@ -78,6 +79,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSmoothSetLevel", _smoothSetLevel);
             ExternalInterface.addCallback("playerSetmaxBufferLength", _setmaxBufferLength);
             ExternalInterface.addCallback("playerSetminBufferLength", _setminBufferLength);
+            ExternalInterface.addCallback("playerSetlowBufferLength", _setlowBufferLength);
             ExternalInterface.addCallback("playerSetflushLiveURLCache", _setflushLiveURLCache);
             ExternalInterface.addCallback("playerSetstartFromLowestLevel", _setstartFromLowestLevel);
             ExternalInterface.addCallback("playerSetseekFromLowestLevel", _setseekFromLowestLevel);
@@ -208,6 +210,10 @@ package org.mangui.chromeless {
             return _hls.minBufferLength;
         };
 
+        private function _getlowBufferLength() : Number {
+            return _hls.lowBufferLength;
+        };
+
         private function _getflushLiveURLCache() : Boolean {
             return _hls.flushLiveURLCache;
         };
@@ -299,6 +305,10 @@ package org.mangui.chromeless {
             _hls.minBufferLength = new_len;
         };
 
+        private function _setlowBufferLength(new_len : Number) : void {
+            _hls.lowBufferLength = new_len;
+        };
+        
         private function _setflushLiveURLCache(flushLiveURLCache : Boolean) : void {
             _hls.flushLiveURLCache = flushLiveURLCache;
         };

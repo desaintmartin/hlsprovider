@@ -75,7 +75,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <th colspan="2"><button onclick="play()">Play</button></th>
     <th colspan="2"><button onclick="pause()">Pause</button></th>
     <th colspan="2"><button onclick="resume()">Resume</button></th>
-    <th colspan="2"><button onclick="stop()">Stop</button></th>
+    <th colspan="3"><button onclick="stop()">Stop</button></th>
     <th colspan="1"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></th>
     <th colspan="1"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></th>
     <th colspan="1"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></th>
@@ -86,6 +86,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   <tr><td>state</td>
       <td>Relative Position</td>
       <td>Playlist Duration</td>
+      <td>Low Buffer Size</td>
       <td>Min Buffer Size</td>
       <td>Buffer Size</td>
       <td>Max Buffer Size</td>
@@ -101,6 +102,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   </tr>
   <tr>
     <td>IDLE</td>
+    <td>0</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -132,11 +134,15 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td><input type="text" name="quality_level"></td>
   </tr>
   <tr>
-  <th><button onclick="setminBufferLength(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)">Set min Buffer Size</button></th>
+  <th><button onclick="setlowBufferLength(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)">Set low Buffer Size</button></th>
+    <td><input type="text" name="low_buffer_size"></td>
+  </tr>
+  <tr>
+  <th><button onclick="setminBufferLength(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set min Buffer Size</button></th>
     <td><input type="text" name="min_buffer_size"></td>
   </tr>
   <tr>
-    <th><button onclick="setmaxBufferLength(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set max Buffer Size</button></th>
+    <th><button onclick="setmaxBufferLength(document.getElementById('mediaControl').rows[5].cells[1].children[0].value)">Set max Buffer Size</button></th>
     <td><input type="text" name="max_buffer_size"></td>
   </tr>
 </table>
@@ -198,7 +204,8 @@ function load(url) {
     document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[2].cells[14].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[8].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[15].innerHTML =  0;
   }
 }
 
@@ -268,6 +275,21 @@ function getbufferLength() {
   }
 }
 
+function getLowBufferLength() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    return obj.getlowBufferLength();
+  }
+}
+
+function setlowBufferLength(new_len) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetlowBufferLength(new_len);
+    appendLog("force low buffer len to :" + new_len);
+  }
+}
+
 function getMinBufferLength() {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
@@ -303,7 +325,7 @@ function toggleDebugLogs() {
   if(obj != null) {
     var state = obj.getLogDebug();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[8].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[9].innerHTML =  state;
     obj.playerSetLogDebug(state);
     appendLog("toggle debug logs to:" + state);
   }
@@ -314,7 +336,7 @@ function toggleDebug2Logs() {
   if(obj != null) {
     var state = obj.getLogDebug2();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[9].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[10].innerHTML =  state;
     obj.playerSetLogDebug2(state);
     appendLog("toggle debug2 logs to:" + state);
   }
@@ -325,7 +347,7 @@ function toggleFlushLiveURLCache() {
   if(obj != null) {
     var state = obj.getflushLiveURLCache();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[10].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[11].innerHTML =  state;
     obj.playerSetflushLiveURLCache(state);
     appendLog("toggle flush live URL cache to:" + state);
   }
@@ -336,7 +358,7 @@ function toggleStartFromLowestLevel() {
   if(obj != null) {
     var state = obj.getstartFromLowestLevel();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[11].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[12].innerHTML =  state;
     obj.playerSetstartFromLowestLevel(state);
     appendLog("toggle start from lowest level to:" + state);
   }
@@ -347,7 +369,7 @@ function toggleSeekFromLowestLevel() {
   if(obj != null) {
     var state = obj.getseekFromLowestLevel();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[12].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[13].innerHTML =  state;
     obj.playerSetseekFromLowestLevel(state);
     appendLog("toggle seek from lowest level to:" + state);
   }
@@ -358,7 +380,7 @@ function toggleJSURLStream() {
   if(obj != null) {
     var state = obj.getJSURLStream();
     state = !state;
-    document.getElementById('mediaInfo').rows[2].cells[12].innerHTML =  state;
+    document.getElementById('mediaInfo').rows[2].cells[14].innerHTML =  state;
     obj.playerSetJSURLStream(state);
     appendLog("toggle JS URL stream to:" + state);
   }
@@ -427,10 +449,11 @@ function onManifest(duration) {
 function onPosition(position,duration,live_sliding) {
   document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  position.toFixed(2);
   document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[3].innerHTML = getMinBufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[4].innerHTML =  getbufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  getMaxBufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[14].innerHTML =  live_sliding.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[3].innerHTML = getLowBufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[4].innerHTML = getMinBufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  getbufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  getMaxBufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[15].innerHTML =  live_sliding.toFixed(2);
 }
 
 function onState(newState) {
@@ -457,7 +480,7 @@ function onAudioTracksListChange(trackList) {
 
 function onAudioTrackChange(trackId) {
   appendLog("switching audio track to "+ trackId);
-  document.getElementById('mediaInfo').rows[2].cells[7].innerHTML = trackId;
+  document.getElementById('mediaInfo').rows[2].cells[8].innerHTML = trackId;
 }
 
 function onRequestResource0(URL) {

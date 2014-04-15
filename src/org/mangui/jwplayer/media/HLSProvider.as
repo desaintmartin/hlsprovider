@@ -191,6 +191,12 @@ package org.mangui.jwplayer.media {
                 _hls.maxBufferLength = value as Number;
             }
 
+            value = cfg.hls_lowbufferlength;
+            if (value != null) {
+                Log.info("hls_lowbufferlength:" + value);
+                _hls.lowBufferLength = value as Number;
+            }
+
             value = cfg.hls_startfromlowestlevel;
             if (value != null) {
                 Log.info("hls_startfromlowestlevel:" + value);

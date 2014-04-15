@@ -88,7 +88,8 @@ functional behavior can be tweaked by adding configuration keys :
 	url: 'HLSProviderFlowPlayer.swf',
 	hls_debug : false,
 	hls_debug2 : false,
-	hls_minbufferlength : 3,
+	hls_lowbufferlength : 3,	
+	hls_minbufferlength : 8,
 	hls_maxbufferlength : 60,
 	hls_startfromlowestlevel : false,
 	hls_seekfromlowestlevel : false,
@@ -101,8 +102,9 @@ functional behavior can be tweaked by adding configuration keys :
 
 * hls_debug (true/default false) : toggle debug traces
 * hls_debug2 (true/default false) : toggle more verbose debug traces
-* hls_minbufferlength (default 3s) : set minimum buffer length before playback can start
-* hls_maxbufferlength (default 60s) : set maximum buffer length (0 means infinite buffering)
+* hls_lowbufferlength (default 3s) : low buffer threshold. when crossing down this threshold, HLS will switch to buffering state.
+* hls_minbufferlength (default 8s) : minimum buffer length before playback can start, after seeking or buffer stalling.
+* hls_maxbufferlength (default 60s) : maximum buffer length (0 means infinite buffering)
 * hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
 * hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
 * hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)
@@ -149,7 +151,8 @@ functional behavior can be tweaked by adding configuration keys :
     jwplayer("player").setup({
 	hls_debug : false,
 	hls_debug2 : false,
-	hls_minbufferlength : 3,
+	hls_lowbufferlength : 3,
+	hls_minbufferlength : 8,
 	hls_maxbufferlength : 60,
 	hls_startfromlowestlevel : true,
 	hls_seekfromlowestlevel : true,
@@ -160,8 +163,9 @@ functional behavior can be tweaked by adding configuration keys :
 
 * hls_debug (true/default false) : toggle debug traces
 * hls_debug2 (true/default false) : toggle more verbose debug traces
-* hls_minbufferlength (default 3s) : set minimum buffer length before playback can start
-* hls_maxbufferlength (default 60s) : set maximum buffer length (0 means infinite buffering)
+* hls_lowbufferlength (default 3s) : low buffer threshold. when crossing down this threshold, HLS will switch to buffering state.
+* hls_minbufferlength (default 8s) : minimum buffer length before playback can start, after seeking or buffer stalling.
+* hls_maxbufferlength (default 60s) : maximum buffer length (0 means infinite buffering)
 * hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
 * hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
 * hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)  

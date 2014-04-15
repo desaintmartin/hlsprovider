@@ -127,6 +127,16 @@ package org.mangui.HLS {
             return _hlsNetStream.maxBufferLength;
         };
 
+        /** set low buffer Length (threshold of buffering state) **/
+        public function set lowBufferLength(new_len : Number) : void {
+            _hlsNetStream.lowBufferLength = new_len;
+        }
+
+        /** get maximum buffer Length  **/
+        public function get lowBufferLength() : Number {
+            return _hlsNetStream.lowBufferLength;
+        };
+
         /** get audio tracks list**/
         public function get audioTracks() : Vector.<HLSAudioTrack> {
             return _fragmentLoader.audioTracks;

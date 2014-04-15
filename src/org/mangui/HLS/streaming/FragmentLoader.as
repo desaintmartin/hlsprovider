@@ -306,6 +306,13 @@ package org.mangui.HLS.streaming {
             if (_frag_byterange_start_offset != -1) {
                 _fragByteArray.position = _fragByteArray.length;
                 _fragByteArray.writeBytes(data);
+                // if we have retrieved all the data, disconnect loader and notify fragment complete
+                if (_fragByteArray.length >= _frag_byterange_end_offset) {
+                    if (_fragstreamloader.connected) {
+                        _fragstreamloader.close();
+                        _fragCompleteHandler(null);
+                    }
+                }
                 /* dont do progressive parsing of segment with byte range option */
                 return;
             }

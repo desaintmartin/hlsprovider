@@ -6,7 +6,7 @@ package org.mangui.HLS.muxing {
     import org.mangui.HLS.utils.Log;
 
     /** Constants and utilities for the AAC audio format. **/
-    public class AAC {
+    public class AAC implements Demuxer {
         /** ADTS Syncword (111111111111), ID (MPEG4), layer (00) and protection_absent (1).**/
         private static const SYNCWORD : uint = 0xFFF1;
         /** ADTS Syncword with MPEG2 stream ID (used by e.g. Squeeze 7). **/
@@ -17,16 +17,30 @@ package org.mangui.HLS.muxing {
         private static const RATES : Array = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
         /** ADIF profile index (ADTS doesn't have Null). **/
         private static const PROFILES : Array = ['Null', 'Main', 'LC', 'SSR', 'LTP', 'SBR'];
+        /** Byte data to be read **/
+        private var _data : ByteArray;
+        /* callback function upon read complete */
+        private var _callback : Function;
 
-        public function AAC(data : ByteArray, callback : Function) : void {
+        /** append new data */
+        public function append(data : ByteArray) : void {
+            _data.writeBytes(data);
+        }
+
+        /** cancel demux operation */
+        public function cancel() : void {
+            _data = null;
+        }
+
+        public function notifycomplete() : void {
             Log.debug("AAC: extracting AAC tags");
             var audioTags : Vector.<Tag> = new Vector.<Tag>();
             /* parse AAC, convert Elementary Streams to TAG */
-            data.position = 0;
-            var id3 : ID3 = new ID3(data);
+            _data.position = 0;
+            var id3 : ID3 = new ID3(_data);
             // AAC should contain ID3 tag filled with a timestamp
-            var frames : Vector.<AudioFrame> = AAC.getFrames(data, data.position);
-            var adif : ByteArray = getADIF(data, 0);
+            var frames : Vector.<AudioFrame> = AAC.getFrames(_data, _data.position);
+            var adif : ByteArray = getADIF(_data, 0);
             var adifTag : Tag = new Tag(Tag.AAC_HEADER, id3.timestamp, id3.timestamp, true);
             adifTag.push(adif, 0, adif.length);
             audioTags.push(adifTag);
@@ -39,9 +53,9 @@ package org.mangui.HLS.muxing {
                 stamp = Math.round(id3.timestamp + i * 1024 * 1000 / frames[i].rate);
                 audioTag = new Tag(Tag.AAC_RAW, stamp, stamp, false);
                 if (i != frames.length - 1) {
-                    audioTag.push(data, frames[i].start, frames[i].length);
+                    audioTag.push(_data, frames[i].start, frames[i].length);
                 } else {
-                    audioTag.push(data, frames[i].start, data.length - frames[i].start);
+                    audioTag.push(_data, frames[i].start, _data.length - frames[i].start);
                 }
                 audioTags.push(audioTag);
                 i++;
@@ -49,7 +63,12 @@ package org.mangui.HLS.muxing {
             var audiotracks : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
             audiotracks.push(new HLSAudioTrack('AAC ES', HLSAudioTrack.FROM_DEMUX, 0, true));
             Log.debug("AAC: all tags extracted, callback demux");
-            callback(audioTags, new Vector.<Tag>(), 0, audiotracks);
+            _callback(audioTags, new Vector.<Tag>(), 0, audiotracks);
+        }
+
+        public function AAC(callback : Function) : void {
+            _callback = callback;
+            _data = new ByteArray();
         };
 
         public static function probe(data : ByteArray) : Boolean {
@@ -57,16 +76,17 @@ package org.mangui.HLS.muxing {
             var id3 : ID3 = new ID3(data);
             // AAC should contain ID3 tag filled with a timestamp
             if (id3.hasTimestamp) {
-                var max_probe_pos : Number = Math.min(data.bytesAvailable, 100);
-                do {
+                while (data.bytesAvailable > 1) {
                     // Check for ADTS header
                     var short : uint = data.readUnsignedShort();
                     if (short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
                         // rewind to sync word
                         data.position -= 2;
                         return true;
+                    } else {
+                        data.position--;
                     }
-                } while (data.position < max_probe_pos);
+                }
                 data.position = pos;
             }
             return false;

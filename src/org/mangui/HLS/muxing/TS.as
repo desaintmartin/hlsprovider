@@ -1,4 +1,5 @@
 package org.mangui.HLS.muxing {
+    import com.hurlant.util.Hex;
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.utils.Log;
     import org.mangui.HLS.HLSAudioTrack;
@@ -10,7 +11,11 @@ package org.mangui.HLS.muxing {
     import flash.utils.Timer;
 
     /** Representation of an MPEG transport stream. **/
-    public class TS extends EventDispatcher {
+    public class TS extends EventDispatcher implements Demuxer {
+        /** read position **/
+        private var _read_position : uint;
+        /** is bytearray full ? **/
+        private var _data_complete : Boolean;
         /** TS Sync byte. **/
         private static const SYNCBYTE : uint = 0x47;
         /** TS Packet size in byte. **/
@@ -81,7 +86,7 @@ package org.mangui.HLS.muxing {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TS(data : ByteArray, callback : Function, discontinuity : Boolean, audioExtract : Boolean, audioPID : Number) {
+        public function TS(callback : Function, discontinuity : Boolean, audioExtract : Boolean, audioPID : Number) {
             // in case of discontinuity, flush any partially parsed audio/video PES packet
             if (discontinuity) {
                 _curAudioData = null;
@@ -94,30 +99,44 @@ package org.mangui.HLS.muxing {
                     _adtsOverflowData = null;
                 }
             }
-            // Extract the elementary streams.
-            _data = data;
+            _data = new ByteArray();
+            _data_complete = false;
             _callback = callback;
             _audioId = audioPID;
             _audioExtract = audioExtract;
+            _read_position = 0;
             _timer = new Timer(0, 0);
             _timer.addEventListener(TimerEvent.TIMER, _readData);
-            _timer.start();
         };
 
         /** append new TS data */
-        // public function appendData(newData:ByteArray):void {
-        // newData.readBytes(_data,_data.length);
-        // _timer.start();
-        // }
+        public function append(data : ByteArray) : void {
+            _data.position = _data.length;
+            _data.writeBytes(data,data.position);
+            _timer.start();
+        }
+
+        /** cancel demux operation */
+        public function cancel() : void {
+            _data = null;
+            _timer.stop();
+        }
+
+        public function notifycomplete() : void {
+            _data_complete = true;
+        }
+
         /** Read a small chunk of packets each time to avoid blocking **/
         private function _readData(e : Event) : void {
             var i : uint = 0;
-            while (_data.bytesAvailable && i < COUNT) {
+            _data.position = _read_position;
+            while ((_data.bytesAvailable >= 188) && i < COUNT) {
                 _readPacket();
                 i++;
             }
+            _read_position = _data.position;
             // finish reading TS fragment
-            if (!_data.bytesAvailable) {
+            if (_data_complete && _data.bytesAvailable < 188) {
                 // first check if TS parsing was successful
                 if (_pmtParsed == false) {
                     Log.error("TS: no PMT found, report parsing error");
@@ -221,7 +240,7 @@ package org.mangui.HLS.muxing {
             }
             if (frame) {
                 // check if last ADTS frame is overflowing on next PES packet
-                var adts_overflow:Number = pes.data.length - (frame.start + frame.length);
+                var adts_overflow : Number = pes.data.length - (frame.start + frame.length);
                 if (adts_overflow) {
                     _adtsOverflowData = new ByteArray();
                     _adtsOverflowData.writeBytes(pes.data, frame.start + frame.length);
@@ -302,10 +321,17 @@ package org.mangui.HLS.muxing {
             var todo : uint = TS.PACKETSIZE;
             // Sync byte.
             if (_data.readByte() != TS.SYNCBYTE) {
-                var pos : Number = _data.position;
+                var pos_start : Number = _data.position - 1;
                 if (probe(_data) == true) {
-                    Log.warn("lost sync in TS, between offsets:" + pos + "/" + _data.position);
-                    _data.position++;
+                    var pos_end : Number = _data.position;
+                    Log.warn("lost sync in TS, between offsets:" + pos_start + "/" + pos_end);
+                    if (Log.LOG_DEBUG2_ENABLED) {
+                        var ba : ByteArray = new ByteArray();
+                        _data.position = pos_start;
+                        _data.readBytes(ba, 0, pos_end-pos_start);
+                        Log.debug2("lost sync dump:"+Hex.fromArray(ba));
+                    }
+                    _data.position = pos_end + 1;
                 } else {
                     throw new Error("Could not parse TS file: sync byte not found @ offset/len " + _data.position + "/" + _data.length);
                 }

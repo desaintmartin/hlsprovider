@@ -81,8 +81,6 @@ package org.mangui.HLS.streaming {
         private var _frag_loading_start_time : Number;
         /** Time the decryption started. **/
         private var _frag_decrypt_start_time : Number;
-        /** Time the demux started. **/
-        private var _frag_demux_start_time : Number;
         /** Did the stream switch quality levels. **/
         private var _switchlevel : Boolean;
         /** Did a discontinuity occurs in the stream **/
@@ -123,6 +121,8 @@ package org.mangui.HLS.streaming {
         private var _prev_audio_dts : Number;
         private var _prev_video_pts : Number;
         private var _prev_video_dts : Number;
+        /* demux instance */
+        private var _demux : Demuxer;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS) : void {
@@ -262,6 +262,7 @@ package org.mangui.HLS.streaming {
                 // decrypt data if needed
                 if (_last_segment_decrypt_key_url != null) {
                     _frag_decrypt_start_time = new Date().valueOf();
+                    Log.debug("init AES context");
                     _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url], _last_segment_decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                 } else {
                     _decryptAES = null;
@@ -288,7 +289,7 @@ package org.mangui.HLS.streaming {
                 _need_reload = true;
                 return;
             }
-            _last_segment_size = _fragByteArray.length;
+            _last_segment_size = _fragWritePosition;
             Log.debug("loading completed");
             var _loading_duration : uint = (new Date().valueOf() - _frag_loading_start_time);
             Log.debug("Loading       duration/length/speed:" + _loading_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _loading_duration) / 1024).toFixed(0) + " kb/s");
@@ -296,35 +297,32 @@ package org.mangui.HLS.streaming {
             if (_decryptAES != null) {
                 _decryptAES.notifycomplete();
             } else {
-                _fragDemux(_fragByteArray);
+                _fragDecryptCompleteHandler();
             }
         }
 
         private function _fragDecryptProgressHandler(data : ByteArray) : void {
-            _fragByteArray.writeBytes(data);
-        }
-
-        private function _fragDecryptCompleteHandler() : void {
-            if (_cancel_load == true)
-                return;
-            var decrypt_duration : Number = (new Date().valueOf() - _frag_decrypt_start_time);
-            _decryptAES = null;
-            Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + _fragByteArray.length + "/" + ((8000 * _fragByteArray.length / decrypt_duration) / 1024).toFixed(0) + " kb/s");
-            _fragDemux(_fragByteArray);
-        }
-
-        private function _fragDemux(data : ByteArray) : void {
-            _frag_demux_start_time = new Date().valueOf();
-
-            /* deal with byte range if any specified */
+            data.position = 0;
             if (_frag_byterange_start_offset != -1) {
-                Log.debug("trim byte range, start/end offset:" + _frag_byterange_start_offset + "/" + _frag_byterange_end_offset);
-                var ba : ByteArray = new ByteArray();
-                data.position = _frag_byterange_start_offset;
-                data.readBytes(ba, 0, _frag_byterange_end_offset - _frag_byterange_start_offset);
-                data = ba;
+                _fragByteArray.position = _fragByteArray.length;
+                _fragByteArray.writeBytes(data);
+                /* dont do progressive parsing of segment with byte range option */
+                return;
             }
-            /* probe file type */
+
+            if (_demux == null) {
+                /* probe file type */
+                _fragByteArray.position = _fragByteArray.length;
+                _fragByteArray.writeBytes(data);
+                data = _fragByteArray;
+                _demux = probe(data);
+            }
+            if (_demux) {
+                _demux.append(data);
+            }
+        }
+
+        private function probe(data : ByteArray) : Demuxer {
             data.position = 0;
             Log.debug("probe fragment type");
             if (TS.probe(data) == true) {
@@ -350,19 +348,48 @@ package org.mangui.HLS.streaming {
                         }
                     }
                 }
-                new TS(data, _fragReadHandler, _switchlevel || _hasDiscontinuity, audio_extract, audio_pid);
+                return new TS(_fragReadHandler, _switchlevel || _hasDiscontinuity, audio_extract, audio_pid);
             } else if (AAC.probe(data) == true) {
                 Log.debug("AAC ES found");
-                new AAC(data, _fragReadHandler);
+                return new AAC(_fragReadHandler);
             } else if (MP3.probe(data) == true) {
                 Log.debug("MP3 ES found");
-                new MP3(data, _fragReadHandler);
+                return new MP3(_fragReadHandler);
             } else {
+                Log.debug("probe fails");
+                return null;
+            }
+        }
+
+        private function _fragDecryptCompleteHandler() : void {
+            if (_cancel_load == true)
+                return;
+
+            if (_decryptAES) {
+                var decrypt_duration : Number = (new Date().valueOf() - _frag_decrypt_start_time);
+                Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + _fragWritePosition + "/" + ((8000 * _fragWritePosition / decrypt_duration) / 1024).toFixed(0) + " kb/s");
+                _decryptAES = null;
+            }
+
+            // deal with byte range here
+            if (_frag_byterange_start_offset != -1) {
+                Log.debug("trim byte range, start/end offset:" + _frag_byterange_start_offset + "/" + _frag_byterange_end_offset);
+                var ba : ByteArray = new ByteArray();
+                _fragByteArray.position = _frag_byterange_start_offset;
+                _fragByteArray.readBytes(ba, 0, _frag_byterange_end_offset - _frag_byterange_start_offset);
+                _demux = probe(ba);
+                if (_demux) {
+                    ba.position = 0;
+                    _demux.append(ba);
+                }
+            }
+
+            if (_demux == null) {
                 Log.error("unknown fragment type");
                 if (Log.LOG_DEBUG2_ENABLED) {
-                    data.position = 0;
+                    _fragByteArray.position = 0;
                     var ba2 : ByteArray = new ByteArray();
-                    data.readBytes(ba2, 0, 512);
+                    _fragByteArray.readBytes(ba2, 0, 512);
                     Log.debug2("frag dump(512 bytes)");
                     Log.debug2(Hex.fromArray(ba2));
                 }
@@ -370,6 +397,7 @@ package org.mangui.HLS.streaming {
                 _fraghandleIOError("invalid content received");
                 return;
             }
+            _demux.notifycomplete();
         }
 
         /** stop loading fragment **/
@@ -384,6 +412,12 @@ package org.mangui.HLS.streaming {
                 _decryptAES.cancel();
                 _decryptAES = null;
             }
+
+            if (_demux) {
+                _demux.cancel();
+                _demux = null;
+            }
+
             _fragByteArray = null;
             _cancel_load = true;
             _bIOError = false;
@@ -587,6 +621,7 @@ package org.mangui.HLS.streaming {
                 _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyErrorHandler);
                 _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
             }
+            _demux = null;
             _last_segment_decrypt_key_url = frag.decrypt_url;
             _frag_byterange_start_offset = frag.byterange_start_offset;
             _frag_byterange_end_offset = frag.byterange_end_offset;
@@ -753,8 +788,6 @@ package org.mangui.HLS.streaming {
         private function _fragReadHandler(audioTags : Vector.<Tag>, videoTags : Vector.<Tag>, audioPID : Number = -1, audioTrackList : Vector.<HLSAudioTrack>=null) : void {
             if (_cancel_load == true)
                 return;
-            var _demux_duration : uint = (new Date().valueOf() - _frag_demux_start_time);
-            Log.debug("Demux         duration/length/speed:" + _demux_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _demux_duration) / 1024).toFixed(0) + " kb/s");
             var audio_index : Number;
             var audio_track_changed : Boolean = false;
             audioTrackList = audioTrackList.sort(function(a : HLSAudioTrack, b : HLSAudioTrack) : Number {

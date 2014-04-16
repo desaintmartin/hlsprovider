@@ -18,7 +18,10 @@ HLSProvider could be used as library to build a custom flash player using a simp
 	* live playlist are also seekable (also known as DVR playlist support)
 * adaptive streaming (multiple bitrate)
 	* manual or automatic quality switching, using serial segment fetching method from [http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf](http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf)
-* accurate seeking (seek to exact position,not to fragment boundary) in VoD and live
+* configurable seeking mode in VoD and live
+	* accurate seeking to exact requested position
+	* key-frame based seeking (seek to nearest key frame before requested seek position)
+	* segment based seeking (seek to beginning of segment containing requested seek position)
 * buffer progress report
 * error resilience
 	* retry mechanism in case of I/O Errors
@@ -93,7 +96,8 @@ functional behavior can be tweaked by adding configuration keys :
 	hls_maxbufferlength : 60,
 	hls_startfromlowestlevel : false,
 	hls_seekfromlowestlevel : false,
-	hls_live_flushurlcache : false
+	hls_live_flushurlcache : false,
+	hls_seekmode : "ACCURATE"
 	}
 	},
 	clip: {
@@ -108,6 +112,10 @@ functional behavior can be tweaked by adding configuration keys :
 * hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
 * hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
 * hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)
+* hls_seekmode:
+	* "ACCURATE" : seek to exact position
+	* "KEYFRAME" : seek to last keyframe before requested position
+	* "SEGMENT" : seek to beginning of segment containing requested position
 
 ###jwplayer5 based setup:
 from zip, extract test/jwplayer5 folder, and get inspired by example.html
@@ -158,6 +166,7 @@ functional behavior can be tweaked by adding configuration keys :
 	hls_seekfromlowestlevel : true,
 	hls_live_flushurlcache : false,
 	hls_live_seekdurationthreshold : 60,
+	hls_seekmode : "ACCURATE"
 	...
 
 
@@ -170,6 +179,10 @@ functional behavior can be tweaked by adding configuration keys :
 * hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
 * hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)  
 * hls\_live\_seekdurationthreshold (true/default 60s) : allow seeking in live playlist if playlist duration is greater than a certain threshold. by default, live playlists with duration greater than 60s are seekable.
+* hls_seekmode:
+	* "ACCURATE" : seek to exact position
+	* "KEYFRAME" : seek to last keyframe before requested position
+	* "SEGMENT" : seek to beginning of segment containing requested position
 
 ### write your own HLS flash player in less than 30 lines of code !
 

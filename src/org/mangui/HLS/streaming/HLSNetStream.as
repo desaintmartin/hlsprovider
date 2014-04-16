@@ -58,6 +58,8 @@ package org.mangui.HLS.streaming {
         private var _buffer_threshold : Number;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
+        /* seek mode */
+        private var _seek_mode : String = HLSSeekmode.ACCURATE_SEEK;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader) : void {
@@ -128,7 +130,7 @@ package org.mangui.HLS.streaming {
                     /* after we reach back threshold value, set it buffer low value to avoid
                      * reporting buffering state to often. using different values for low buffer / min buffer
                      * allow to fine tune this 
-                    */
+                     */
                     _buffer_threshold = _buffer_low_len;
                     // no more in low buffer state
                     if (_state == HLSStates.PLAYING_BUFFERING) {
@@ -196,12 +198,13 @@ package org.mangui.HLS.streaming {
 
         /** Add a fragment to the buffer. **/
         private function _loaderCallback(tags : Vector.<Tag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number) : void {
-            /* PTS of first FLV tag that will be pushed into FLV tag buffer */
+            var i : Number = 0;
+            /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
-
+            /* PTS of last video keyframe before requested seek position */
+            var keyframe_pts : Number;
             if (_seek_position_real == Number.NEGATIVE_INFINITY) {
                 /* 
-                 * compute r
                  * 
                  *    real seek       requested seek                 Frag 
                  *     position           position                    End
@@ -212,16 +215,42 @@ package org.mangui.HLS.streaming {
                  * real seek position is the start offset of the first received fragment after seek command. (= fragment start offset).
                  * seek offset is the diff between the requested seek position and the real seek position
                  */
-                if (_seek_position_requested < start_position ||
-                    _seek_position_requested >= start_position+ ((max_pts-min_pts)/1000)) {
+
+                /* if requested seek position is out of this segment bounds
+                 * all the segments will be pushed, first pts should be thus be min_pts
+                 */
+                if (_seek_position_requested < start_position || _seek_position_requested >= start_position + ((max_pts - min_pts) / 1000)) {
                     _seek_position_real = start_position;
                     first_pts = min_pts;
                 } else {
-                    _seek_position_real = _seek_position_requested;
-                    first_pts = min_pts + 1000 * (_seek_position_real - start_position);
+                    /* if requested position is within segment bounds, determine real seek position depending on seek mode setting */
+                    if (_seek_mode == HLSSeekmode.SEGMENT_SEEK) {
+                        _seek_position_real = start_position;
+                        first_pts = min_pts;
+                    } else {
+                        /* accurate or keyframe seeking */
+                        /* seek_pts is the requested PTS seek position */
+                        var seek_pts : Number = min_pts + 1000 * (_seek_position_requested - start_position);
+                        /* analyze fragment tags and look for PTS of last keyframe before seek position.*/
+                        keyframe_pts = tags[0].pts;
+                        for (i = 0; i < tags.length; i++) {
+                            // look for last keyframe with pts <= seek_pts
+                            if (tags[i].keyframe == true && tags[i].pts <= seek_pts && tags[i].type.indexOf("AVC") != -1) {
+                                keyframe_pts = tags[i].pts;
+                            }
+                        }
+                        if (_seek_mode == HLSSeekmode.KEYFRAME_SEEK) {
+                            _seek_position_real = start_position + (keyframe_pts - min_pts) / 1000;
+                            first_pts = keyframe_pts;
+                        } else {
+                            // accurate seek, to exact requested position
+                            _seek_position_real = _seek_position_requested;
+                            first_pts = seek_pts;
+                        }
+                    }
                 }
             } else {
-                /* whole fragment will be injected */
+                /* no seek in progress operation, whole fragment will be injected */
                 first_pts = min_pts;
                 /* check live playlist sliding here :
                 _seek_position_real + getTotalBufferedDuration()  should be the start_position
@@ -242,27 +271,13 @@ package org.mangui.HLS.streaming {
 
             tags.sort(_sortTagsbyDTS);
 
-            if (_seek_in_progress) {
-                /* accurate seeking : 
-                 * analyze fragment tags and look for last keyframe before seek position.
-                 * in schema below, we seek at t=17s, in a fragment starting at t=10s, ending at t=20s
-                 * this fragment contains 4 keyframes.
-                 *  timestamp of the last keyframe before seek position is @ t=16s
-                 * 
-                 *                             seek_pts
-                 *  K----------K------------K------*-----K---------|
-                 *  10s       13s          16s    17s    18s      20s
-                 *  
-                 *  
-                 */
-                var i : Number = 0;
-                var keyframe_pts : Number;
+            /* if no seek in progress or if in segment seeking mode : push all FLV tags */
+            if (!_seek_in_progress || _seek_mode == HLSSeekmode.SEGMENT_SEEK) {
                 for (i = 0; i < tags.length; i++) {
-                    // look for last keyframe with pts <= seek_pts
-                    if (tags[i].keyframe == true && tags[i].pts <= first_pts && tags[i].type.indexOf("AVC") != -1)
-                        keyframe_pts = tags[i].pts;
+                    _flvTagBuffer.push(tags[i]);
                 }
-
+            } else {
+                /* keyframe / accurate seeking, we need to filter out some FLV tags */
                 for (i = 0; i < tags.length; i++) {
                     if (tags[i].pts >= first_pts) {
                         _flvTagBuffer.push(tags[i]);
@@ -287,11 +302,6 @@ package org.mangui.HLS.streaming {
                                 break;
                         }
                     }
-                }
-            } else {
-                // not after seek, push all FLV tags
-                for (i = 0; i < tags.length; i++) {
-                    _flvTagBuffer.push(tags[i]);
                 }
             }
             _flvTagBufferDuration += (max_pts - first_pts) / 1000;
@@ -425,6 +435,16 @@ package org.mangui.HLS.streaming {
         /** set low Buffer Length  **/
         public function set lowBufferLength(new_len : Number) : void {
             _buffer_low_len = new_len;
+        };
+
+        /** get seek mode  **/
+        public function get seekMode() : String {
+            return _seek_mode;
+        };
+
+        /** set low Buffer Length  **/
+        public function set seekMode(mode : String) : void {
+            _seek_mode = mode;
         };
 
         /** Start playing data in the buffer. **/

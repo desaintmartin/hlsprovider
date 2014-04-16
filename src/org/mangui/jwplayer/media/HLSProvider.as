@@ -220,6 +220,12 @@ package org.mangui.jwplayer.media {
                 Log.info("hls_live_seekdurationthreshold:" + value);
                 _seekInLiveDurationThreshold = value as Number;
             }
+
+            value = cfg.hls_seekmode;
+            if (value != null) {
+                Log.info("hls_seekmode:" + value);
+                _hls.seekMode = value as String;
+            }
             mute(cfg.mute);
         };
 

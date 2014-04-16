@@ -23,7 +23,7 @@ package org.mangui.HLS {
         private var _client : Object = {};
 
         /** Create and connect all components. **/
-        public function HLS() : void {
+        public function HLS() {
             var connection : NetConnection = new NetConnection();
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
@@ -135,6 +135,16 @@ package org.mangui.HLS {
         /** get maximum buffer Length  **/
         public function get lowBufferLength() : Number {
             return _hlsNetStream.lowBufferLength;
+        };
+
+        /** set seek mode  **/
+        public function set seekMode(mode : String) : void {
+            _hlsNetStream.seekMode = mode;
+        }
+
+        /** get seek mode **/
+        public function get seekMode() : String {
+            return _hlsNetStream.seekMode;
         };
 
         /** get audio tracks list**/

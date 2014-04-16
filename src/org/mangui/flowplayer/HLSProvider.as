@@ -113,6 +113,13 @@ package org.mangui.flowplayer {
                 Log.info("hls_live_flushurlcache:" + value);
                 _hls.flushLiveURLCache = value as Boolean;
             }
+
+            value = cfg.hls_seekmode;
+            if (value != null) {
+                Log.info("hls_seekmode:" + value);
+                _hls.seekMode = value as String;
+            }
+            
             _model.dispatchOnLoad();
         }
 

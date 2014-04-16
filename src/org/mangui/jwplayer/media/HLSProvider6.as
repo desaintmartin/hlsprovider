@@ -5,7 +5,6 @@ package org.mangui.jwplayer.media {
     import com.longtailvideo.jwplayer.model.PlayerConfig;
 
     import org.mangui.HLS.HLSEvent;
-    import org.mangui.jwplayer.media.HLSProvider;
 
     /** additional method needed for jwplayer6 **/
     public class HLSProvider6 extends HLSProvider {

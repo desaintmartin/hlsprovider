@@ -8,7 +8,7 @@ package org.mangui.basic {
         private var hls : HLS = null;
         private var video : Video = null;
 
-        public function Player() : void {
+        public function Player() {
             hls = new HLS();
 
             video = new Video(640, 480);

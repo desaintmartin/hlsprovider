@@ -31,7 +31,7 @@ package org.mangui.HLS.parsing {
         public var valid : Boolean;
 
         /** Create the fragment. **/
-        public function Fragment(url : String, duration : Number, seqnum : Number, start_time : Number, continuity : Number, program_date : Number, decrypt_url : String, decrypt_iv : ByteArray, byterange_start_offset : Number, byterange_end_offset : Number) : void {
+        public function Fragment(url : String, duration : Number, seqnum : Number, start_time : Number, continuity : Number, program_date : Number, decrypt_url : String, decrypt_iv : ByteArray, byterange_start_offset : Number, byterange_end_offset : Number) {
             this.duration = duration;
             this.url = url;
             this.seqnum = seqnum;

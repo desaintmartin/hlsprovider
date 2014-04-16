@@ -8,7 +8,7 @@ package org.mangui.HLS.parsing {
         public var url : String;
 
         /** Create the quality level. **/
-        public function AltAudioTrack(alt_group_id : String, alt_lang : String, alt_name : String, alt_autoselect : Boolean, alt_default : Boolean, alt_url : String) : void {
+        public function AltAudioTrack(alt_group_id : String, alt_lang : String, alt_name : String, alt_autoselect : Boolean, alt_default : Boolean, alt_url : String) {
             group_id = alt_group_id;
             lang = alt_lang;
             name = alt_name;

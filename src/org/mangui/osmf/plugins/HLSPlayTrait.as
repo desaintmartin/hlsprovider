@@ -26,7 +26,7 @@ package org.mangui.osmf.plugins {
             Log.info("HLSPlayTrait:playStateChangeStart:" + newPlayState);
             switch(newPlayState) {
                 case PlayState.PLAYING:
-                    if (streamStarted == false) {
+                    if (!streamStarted) {
                         _hls.stream.play();
                         streamStarted = true;
                     } else {

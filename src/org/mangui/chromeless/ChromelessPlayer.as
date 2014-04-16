@@ -32,7 +32,7 @@ package org.mangui.chromeless {
         private var _duration : Number;
 
         /** Initialization. **/
-        public function ChromelessPlayer() : void {
+        public function ChromelessPlayer() {
             // Set stage properties
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;

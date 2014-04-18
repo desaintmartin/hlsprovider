@@ -15,6 +15,7 @@ package org.mangui.chromeless {
     import flash.media.StageVideoAvailability;
     import flash.utils.setTimeout;
 
+    // import com.sociodox.theminer.*;
     public class ChromelessPlayer extends Sprite {
         /** reference to the framework. **/
         private var _hls : HLS;
@@ -379,6 +380,7 @@ package org.mangui.chromeless {
                 _video.attachNetStream(_hls.stream);
             }
             stage.removeEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
+            //addChild(new TheMiner());
         };
 
         private function _onStageResize(event : Event) : void {

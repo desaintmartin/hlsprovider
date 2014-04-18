@@ -41,8 +41,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
 	-library-path+=../lib/blooddy_crypto.swc \
 	-target-player="11.1" \
 	-default-size 480 270 \
-	-default-background-color=0x000000
-
+	-default-background-color=0x000000 #	-library-path+=../lib/TheMiner_en.swc
 
 #echo "Compiling HLSProviderBasic.swf"
 #$FLEXPATH/bin/mxmlc ../src/org/mangui/basic/Player.as \

@@ -1,25 +1,16 @@
 package org.mangui.HLS.streaming {
+    import com.hurlant.util.Hex;
+    
+    import flash.events.*;
+    import flash.net.*;
+    import flash.utils.ByteArray;
+    import flash.utils.Timer;
+    
     import org.mangui.HLS.*;
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.parsing.*;
     import org.mangui.HLS.streaming.*;
     import org.mangui.HLS.utils.*;
-
-    import com.hurlant.util.Hex;
-
-    // CONFIG::AS3HTTPCLIENT {
-    // import com.adobe.net.URI;
-    // import org.httpclient.HttpClient;
-    // import org.httpclient.HttpRequest;
-    // import org.httpclient.http.Get;
-    // import org.httpclient.events.HttpListener;
-    // import org.httpclient.events.HttpDataEvent;
-    // import org.httpclient.events.HttpStatusEvent;
-    // }
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.ByteArray;
-    import flash.utils.Timer;
 
     /** Class that fetches fragments. **/
     public class FragmentLoader {
@@ -106,8 +97,8 @@ package org.mangui.HLS.streaming {
         private var _audioTracks : Vector.<HLSAudioTrack>;
         /** current audio track id **/
         private var _audioTrackId : Number;
-        public var startFromLowestLevel : Boolean = false;
-        public var seekFromLowestLevel : Boolean = false;
+        public var startFromLowestLevel : Boolean = HLSSettings.startFromLowestLevel;
+        public var seekFromLowestLevel : Boolean = HLSSettings.seekFromLowestLevel;
         /** Timer used to monitor/schedule fragment download. **/
         private var _timer : Timer;
         /** Store that a fragment load is in progress. **/

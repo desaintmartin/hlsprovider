@@ -1,11 +1,11 @@
 package org.mangui.HLS.streaming {
-    import org.mangui.HLS.*;
-    import org.mangui.HLS.parsing.*;
-    import org.mangui.HLS.utils.*;
-
     import flash.events.*;
     import flash.net.*;
     import flash.utils.*;
+    
+    import org.mangui.HLS.*;
+    import org.mangui.HLS.parsing.*;
+    import org.mangui.HLS.utils.*;
 
     /** Loader for hls manifests. **/
     public class ManifestLoader {
@@ -30,7 +30,7 @@ package org.mangui.HLS.streaming {
         /** reference to manifest being loaded **/
         private var _manifest_loading : Manifest;
         /** flush live URL cache **/
-        private var _flushLiveURLCache : Boolean = false;
+        private var _flushLiveURLCache : Boolean = HLSSettings.flushLiveURLCache;
 
         /** Setup the loader. **/
         public function ManifestLoader(hls : HLS) {

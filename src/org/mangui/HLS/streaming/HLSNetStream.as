@@ -15,6 +15,8 @@ package org.mangui.HLS.streaming {
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
         private var _hls : HLS;
+        /** reference to auto buffer manager */
+        private var _autoBufferManager : AutoBufferManager;
         /** FLV tags buffer vector **/
         private var _flvTagBuffer : Vector.<Tag>;
         /** FLV tags buffer duration **/
@@ -48,7 +50,7 @@ package org.mangui.HLS.streaming {
         /** max buffer length (default 60s)**/
         private var _buffer_max_len : Number = 60;
         /** min buffer length (default 8s)**/
-        private var _buffer_min_len : Number = 8;
+        private var _buffer_min_len : Number = -1;
         /** low buffer length (default 3s). if buffer is less than this value, HLS will enter into buffering state**/
         private var _buffer_low_len : Number = 3;
         /** threshold to get out of buffering state
@@ -66,6 +68,7 @@ package org.mangui.HLS.streaming {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
+            _autoBufferManager = new AutoBufferManager(hls);
             _fragmentLoader = fragmentLoader;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
@@ -111,7 +114,11 @@ package org.mangui.HLS.streaming {
                         } else {
                             // pause Netstream in really low buffer condition
                             super.pause();
-                            _buffer_threshold = _buffer_min_len;
+                            if (_buffer_min_len == -1) {
+                                _buffer_threshold = _autoBufferManager.minBufferLength;
+                            } else {
+                                _buffer_threshold = _buffer_min_len;
+                            }
                         }
                     }
                     // dont switch to buffering state in case we reached end of a VOD playlist
@@ -131,7 +138,12 @@ package org.mangui.HLS.streaming {
                      * reporting buffering state to often. using different values for low buffer / min buffer
                      * allow to fine tune this 
                      */
-                    _buffer_threshold = _buffer_low_len;
+                    if (_buffer_min_len == -1) {
+                        _buffer_threshold = Math.min(_autoBufferManager.minBufferLength / 2, _buffer_low_len);
+                    } else {
+                        _buffer_threshold = _buffer_low_len;
+                    }
+
                     // no more in low buffer state
                     if (_state == HLSStates.PLAYING_BUFFERING) {
                         super.resume();
@@ -178,6 +190,11 @@ package org.mangui.HLS.streaming {
                 }
                 // FLV tag buffer drained, reset its duration
                 _flvTagBufferDuration = 0;
+
+                // update buffer threshold here if needed
+                if (_buffer_min_len == -1) {
+                    _buffer_threshold = _autoBufferManager.minBufferLength;
+                }
             }
         };
 
@@ -411,9 +428,6 @@ package org.mangui.HLS.streaming {
 
         /** set min Buffer Length  **/
         public function set minBufferLength(new_len : Number) : void {
-            if (new_len < 0.1) {
-                new_len = 0.1;
-            }
             _buffer_min_len = new_len;
         };
 
@@ -458,7 +472,11 @@ package org.mangui.HLS.streaming {
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
             _reached_vod_end = false;
-            _buffer_threshold = _buffer_min_len;
+            if (_buffer_min_len == -1) {
+                _buffer_threshold = _autoBufferManager.minBufferLength;
+            } else {
+                _buffer_threshold = _buffer_min_len;
+            }
             /* if HLS was in paused state before seeking, 
              * switch to paused buffering state
              * otherwise, switch to playing buffering state

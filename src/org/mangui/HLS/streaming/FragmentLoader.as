@@ -32,7 +32,7 @@ package org.mangui.HLS.streaming {
         /** overall processing bandwidth of last loaded fragment (fragment size divided by processing duration) **/
         private var _last_bandwidth : int = 0;
         /** overall processing time of the last loaded fragment (loading+decrypting+parsing) **/
-        private var _last_process_duration : Number = 0;
+        private var _last_fragment_processing_duration : Number = 0;
         /** duration of the last loaded fragment **/
         private var _last_segment_duration : Number = 0;
         /** last loaded fragment size **/
@@ -443,7 +443,7 @@ package org.mangui.HLS.streaming {
 
         /** Get the current QOS metrics. **/
         public function get metrics() : HLSMetrics {
-            return new HLSMetrics(_level, _last_bandwidth);
+            return new HLSMetrics(_level, _last_bandwidth, _last_segment_duration, _last_fragment_processing_duration);
         };
 
         private function _updateLevel(buffer : Number) : Number {
@@ -461,7 +461,7 @@ package org.mangui.HLS.streaming {
             } else if (_switchlevel == true) {
                 level = _level;
             } else if (_manual_level == -1 ) {
-                level = _autoLevelManager.getnextlevel(_level, buffer, _last_segment_duration, _last_process_duration, _last_bandwidth);
+                level = _autoLevelManager.getnextlevel(_level, buffer, _last_segment_duration, _last_fragment_processing_duration, _last_bandwidth);
             } else {
                 level = _manual_level;
             }
@@ -948,9 +948,9 @@ package org.mangui.HLS.streaming {
             }
 
             // Calculate bandwidth
-            _last_process_duration = (new Date().valueOf() - _frag_loading_start_time);
-            _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_process_duration);
-            Log.debug("Total Process duration/length/speed:" + _last_process_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _last_process_duration) / 1024).toFixed(0) + " kb/s");
+            _last_fragment_processing_duration = (new Date().valueOf() - _frag_loading_start_time);
+            _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_fragment_processing_duration);
+            Log.debug("Total Process duration/length/speed:" + _last_fragment_processing_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _last_fragment_processing_duration) / 1024).toFixed(0) + " kb/s");
 
             if (_manifest_just_loaded) {
                 _manifest_just_loaded = false;

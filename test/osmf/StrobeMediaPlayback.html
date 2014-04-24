@@ -76,7 +76,19 @@ function listStreams(list, container) {
                 controlBarPosition: "bottom",
                 poster: "images/poster.png",
                 javascriptCallbackFunction: "jsbridge",
-                plugin_hls: "HLSProviderOSMF.swf"
+                plugin_hls: "HLSProviderOSMF.swf",
+                hls_minbufferlength: 4,
+                hls_maxbufferlength: 30,
+                hls_lowbufferlength: 3,
+                hls_seekmode: "SEGMENT_SEEK",
+                hls_startfromlowestlevel: false,
+                hls_seekfromlowestlevel: false,
+                hls_live_flushurlcache: false,
+                hls_info: false,
+                hls_debug: true,
+                hls_debug2: true,
+                hls_warn: true,
+                hls_error: true
             };
             
             for (var i = 0; i < parameterNames.length; i++) {

@@ -32,7 +32,8 @@ package org.mangui.HLS.streaming {
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
-            _bw[_nb_samples % MAX_SAMPLES] = event.metrics.bandwidth;
+            var cur_bw:Number = event.metrics.bandwidth;
+            _bw[_nb_samples % MAX_SAMPLES] = cur_bw;
             _nb_samples++;
 
             // compute min bw on MAX_SAMPLES
@@ -43,7 +44,7 @@ package org.mangui.HLS.streaming {
             }
 
              // give more weight to current bandwidth
-            var bw_ratio : Number = 2 * event.metrics.bandwidth / (min_bw + event.metrics.bandwidth);
+            var bw_ratio : Number = 2 * cur_bw / (min_bw + cur_bw);
 
             /* predict time to dl next segment using a conservative approach.
              * 
@@ -57,7 +58,7 @@ package org.mangui.HLS.streaming {
             _minBufferLength = event.metrics.frag_processing_time * (_targetduration / event.metrics.frag_duration) * bw_ratio;
             // avoid min > max
             _minBufferLength = Math.min(_hls.maxBufferLength, _minBufferLength);
-            Log.info("AutoBufferManager:minBufferLength:" + _minBufferLength);
+            Log.debug("AutoBufferManager:minBufferLength:" + _minBufferLength);
         };
     }
 }

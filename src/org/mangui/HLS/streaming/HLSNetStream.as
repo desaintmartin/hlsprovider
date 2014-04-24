@@ -139,6 +139,7 @@ package org.mangui.HLS.streaming {
                      * allow to fine tune this 
                      */
                     if (_buffer_min_len == -1) {
+                        // in automode, low buffer threshold should be less than min auto buffer
                         _buffer_threshold = Math.min(_autoBufferManager.minBufferLength / 2, _buffer_low_len);
                     } else {
                         _buffer_threshold = _buffer_low_len;

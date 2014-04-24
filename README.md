@@ -1,6 +1,6 @@
 #HLSprovider
 
-**HLSProvider** is an open-source HLS Flash plugin/player that allows you to play HLS streams. It is integrated with the following players :
+**HLSProvider** is an open-source HLS Flash plugin that allows you to play HLS streams. It is integrated with the following players :
 
 * a home made **Chromeless** Flash Player, with js controls.
 * **JWPlayer** free edition version **5.x**
@@ -52,6 +52,23 @@ the following containers are supported:
 * AAC and MPEG1-Layer 3 Audio Elementary streams
 	* as per HLS spec, Each Elementary Audio Stream segment MUST signal the timestamp of its first sample with an ID3 PRIV tag at the beginning of the segment.  The ID3 PRIV owner identifier MUST be      "com.apple.streaming.transportStreamTimestamp".
 
+### Customization parameters for JWPlayer5/6, FlowPlayer, OSMF Based Players:
+
+It is possible to customize HLS playback thanks to the following configuration keys:
+
+* hls_debug (true/default false) : toggle debug traces, outputted on JS console
+* hls_debug2 (true/default false) : toggle verbose debug traces, outputted on JS console
+* hls_minbufferlength (default -1s) : minimum buffer length that needs to be reached before playback can start(after seeking) or restart (in case of empty buffer).
+	* if set to -1, some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall.
+* hls_lowbufferlength (default 3s) : low buffer threshold. when crossing down this threshold, HLS will switch to buffering state, usually player will report this buffering state through a rotating icon. playback will still continue.
+* hls_maxbufferlength (default 60s) : maximum buffer length (0 means infinite buffering)
+* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
+* hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
+* hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)
+* hls_seekmode:
+	* "ACCURATE" : seek to exact position
+	* "KEYFRAME" : seek to last keyframe before requested position
+	* "SEGMENT" : seek to beginning of segment containing requested position
 
 ##HLSProvider in action :
 
@@ -78,10 +95,9 @@ from zip, extract test/osmf folder, and get inspired by index.html
 ###FlowPlayer based setup:
 from zip, extract test/flowplayer folder, and get inspired by index.html
 
+#####Flowplayer customization parameters:
 
-###Flowplayer customization parameters:
-
-functional behavior can be tweaked by adding configuration keys :
+functional behavior can be tweaked by adding configuration keys as below :
 
 	flowplayer("player", "flowplayer.swf", {
 	// configure the required plugins
@@ -104,18 +120,7 @@ functional behavior can be tweaked by adding configuration keys :
 	...
 
 
-* hls_debug (true/default false) : toggle debug traces
-* hls_debug2 (true/default false) : toggle more verbose debug traces
-* hls_lowbufferlength (default 3s) : low buffer threshold. when crossing down this threshold, HLS will switch to buffering state.
-* hls_minbufferlength (default 8s) : minimum buffer length before playback can start, after seeking or buffer stalling.
-* hls_maxbufferlength (default 60s) : maximum buffer length (0 means infinite buffering)
-* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
-* hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
-* hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)
-* hls_seekmode:
-	* "ACCURATE" : seek to exact position
-	* "KEYFRAME" : seek to last keyframe before requested position
-	* "SEGMENT" : seek to beginning of segment containing requested position
+
 
 ###jwplayer5 based setup:
 from zip, extract test/jwplayer5 folder, and get inspired by example.html
@@ -154,7 +159,7 @@ from zip, extract test/jwplayer6 folder, and get inspired by example.html
 
 ###jwplayer 5/6 customization parameters:
 
-functional behavior can be tweaked by adding configuration keys :
+functional behavior can be tweaked by adding configuration keys as below:
 
     jwplayer("player").setup({
 	hls_debug : false,
@@ -169,20 +174,6 @@ functional behavior can be tweaked by adding configuration keys :
 	hls_seekmode : "ACCURATE"
 	...
 
-
-* hls_debug (true/default false) : toggle debug traces
-* hls_debug2 (true/default false) : toggle more verbose debug traces
-* hls_lowbufferlength (default 3s) : low buffer threshold. when crossing down this threshold, HLS will switch to buffering state.
-* hls_minbufferlength (default 8s) : minimum buffer length before playback can start, after seeking or buffer stalling.
-* hls_maxbufferlength (default 60s) : maximum buffer length (0 means infinite buffering)
-* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
-* hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
-* hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)  
-* hls\_live\_seekdurationthreshold (true/default 60s) : allow seeking in live playlist if playlist duration is greater than a certain threshold. by default, live playlists with duration greater than 60s are seekable.
-* hls_seekmode:
-	* "ACCURATE" : seek to exact position
-	* "KEYFRAME" : seek to last keyframe before requested position
-	* "SEGMENT" : seek to beginning of segment containing requested position
 
 ### write your own HLS flash player in less than 30 lines of code !
 

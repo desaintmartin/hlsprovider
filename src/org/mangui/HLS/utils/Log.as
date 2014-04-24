@@ -1,5 +1,7 @@
 package org.mangui.HLS.utils {
     import flash.external.ExternalInterface;
+    
+    import org.mangui.HLS.HLSSettings;
 
     /** Class that sends log messages to browser console. **/
     public class Log {
@@ -7,11 +9,11 @@ package org.mangui.HLS.utils {
         private static const LEVEL_DEBUG : String = "DEBUG:";
         private static const LEVEL_WARN : String = "WARN:";
         private static const LEVEL_ERROR : String = "ERROR:";
-        public static var LOG_INFO_ENABLED : Boolean = true;
-        public static var LOG_DEBUG_ENABLED : Boolean = false;
-        public static var LOG_DEBUG2_ENABLED : Boolean = false;
-        public static var LOG_WARN_ENABLED : Boolean = true;
-        public static var LOG_ERROR_ENABLED : Boolean = true;
+        public static var LOG_INFO_ENABLED : Boolean = HLSSettings.logInfo;
+        public static var LOG_DEBUG_ENABLED : Boolean = HLSSettings.logDebug;
+        public static var LOG_DEBUG2_ENABLED : Boolean = HLSSettings.logDebug2;
+        public static var LOG_WARN_ENABLED : Boolean = HLSSettings.logWarn;
+        public static var LOG_ERROR_ENABLED : Boolean = HLSSettings.logError;
 
         public static function info(message : *) : void {
             if (LOG_INFO_ENABLED)

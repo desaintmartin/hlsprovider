@@ -1,21 +1,21 @@
 package org.mangui.osmf.plugins {
+    import org.mangui.HLS.HLS;
+    import org.mangui.HLS.HLSEvent;
     import org.mangui.HLS.HLSTypes;
-    import org.osmf.net.StreamType;
-    import org.osmf.net.StreamingURLResource;
     import org.mangui.HLS.parsing.Level;
-    import org.osmf.net.DynamicStreamingItem;
-    import org.osmf.net.DynamicStreamingResource;
     import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
     import org.osmf.events.MediaError;
     import org.osmf.events.MediaErrorEvent;
     import org.osmf.media.MediaElement;
     import org.osmf.media.MediaResourceBase;
     import org.osmf.media.URLResource;
+    import org.osmf.net.DynamicStreamingItem;
+    import org.osmf.net.DynamicStreamingResource;
+    import org.osmf.net.StreamType;
+    import org.osmf.net.StreamingURLResource;
     import org.osmf.traits.LoadState;
     import org.osmf.traits.LoadTrait;
     import org.osmf.traits.LoaderBase;
-    import org.mangui.HLS.HLS;
-    import org.mangui.HLS.HLSEvent;
 
     /**
      * Loader for .m3u8 playlist file.

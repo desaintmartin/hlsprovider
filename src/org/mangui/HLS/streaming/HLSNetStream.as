@@ -1,15 +1,14 @@
 package org.mangui.HLS.streaming {
-    import flash.events.NetStatusEvent;
     import flash.events.Event;
+    import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
-
+    import flash.net.*;
+    import flash.utils.*;
+    
     import org.mangui.HLS.*;
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.streaming.*;
     import org.mangui.HLS.utils.*;
-
-    import flash.net.*;
-    import flash.utils.*;
 
     /** Class that keeps the buffer filled. **/
     public class HLSNetStream extends NetStream {
@@ -48,11 +47,11 @@ package org.mangui.HLS.streaming {
         /** Current playback state. **/
         private var _state : String;
         /** max buffer length (default 60s)**/
-        private var _buffer_max_len : Number = 60;
-        /** min buffer length (default 8s)**/
-        private var _buffer_min_len : Number = -1;
+        private var _buffer_max_len : Number = HLSSettings.maxBufferLength;
+        /** min buffer length (default -1 = auto)**/
+        private var _buffer_min_len : Number = HLSSettings.minBufferLength;
         /** low buffer length (default 3s). if buffer is less than this value, HLS will enter into buffering state**/
-        private var _buffer_low_len : Number = 3;
+        private var _buffer_low_len : Number = HLSSettings.lowBufferLength;
         /** threshold to get out of buffering state
          * by default it is set to _buffer_low_len
          * however if buffer gets empty, its value is moved to _buffer_min_len
@@ -61,7 +60,7 @@ package org.mangui.HLS.streaming {
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
         /* seek mode */
-        private var _seek_mode : String = HLSSeekmode.ACCURATE_SEEK;
+        private var _seek_mode : String = HLSSettings.seekMode;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader) : void {

@@ -106,7 +106,8 @@ package org.mangui.chromeless {
 
         private function _errorHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("onError", event.message);
+                var hlsError: HLSError = event.error;
+                ExternalInterface.call("onError", hlsError.code,hlsError.url,hlsError.msg);
             }
         };
 

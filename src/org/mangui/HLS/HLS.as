@@ -36,7 +36,7 @@ package org.mangui.HLS {
         /** Forward internal errors. **/
         override public function dispatchEvent(event : Event) : Boolean {
             if (event.type == HLSEvent.ERROR) {
-                Log.error(HLSEvent(event).message);
+                Log.error((event as HLSEvent).error);
                 _hlsNetStream.close();
             }
             return super.dispatchEvent(event);

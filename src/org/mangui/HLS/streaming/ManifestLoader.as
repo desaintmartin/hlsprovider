@@ -2,7 +2,7 @@ package org.mangui.HLS.streaming {
     import flash.events.*;
     import flash.net.*;
     import flash.utils.*;
-    
+
     import org.mangui.HLS.*;
     import org.mangui.HLS.parsing.*;
     import org.mangui.HLS.utils.*;
@@ -47,16 +47,21 @@ package org.mangui.HLS.streaming {
         /** Loading failed; return errors. **/
         private function _errorHandler(event : ErrorEvent) : void {
             var txt : String;
+            var code : Number;
             if (event is SecurityErrorEvent) {
                 var error : SecurityErrorEvent = event as SecurityErrorEvent;
+                code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
                 txt = "Cannot load M3U8: crossdomain access denied:" + error.text;
             } else if (event is IOErrorEvent && _levels.length) {
                 Log.warn("I/O Error while trying to load Playlist, retry in 2s");
                 _timeoutID = setTimeout(_loadActiveLevelPlaylist, 2000);
+                return;
             } else {
+                code = HLSError.MANIFEST_LOADING_IO_ERROR;
                 txt = "Cannot load M3U8: " + event.text;
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, txt));
+            var hlsError : HLSError = new HLSError(code, _url, txt);
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         };
 
         /** Return the current manifest. **/
@@ -141,8 +146,8 @@ package org.mangui.HLS.streaming {
                     }
                 }
             } else {
-                var message : String = "Manifest is not a valid M3U8 file" + _url;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, message));
+                var hlsError : HLSError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "Manifest is not a valid M3U8 file");
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         };
 

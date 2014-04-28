@@ -43,7 +43,7 @@ package org.mangui.HLS {
         /** The list with alternate audio Tracks. **/
         public var altAudioTracks : Vector.<AltAudioTrack>;
         /** The error message. **/
-        public var message : String;
+        public var error : HLSError;
         /** The current QOS metrics. **/
         public var metrics : HLSMetrics;
         /** The time position. **/
@@ -57,7 +57,7 @@ package org.mangui.HLS {
         public function HLSEvent(type : String, parameter : *=null) {
             switch(type) {
                 case HLSEvent.ERROR:
-                    message = parameter as String;
+                    error = parameter as HLSError;
                     break;
                 case HLSEvent.FRAGMENT_LOADED:
                     metrics = parameter as HLSMetrics;

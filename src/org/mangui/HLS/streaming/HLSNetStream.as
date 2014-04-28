@@ -4,7 +4,7 @@ package org.mangui.HLS.streaming {
     import flash.events.TimerEvent;
     import flash.net.*;
     import flash.utils.*;
-    
+
     import org.mangui.HLS.*;
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.streaming.*;
@@ -180,7 +180,8 @@ package org.mangui.HLS.streaming {
                             super.appendBytes(tagBuffer.data);
                         }
                     } catch (error : Error) {
-                        _errorHandler(new Error(tagBuffer.type + ": " + error.message));
+                        var hlsError : HLSError = new HLSError(HLSError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                     }
                     // Last tag done? Then append sequence end.
                     if (_reached_vod_end && _flvTagBuffer.length == 0) {
@@ -196,11 +197,6 @@ package org.mangui.HLS.streaming {
                     _buffer_threshold = _autoBufferManager.minBufferLength;
                 }
             }
-        };
-
-        /** Dispatch an error to the controller. **/
-        private function _errorHandler(error : Error) : void {
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
         };
 
         /** Return the current playback state. **/

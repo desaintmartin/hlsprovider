@@ -434,8 +434,8 @@ function onVideoSize(width, height) {
 function onComplete(message) {
   appendLog("onComplete(), playback completed");
 }
-function onError(message) {
-  appendLog("onError():"+ message);
+function onError(code,url,message) {
+  appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
 }
 
 function onFragment(bandwidth,level,width) {

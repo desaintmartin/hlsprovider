@@ -1,11 +1,11 @@
 package org.mangui.HLS.streaming {
     import com.hurlant.util.Hex;
-    
+
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
-    
+
     import org.mangui.HLS.*;
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.parsing.*;
@@ -34,6 +34,8 @@ package org.mangui.HLS.streaming {
         private var _last_segment_continuity_counter : Number = 0;
         /** program date of the last fragment load. **/
         private var _last_segment_program_date : Number = 0;
+        /** URL of last segment **/
+        private var _last_segment_url : String;
         /** decrypt URL of last segment **/
         private var _last_segment_decrypt_key_url : String;
         /** IV of  last segment **/
@@ -198,6 +200,7 @@ package org.mangui.HLS.streaming {
         /** key load completed. **/
         private function _keyCompleteHandler(event : Event) : void {
             Log.debug("key loading completed");
+            var hlsError : HLSError;
             var frag : Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
             // Collect key data
             if ( _keystreamloader.bytesAvailable == 16 ) {
@@ -210,10 +213,12 @@ package org.mangui.HLS.streaming {
                     _fragByteArray = null;
                     _fragstreamloader.load(new URLRequest(frag.url));
                 } catch (error : Error) {
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
+                    hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                 }
             } else {
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "URL " + frag.decrypt_url + "\ninvalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes"));
+                hlsError = new HLSError(HLSError.KEY_PARSING_ERROR, frag.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         };
 
@@ -235,7 +240,8 @@ package org.mangui.HLS.streaming {
                 _bIOError = true;
                 _nIOErrorDate = new Date().valueOf();
             } else if ((new Date().valueOf() - _nIOErrorDate) > 1000 * _levels[_last_updated_level].averageduration ) {
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "I/O Error :" + message));
+                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _last_segment_url, "I/O Error :" + message);
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
             _need_reload = true;
         }
@@ -424,7 +430,8 @@ package org.mangui.HLS.streaming {
 
         /** Catch IO and security errors. **/
         private function _keyErrorHandler(event : ErrorEvent) : void {
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, "cannot load key:" + event.text));
+            var hlsError : HLSError = new HLSError(HLSError.KEY_LOADING_ERROR, _last_segment_decrypt_key_url, event.text);
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         };
 
         /** Catch IO and security errors. **/
@@ -620,6 +627,7 @@ package org.mangui.HLS.streaming {
                 _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
             }
             _demux = null;
+            _last_segment_url = frag.url;
             _last_segment_decrypt_key_url = frag.decrypt_url;
             _frag_byterange_start_offset = frag.byterange_start_offset;
             _frag_byterange_end_offset = frag.byterange_end_offset;
@@ -637,7 +645,8 @@ package org.mangui.HLS.streaming {
                 Log.debug("loading fragment:" + frag.url);
                 _fragstreamloader.load(new URLRequest(frag.url));
             } catch (error : Error) {
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.message));
+                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         }
 
@@ -787,6 +796,7 @@ package org.mangui.HLS.streaming {
             if (_cancel_load == true)
                 return;
             var audio_index : Number;
+            var hlsError : HLSError;
             var audio_track_changed : Boolean = false;
             audioTrackList = audioTrackList.sort(function(a : HLSAudioTrack, b : HLSAudioTrack) : Number {
                 return a.id - b.id;
@@ -826,9 +836,8 @@ package org.mangui.HLS.streaming {
             _bIOError = false;
 
             if (audioTags == null || videoTags == null) {
-                var error_txt : String = "error parsing content";
-                Log.error(error_txt);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error_txt));
+                hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _last_segment_url, "error parsing fragment, no tag found");
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
             var k : Number;
             // Audio PTS/DTS normalization + min/max computation
@@ -974,7 +983,8 @@ package org.mangui.HLS.streaming {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));
                 _fragment_first_loaded = true;
             } catch (error : Error) {
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, error.toString()));
+                hlsError = new HLSError(HLSError.OTHER_ERROR, _last_segment_url, error.message);
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         }
 

@@ -51,7 +51,7 @@ package org.mangui.jwplayer.media {
 
         /** Forward playback errors from the framework. **/
         private function _errorHandler(event : HLSEvent) : void {
-            super.error(event.message);
+            super.error(event.error.msg);
         };
 
         /** Forward QOS metrics on fragment load. **/

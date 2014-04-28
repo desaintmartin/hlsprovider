@@ -839,7 +839,6 @@ package org.mangui.HLS.streaming {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _last_segment_url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
-            var k : Number;
             // Audio PTS/DTS normalization + min/max computation
             if (audioTags.length > 0) {
                 var cur_audio_pts : Number;
@@ -848,21 +847,21 @@ package org.mangui.HLS.streaming {
                     _prev_audio_pts = NaN;
                     _prev_audio_dts = NaN;
                 }
-                for (k = 0; k < audioTags.length; k++) {
-                    cur_audio_pts = audioTags[k].pts;
-                    cur_audio_dts = audioTags[k].dts;
+                for each (var audioTag : Tag in audioTags) {
+                    cur_audio_pts = audioTag.pts;
+                    cur_audio_dts = audioTag.dts;
                     // 2^32 / 90
                     while (!isNaN(_prev_audio_pts) && (Math.abs(cur_audio_pts - _prev_audio_pts) > 47721858)) {
                         // + 2^33/90
                         // Log.info("cur_audio_pts/prev_audio_pts:" + cur_audio_pts + "/" + prev_audio_pts);
                         cur_audio_pts += 95443717;
                         // Log.info("cur_audio_pts:" + cur_audio_pts);
-                        audioTags[k].pts = cur_audio_pts;
+                        audioTag.pts = cur_audio_pts;
                     }
                     while (!isNaN(_prev_audio_dts) && Math.abs(cur_audio_dts - _prev_audio_dts) > 47721858) {
                         // + 2^33/90
                         cur_audio_dts += 95443717;
-                        audioTags[k].dts = cur_audio_dts;
+                        audioTag.dts = cur_audio_dts;
                     }
                     min_audio_pts = Math.min(min_audio_pts, cur_audio_pts);
                     max_audio_pts = Math.max(max_audio_pts, cur_audio_pts);
@@ -883,20 +882,20 @@ package org.mangui.HLS.streaming {
                     _prev_video_pts = NaN;
                     _prev_video_dts = NaN;
                 }
-                for (k = 0; k < videoTags.length; k++) {
-                    cur_video_pts = videoTags[k].pts;
-                    cur_video_dts = videoTags[k].dts;
+                for each (var videoTag : Tag in videoTags) {
+                    cur_video_pts = videoTag.pts;
+                    cur_video_dts = videoTag.dts;
                     // 2^32 / 90
                     while (!isNaN(_prev_video_pts) && Math.abs(cur_video_pts - _prev_video_pts) > 47721858) {
                         // + 2^33/90
                         cur_video_pts += 95443717;
-                        videoTags[k].pts = cur_video_pts;
+                        videoTag.pts = cur_video_pts;
                     }
                     // 2^32 / 90
                     while (!isNaN(_prev_video_dts) && Math.abs(cur_video_dts - _prev_video_dts) > 47721858) {
                         // + 2^33/90
                         cur_video_dts += 95443717;
-                        videoTags[k].dts = cur_video_dts;
+                        videoTag.dts = cur_video_dts;
                     }
                     min_video_pts = Math.min(min_video_pts, cur_video_pts);
                     max_video_pts = Math.max(max_video_pts, cur_video_pts);
@@ -935,11 +934,11 @@ package org.mangui.HLS.streaming {
 
             var tags : Vector.<Tag> = new Vector.<Tag>();
             // Push regular tags into buffer.
-            for (var i : Number = 0; i < videoTags.length; i++) {
-                tags.push(videoTags[i]);
+            for each (var vtag : Tag in videoTags) {
+                tags.push(vtag);
             }
-            for (var j : Number = 0; j < audioTags.length; j++) {
-                tags.push(audioTags[j]);
+            for each (var atag : Tag in audioTags) {
+                tags.push(atag);
             }
 
             // change the media to null if the file is only audio.

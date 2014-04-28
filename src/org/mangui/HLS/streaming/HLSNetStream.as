@@ -211,7 +211,7 @@ package org.mangui.HLS.streaming {
 
         /** Add a fragment to the buffer. **/
         private function _loaderCallback(tags : Vector.<Tag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number) : void {
-            var i : Number = 0;
+            var tag : Tag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
             /* PTS of last video keyframe before requested seek position */
@@ -246,10 +246,10 @@ package org.mangui.HLS.streaming {
                         var seek_pts : Number = min_pts + 1000 * (_seek_position_requested - start_position);
                         /* analyze fragment tags and look for PTS of last keyframe before seek position.*/
                         keyframe_pts = tags[0].pts;
-                        for (i = 0; i < tags.length; i++) {
+                        for each (tag in tags) {
                             // look for last keyframe with pts <= seek_pts
-                            if (tags[i].keyframe == true && tags[i].pts <= seek_pts && tags[i].type.indexOf("AVC") != -1) {
-                                keyframe_pts = tags[i].pts;
+                            if (tag.keyframe == true && tag.pts <= seek_pts && tag.type.indexOf("AVC") != -1) {
+                                keyframe_pts = tag.pts;
                             }
                         }
                         if (_seek_mode == HLSSeekmode.KEYFRAME_SEEK) {
@@ -286,29 +286,29 @@ package org.mangui.HLS.streaming {
 
             /* if no seek in progress or if in segment seeking mode : push all FLV tags */
             if (!_seek_in_progress || _seek_mode == HLSSeekmode.SEGMENT_SEEK) {
-                for (i = 0; i < tags.length; i++) {
-                    _flvTagBuffer.push(tags[i]);
+                for each (tag in tags) {
+                    _flvTagBuffer.push(tag);
                 }
             } else {
                 /* keyframe / accurate seeking, we need to filter out some FLV tags */
-                for (i = 0; i < tags.length; i++) {
-                    if (tags[i].pts >= first_pts) {
-                        _flvTagBuffer.push(tags[i]);
+                for each (tag in tags) {
+                    if (tag.pts >= first_pts) {
+                        _flvTagBuffer.push(tag);
                     } else {
-                        switch(tags[i].type) {
+                        switch(tag.type) {
                             case Tag.AAC_HEADER:
                             case Tag.AVC_HEADER:
-                                tags[i].pts = tags[i].dts = first_pts;
-                                _flvTagBuffer.push(tags[i]);
+                                tag.pts = tag.dts = first_pts;
+                                _flvTagBuffer.push(tag);
                                 break;
                             case Tag.AVC_NALU:
                                 /* only append video tags starting from last keyframe before seek position to avoid playback artifacts
                                  *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
                                  *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
                                  *  */
-                                if (tags[i].pts >= keyframe_pts) {
-                                    tags[i].pts = tags[i].dts = first_pts;
-                                    _flvTagBuffer.push(tags[i]);
+                                if (tag.pts >= keyframe_pts) {
+                                    tag.pts = tag.dts = first_pts;
+                                    _flvTagBuffer.push(tag);
                                 }
                                 break;
                             default:

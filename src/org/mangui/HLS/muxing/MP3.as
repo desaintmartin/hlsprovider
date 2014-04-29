@@ -12,8 +12,10 @@ package org.mangui.HLS.muxing {
         private static const SAMPLES_PER_FRAME : uint = 1152;
         /** Byte data to be read **/
         private var _data : ByteArray;
-        /* callback function upon read complete */
-        private var _callback : Function;
+        /* callback functions for audio selection, and parsing progress/complete */
+        private var _callback_audioselect : Function;
+        private var _callback_progress : Function;
+        private var _callback_complete : Function;
 
         /** append new data */
         public function append(data : ByteArray) : void {
@@ -49,14 +51,18 @@ package org.mangui.HLS.muxing {
                 audioTags.push(audioTag);
                 i++;
             }
-            Log.debug("MP3: all tags extracted, callback demux");
             var audiotracks : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
             audiotracks.push(new HLSAudioTrack('MP3 ES', HLSAudioTrack.FROM_DEMUX, 0, true));
-            _callback(audioTags, new Vector.<Tag>(), 0, audiotracks);
+            // report unique audio track. dont check return value as obviously the track will be selected
+            _callback_audioselect(audiotracks);
+            Log.debug("MP3: all tags extracted, callback demux");
+            _callback_complete(audioTags, new Vector.<Tag>());
         }
 
-        public function MP3(callback : Function) : void {
-            _callback = callback;
+        public function MP3(callback_audioselect : Function, callback_progress : Function, callback_complete : Function) : void {
+            _callback_audioselect = callback_audioselect;
+            _callback_progress = callback_progress;
+            _callback_complete = callback_complete;
             _data = new ByteArray();
         };
 

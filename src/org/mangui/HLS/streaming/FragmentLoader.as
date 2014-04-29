@@ -331,34 +331,13 @@ package org.mangui.HLS.streaming {
             Log.debug("probe fragment type");
             if (TS.probe(data) == true) {
                 Log.debug("MPEG2-TS found");
-                var audio_pid : Number;
-                var audio_extract : Boolean;
-                if (_audioTrackId == -1 || (_audioTrackId + 1) > _audioTracks.length) {
-                    // unknown, will be retrieved from demux
-                    audio_pid = -1;
-                    audio_extract = true;
-                } else {
-                    var track : HLSAudioTrack = _audioTracks[_audioTrackId];
-                    if (track.source == HLSAudioTrack.FROM_DEMUX) {
-                        audio_pid = track.id;
-                        audio_extract = true;
-                    } else {
-                        audio_pid = -1;
-                        if (_altAudioTrackLists[track.id].url) {
-                            audio_extract = false;
-                        } else {
-                            Log.debug('Using default audio track from TS');
-                            audio_extract = true;
-                        }
-                    }
-                }
-                return new TS(_fragReadHandler, _switchlevel || _hasDiscontinuity, audio_extract, audio_pid);
+                return new TS(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _switchlevel || _hasDiscontinuity);
             } else if (AAC.probe(data) == true) {
                 Log.debug("AAC ES found");
-                return new AAC(_fragReadHandler);
+                return new AAC(_fragParsingAudioSelectionHandler,_fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else if (MP3.probe(data) == true) {
                 Log.debug("MP3 ES found");
-                return new MP3(_fragReadHandler);
+                return new MP3(_fragParsingAudioSelectionHandler,_fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else {
                 Log.debug("probe fails");
                 return null;
@@ -791,27 +770,16 @@ package org.mangui.HLS.streaming {
             }
         }
 
-        /** Handles the actual reading of the TS fragment **/
-        private function _fragReadHandler(audioTags : Vector.<Tag>, videoTags : Vector.<Tag>, audioPID : Number = -1, audioTrackList : Vector.<HLSAudioTrack>=null) : void {
-            if (_cancel_load == true)
-                return;
-            var audio_index : Number;
-            var hlsError : HLSError;
+        // should return PID of selected audio track
+        private function _fragParsingAudioSelectionHandler(audioTrackList : Vector.<HLSAudioTrack>) : HLSAudioTrack {
             var audio_track_changed : Boolean = false;
             audioTrackList = audioTrackList.sort(function(a : HLSAudioTrack, b : HLSAudioTrack) : Number {
                 return a.id - b.id;
             });
-            for (var idx : int = 0; idx < audioTrackList.length; ++idx) {
-                // retrieve index id of current audio track
-                if (audioTrackList[idx].id == audioPID) {
-                    audio_index = idx;
-                    break;
-                }
-            }
             if (_audioTracksfromDemux.length != audioTrackList.length) {
                 audio_track_changed = true;
             } else {
-                for (idx = 0; idx < _audioTracksfromDemux.length; ++idx) {
+                for (var idx : Number = 0; idx < _audioTracksfromDemux.length; ++idx) {
                     if (_audioTracksfromDemux[idx].id != audioTrackList[idx].id) {
                         audio_track_changed = true;
                     }
@@ -822,6 +790,26 @@ package org.mangui.HLS.streaming {
                 _audioTracksfromDemux = audioTrackList;
                 _audioTracksMerge();
             }
+
+            /* if audio track not defined, or audio from external source (playlist) 
+            return null (demux audio not selected) */
+            if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == HLSAudioTrack.FROM_PLAYLIST) {
+                return null;
+            } else {
+                // source is demux,retrun selected audio track
+                return _audioTracks[_audioTrackId];
+            }
+        }
+
+        private function _fragParsingProgressHandler(audioTags : Vector.<Tag>, videoTags : Vector.<Tag>) : void {
+            // not implemented for now
+        }
+
+        /** Handles the actual reading of the TS fragment **/
+        private function _fragParsingCompleteHandler(audioTags : Vector.<Tag>, videoTags : Vector.<Tag>) : void {
+            if (_cancel_load == true)
+                return;
+            var hlsError : HLSError;
 
             // Tags used for PTS analysis
             var min_pts : Number = Number.POSITIVE_INFINITY;

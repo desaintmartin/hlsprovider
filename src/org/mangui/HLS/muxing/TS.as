@@ -1,5 +1,6 @@
 package org.mangui.HLS.muxing {
     import com.hurlant.util.Hex;
+
     import org.mangui.HLS.muxing.*;
     import org.mangui.HLS.utils.Log;
     import org.mangui.HLS.HLSAudioTrack;
@@ -39,11 +40,6 @@ package org.mangui.HLS.muxing {
         /** Packet ID of selected audio stream. **/
         private static var _audioId : Number = -1;
         private var _audioIsAAC : Boolean = false;
-        /** should we extract audio ? **/
-        private var _audioExtract : Boolean;
-        /** List of AAC and MP3 audio PIDs */
-        private var _aacIds : Vector.<uint> = new Vector.<uint>();
-        private var _mp3Ids : Vector.<uint> = new Vector.<uint>();
         /** List with audio frames. **/
         private var _audioTags : Vector.<Tag> = new Vector.<Tag>();
         /** List with video frames. **/
@@ -52,8 +48,10 @@ package org.mangui.HLS.muxing {
         private var _timer : Timer;
         /** Byte data to be read **/
         private var _data : ByteArray;
-        /* callback function upon read complete */
-        private var _callback : Function;
+        /* callback functions for audio selection, and parsing progress/complete */
+        private var _callback_audioselect : Function;
+        private var _callback_progress : Function;
+        private var _callback_complete : Function;
         /* current audio binary data */
         private static var _curAudioData : ByteArray = null;
         /* current video binary data */
@@ -62,7 +60,6 @@ package org.mangui.HLS.muxing {
         private static var _adtsOverflowData : ByteArray = null;
         /* current AVC Tag */
         private var _curVideoTag : Tag;
-
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : Number = data.position;
@@ -86,24 +83,18 @@ package org.mangui.HLS.muxing {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TS(callback : Function, discontinuity : Boolean, audioExtract : Boolean, audioPID : Number) {
+        public function TS(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, discontinuity : Boolean) {
             // in case of discontinuity, flush any partially parsed audio/video PES packet
             if (discontinuity) {
                 _curAudioData = null;
                 _curVideoData = null;
                 _adtsOverflowData = null;
-            } else {
-                // in case there is no discontinuity, but audio PID change, flush any partially parsed audio PES packet
-                if (_audioExtract && audioPID != _audioId) {
-                    _curAudioData = null;
-                    _adtsOverflowData = null;
-                }
             }
             _data = new ByteArray();
             _data_complete = false;
-            _callback = callback;
-            _audioId = audioPID;
-            _audioExtract = audioExtract;
+            _callback_audioselect = callback_audioselect;
+            _callback_progress = callback_progress;
+            _callback_complete = callback_complete;
             _read_position = 0;
             _timer = new Timer(0, 0);
             _timer.addEventListener(TimerEvent.TIMER, _readData);
@@ -112,7 +103,7 @@ package org.mangui.HLS.muxing {
         /** append new TS data */
         public function append(data : ByteArray) : void {
             _data.position = _data.length;
-            _data.writeBytes(data,data.position);
+            _data.writeBytes(data, data.position);
             _timer.start();
         }
 
@@ -140,7 +131,7 @@ package org.mangui.HLS.muxing {
                 // first check if TS parsing was successful
                 if (_pmtParsed == false) {
                     Log.error("TS: no PMT found, report parsing error");
-                    _callback(null, null, null, null);
+                    _callback_complete(null, null);
                 } else {
                     _timer.stop();
                     _parsingEnd();
@@ -154,7 +145,7 @@ package org.mangui.HLS.muxing {
             if (_curAudioData && _curAudioData.length > 14) {
                 var pes : PES = new PES(TS._curAudioData, true);
                 if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
-                    Log.debug2("complete Audio PES found at end of segment, parse it");
+                    Log.debug2("TS: complete Audio PES found at end of segment, parse it");
                     // complete PES, parse and push into the queue
                     if (_audioIsAAC) {
                         _parseADTSPES(pes);
@@ -163,7 +154,7 @@ package org.mangui.HLS.muxing {
                     }
                     _curAudioData = null;
                 } else {
-                    Log.debug("partial AAC PES at end of segment");
+                    Log.debug("TS: partial AAC PES at end of segment");
                     _curAudioData.position = _curAudioData.length;
                 }
             }
@@ -171,34 +162,19 @@ package org.mangui.HLS.muxing {
             if (_curVideoData && _curVideoData.length > 14) {
                 pes = new PES(TS._curVideoData, false);
                 if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
-                    Log.debug2("complete AVC PES found at end of segment, parse it");
+                    Log.debug2("TS: complete AVC PES found at end of segment, parse it");
                     // complete PES, parse and push into the queue
                     _parseAVCPES(pes);
                     _curVideoData = null;
                 } else {
-                    Log.debug("partial AVC PES at end of segment");
+                    Log.debug("TS: partial AVC PES at end of segment");
                     _curVideoData.position = _curVideoData.length;
                 }
             }
             Log.debug("TS: successfully parsed");
-            // report current audio track and audio track list
-            var audioList : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
-            if (_audioId > 0) {
-                var isDefault : Boolean = true;
-                for (var i : Number = 0; i < _aacIds.length; ++i) {
-                    audioList.push(new HLSAudioTrack('TS/AAC ' + i, HLSAudioTrack.FROM_DEMUX, _aacIds[i], isDefault));
-                    if (isDefault)
-                        isDefault = false;
-                }
-                for (i = 0; i < _mp3Ids.length; ++i) {
-                    audioList.push(new HLSAudioTrack('TS/MP3 ' + i, HLSAudioTrack.FROM_DEMUX, _mp3Ids[i], isDefault));
-                    if (isDefault)
-                        isDefault = false;
-                }
-            }
             Log.debug("TS: " + _videoTags.length + " video tags extracted");
             Log.debug("TS: " + _audioTags.length + " audio tags extracted");
-            _callback(_audioTags, _videoTags, _audioId, audioList);
+            _callback_complete(_audioTags, _videoTags);
         }
 
         /** parse ADTS audio PES packet **/
@@ -207,7 +183,7 @@ package org.mangui.HLS.muxing {
             // check if previous ADTS frame was overflowing.
             if (_adtsOverflowData && _adtsOverflowData.length) {
                 // if overflowing, append remaining data from previous frame at the beginning of PES packet
-                Log.debug("AAC:append overflowing " + _adtsOverflowData.length + " bytes to beginning of new PES packet");
+                Log.debug("TS/AAC: append overflowing " + _adtsOverflowData.length + " bytes to beginning of new PES packet");
                 var ba : ByteArray = new ByteArray();
                 ba.writeBytes(_adtsOverflowData);
                 ba.writeBytes(pes.data, pes.payload);
@@ -216,14 +192,14 @@ package org.mangui.HLS.muxing {
                 _adtsOverflowData = null;
             }
             if (isNaN(pes.pts)) {
-                Log.warn("AAC:no PTS info in this PES packet,discarding it");
+                Log.warn("TS/AAC: no PTS info in this PES packet,discarding it");
                 return;
             }
             // insert ADIF TAG at the beginning
             if (_audioTags.length == 0) {
                 var adifTag : Tag = new Tag(Tag.AAC_HEADER, pes.pts, pes.dts, true);
                 var adif : ByteArray = AAC.getADIF(pes.data, pes.payload);
-                Log.debug("AAC: insert ADIF TAG");
+                Log.debug("TS/AAC: insert ADIF TAG");
                 adifTag.push(adif, 0, adif.length);
                 _audioTags.push(adifTag);
             }
@@ -244,7 +220,7 @@ package org.mangui.HLS.muxing {
                 if (adts_overflow) {
                     _adtsOverflowData = new ByteArray();
                     _adtsOverflowData.writeBytes(pes.data, frame.start + frame.length);
-                    Log.debug("AAC:ADTS frame overflow:" + adts_overflow);
+                    Log.debug("TS/AAC:ADTS frame overflow:" + adts_overflow);
                 }
             }
         };
@@ -252,7 +228,7 @@ package org.mangui.HLS.muxing {
         /** parse MPEG audio PES packet **/
         private function _parseMPEGPES(pes : PES) : void {
             if (isNaN(pes.pts)) {
-                Log.warn("no PTS info in this MP3 PES packet,discarding it");
+                Log.warn("TS/MP3: no PTS info in this MP3 PES packet,discarding it");
                 return;
             }
             var tag : Tag = new Tag(Tag.MP3_RAW, pes.pts, pes.dts, false);
@@ -272,7 +248,7 @@ package org.mangui.HLS.muxing {
                 if (_curVideoTag) {
                     _curVideoTag.push(pes.data, pes.payload, pes.data.length - pes.payload);
                 } else {
-                    Log.warn("no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
+                    Log.warn("TS: no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
                 }
                 return;
             }
@@ -282,7 +258,7 @@ package org.mangui.HLS.muxing {
                 _curVideoTag.push(pes.data, pes.payload, overflow);
             }
             if (isNaN(pes.pts)) {
-                Log.warn("no PTS info in this AVC PES packet,discarding it");
+                Log.warn("TS: no PTS info in this AVC PES packet,discarding it");
                 return;
             }
             _curVideoTag = new Tag(Tag.AVC_NALU, pes.pts, pes.dts, false);
@@ -324,16 +300,16 @@ package org.mangui.HLS.muxing {
                 var pos_start : Number = _data.position - 1;
                 if (probe(_data) == true) {
                     var pos_end : Number = _data.position;
-                    Log.warn("lost sync in TS, between offsets:" + pos_start + "/" + pos_end);
+                    Log.warn("TS: lost sync between offsets:" + pos_start + "/" + pos_end);
                     if (Log.LOG_DEBUG2_ENABLED) {
                         var ba : ByteArray = new ByteArray();
                         _data.position = pos_start;
-                        _data.readBytes(ba, 0, pos_end-pos_start);
-                        Log.debug2("lost sync dump:"+Hex.fromArray(ba));
+                        _data.readBytes(ba, 0, pos_end - pos_start);
+                        Log.debug2("TS: lost sync dump:" + Hex.fromArray(ba));
                     }
                     _data.position = pos_end + 1;
                 } else {
-                    throw new Error("Could not parse TS file: sync byte not found @ offset/len " + _data.position + "/" + _data.length);
+                    throw new Error("TS: Could not parse file: sync byte not found @ offset/len " + _data.position + "/" + _data.length);
                 }
             }
             todo--;
@@ -373,15 +349,15 @@ package org.mangui.HLS.muxing {
                     }
                     break;
                 case _pmtId:
-                    todo -= _readPMT(stt);
                     if (_pmtParsed == false) {
+                        Log.debug("TS: PMT found");
+                        todo -= _readPMT(stt);
                         _pmtParsed = true;
-                        Log.debug("TS: PMT found.AVC,Audio PIDs:" + _avcId + "," + _audioId);
                         // if PMT was not parsed before, and some unknown packets have been skipped in between,
                         // rewind to beginning of the stream, it helps recovering bad segmented content
                         // in theory there should be no A/V packets before PAT/PMT)
                         if (_packetsBeforePMT) {
-                            Log.warn("late PMT found, rewinding at beginning of TS");
+                            Log.warn("TS: late PMT found, rewinding at beginning of TS");
                             _data.position = 0;
                             return;
                         }
@@ -404,7 +380,7 @@ package org.mangui.HLS.muxing {
                     if (_curAudioData) {
                         _curAudioData.writeBytes(_data, _data.position, todo);
                     } else {
-                        Log.warn("Discarding TS audio packet with id " + pid);
+                        Log.warn("TS: Discarding audio packet with id " + pid);
                     }
                     break;
                 case _avcId:
@@ -420,7 +396,7 @@ package org.mangui.HLS.muxing {
                     if (_curVideoData) {
                         _curVideoData.writeBytes(_data, _data.position, todo);
                     } else {
-                        Log.warn("Discarding TS video packet with id " + pid + " bad TS segmentation ?");
+                        Log.warn("TS: Discarding video packet with id " + pid + " bad TS segmentation ?");
                     }
                     break;
                 case _sdtId:
@@ -447,7 +423,7 @@ package org.mangui.HLS.muxing {
             var sectionLen : uint = _data.readUnsignedShort() & 0x3FF;
             // Check the section length for a single PMT.
             if (sectionLen > 13) {
-                throw new Error("Multiple PMT entries are not supported.");
+                throw new Error("TS: Multiple PMT entries are not supported.");
             }
             // Grab the PMT ID.
             _data.position += 7;
@@ -459,10 +435,8 @@ package org.mangui.HLS.muxing {
         private function _readPMT(stt : uint) : Number {
             var pointerField : uint = 0;
 
-            // reset audio tracks
-            var audioFound : Boolean = false;
-            _aacIds = new Vector.<uint>();
-            _mp3Ids = new Vector.<uint>();
+            /** audio Track List */
+            var audioList : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
 
             if (stt) {
                 pointerField = _data.readUnsignedByte();
@@ -487,21 +461,15 @@ package org.mangui.HLS.muxing {
                 var sid : uint = _data.readUnsignedShort() & 0x1fff;
                 if (typ == 0x0F) {
                     // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
-                    _aacIds.push(sid);
-                    if (sid == _audioId) {
-                        audioFound = true;
-                        _audioIsAAC = true;
-                    }
+                    audioList.push(new HLSAudioTrack('TS/AAC ' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length==0)));
                 } else if (typ == 0x1B) {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
                     _avcId = sid;
+                    Log.debug("TS: Selected video PID: " + _avcId);
                 } else if (typ == 0x03 || typ == 0x04) {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
                     // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
-                    _mp3Ids.push(sid);
-                    if (sid == _audioId) {
-                        audioFound = true;
-                    }
+                    audioList.push(new HLSAudioTrack('TS/MP3' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length==0)));
                 }
                 // es_info_length
                 var sel : uint = _data.readUnsignedShort() & 0xFFF;
@@ -509,20 +477,26 @@ package org.mangui.HLS.muxing {
                 // loop to next stream
                 read += sel + 5;
             }
-            if (_audioId <= 0 || !audioFound) {
-                if (_audioExtract) {
-                    // automatically select audio track
-                    Log.debug("Found " + _aacIds.length + " AAC tracks");
-                    Log.debug("Found " + _mp3Ids.length + " MP3 tracks");
-                    if (_aacIds.length > 0) {
-                        _audioId = _aacIds[0];
-                        _audioIsAAC = true;
-                    } else if (_mp3Ids.length > 0) {
-                        _audioId = _mp3Ids[0];
-                        _audioIsAAC = false;
-                    }
-                    Log.debug("Selected audio PID: " + _audioId);
-                }
+            
+            if(audioList.length) {
+                Log.debug("TS: Found " + audioList.length + " audio tracks");
+            }
+            // provide audio track List to audio select callback. this callback will return the selected audio track
+            var audioPID : Number;
+            var audioTrack : HLSAudioTrack = _callback_audioselect(audioList);
+            if (audioTrack) {
+                audioPID = audioTrack.id;
+                _audioIsAAC = (audioTrack.title.indexOf("AAC") > -1);
+                Log.debug("TS: selected audio PID: " + _audioId + " isAAC:" + _audioIsAAC);
+            } else {
+                audioPID = -1;
+                Log.debug("TS: no audio selected");
+            }
+            // in case audio PID change, flush any partially parsed audio PES packet
+            if (audioPID != _audioId) {
+                _curAudioData = null;
+                _adtsOverflowData = null;
+                _audioId = audioPID;
             }
             return len + pointerField;
         };

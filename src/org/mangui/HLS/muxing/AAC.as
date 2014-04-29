@@ -19,8 +19,10 @@ package org.mangui.HLS.muxing {
         private static const PROFILES : Array = ['Null', 'Main', 'LC', 'SSR', 'LTP', 'SBR'];
         /** Byte data to be read **/
         private var _data : ByteArray;
-        /* callback function upon read complete */
-        private var _callback : Function;
+        /* callback functions for audio selection, and parsing progress/complete */
+        private var _callback_audioselect : Function;
+        private var _callback_progress : Function;
+        private var _callback_complete : Function;
 
         /** append new data */
         public function append(data : ByteArray) : void {
@@ -62,12 +64,16 @@ package org.mangui.HLS.muxing {
             }
             var audiotracks : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
             audiotracks.push(new HLSAudioTrack('AAC ES', HLSAudioTrack.FROM_DEMUX, 0, true));
+            // report unique audio track. dont check return value as obviously the track will be selected
+            _callback_audioselect(audiotracks);
             Log.debug("AAC: all tags extracted, callback demux");
-            _callback(audioTags, new Vector.<Tag>(), 0, audiotracks);
+            _callback_complete(audioTags, new Vector.<Tag>());
         }
 
-        public function AAC(callback : Function) : void {
-            _callback = callback;
+        public function AAC(callback_audioselect : Function, callback_progress : Function, callback_complete : Function) : void {
+            _callback_audioselect = callback_audioselect;
+            _callback_progress = callback_progress;
+            _callback_complete = callback_complete;
             _data = new ByteArray();
         };
 

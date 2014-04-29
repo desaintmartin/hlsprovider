@@ -487,7 +487,7 @@ package org.mangui.HLS.muxing {
             if (audioTrack) {
                 audioPID = audioTrack.id;
                 _audioIsAAC = (audioTrack.title.indexOf("AAC") > -1);
-                Log.debug("TS: selected audio PID: " + _audioId + " isAAC:" + _audioIsAAC);
+                Log.debug("TS: selected audio PID: " + audioPID + " isAAC:" + _audioIsAAC);
             } else {
                 audioPID = -1;
                 Log.debug("TS: no audio selected");

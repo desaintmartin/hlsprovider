@@ -26,7 +26,7 @@ package org.mangui.HLS.muxing {
         /** Get Avcc header from AVC stream 
         See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
          **/
-        public static function getAVCC(sps : ByteArray, pps:ByteArray) : ByteArray {
+        public static function getAVCC(sps : ByteArray, pps : ByteArray) : ByteArray {
             // Write startbyte
             var avcc : ByteArray = new ByteArray();
             avcc.writeByte(0x01);
@@ -46,16 +46,17 @@ package org.mangui.HLS.muxing {
             avcc.writeShort(pps.length);
             // data of PPS
             avcc.writeBytes(pps, 0, pps.length);
-            // Grab profile/level
-            avcc.position = 1;
-            var prf : Number = sps.readByte();
-            avcc.position = 3;
-            var lvl : Number = sps.readByte();
-            Log.debug("AVC: " + PROFILES[prf] + ' level ' + lvl);
+            if (Log.LOG_DEBUG_ENABLED) {
+                // Grab profile/level
+                sps.position = 1;
+                var prf : Number = sps.readByte();
+                sps.position = 3;
+                var lvl : Number = sps.readByte();
+                Log.debug("AVC: " + PROFILES[prf] + ' level ' + lvl);
+            }
             avcc.position = 0;
             return avcc;
         };
-
 
         /** Return an array with NAL delimiter indexes. **/
         public static function getNALU(nalu : ByteArray, position : Number) : Vector.<VideoFrame> {

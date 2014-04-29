@@ -130,8 +130,8 @@ package org.mangui.HLS.muxing {
             if (_data_complete && _data.bytesAvailable < 188) {
                 // first check if TS parsing was successful
                 if (_pmtParsed == false) {
-                    Log.error("TS: no PMT found, report parsing error");
-                    _callback_complete(null, null);
+                    Log.error("TS: no PMT found, report parsing complete");
+                    _callback_complete();
                 } else {
                     _timer.stop();
                     _parsingEnd();
@@ -174,7 +174,8 @@ package org.mangui.HLS.muxing {
             Log.debug("TS: successfully parsed");
             Log.debug("TS: " + _videoTags.length + " video tags extracted");
             Log.debug("TS: " + _audioTags.length + " audio tags extracted");
-            _callback_complete(_audioTags, _videoTags);
+            _callback_progress(_audioTags, _videoTags);
+            _callback_complete();
         }
 
         /** parse ADTS audio PES packet **/

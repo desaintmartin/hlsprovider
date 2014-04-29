@@ -67,7 +67,8 @@ package org.mangui.HLS.muxing {
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             Log.debug("AAC: all tags extracted, callback demux");
-            _callback_complete(audioTags, new Vector.<Tag>());
+            _callback_progress(audioTags, new Vector.<Tag>());
+            _callback_complete();
         }
 
         public function AAC(callback_audioselect : Function, callback_progress : Function, callback_complete : Function) : void {

@@ -288,6 +288,10 @@ package org.mangui.HLS.muxing {
                 var avccTag : Tag = new Tag(Tag.AVC_HEADER, pes.pts, pes.dts, true);
                 avccTag.push(avcc, 0, avcc.length);
                 _videoTags.push(avccTag);
+                /* in case SPS/PPS NAL unit have been found, force video tag has being keyframe.
+                 * this will fix playback issues with some streams for which there is no IDR NAL unit in same PES packet
+                */
+                _curVideoTag.keyframe = true;
             }
             _videoTags.push(_curVideoTag);
         }

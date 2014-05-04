@@ -122,7 +122,6 @@ package org.mangui.HLS.muxing {
                 var channels : uint = (adts.readShort() & 0x01C0) >> 6;
             } else {
                 throw new Error("Stream did not start with ADTS header.");
-                return null;
             }
             // 5 bits profile + 4 bits samplerate + 4 bits channels.
             var adif : ByteArray = new ByteArray();

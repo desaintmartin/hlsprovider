@@ -806,6 +806,9 @@ package org.mangui.HLS.streaming {
         }
 
         private function _fragParsingProgressHandler(audioTags : Vector.<Tag>, videoTags : Vector.<Tag>) : void {
+            if (Log.LOG_DEBUG2_ENABLED) {
+                Log.debug2(audioTags.length + "/" + videoTags.length + " audio/video tags extracted");
+            }
             var tag : Tag;
             for each (tag in audioTags) {
                 _audioTags.push(tag);

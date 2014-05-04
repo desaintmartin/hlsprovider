@@ -125,6 +125,25 @@ package org.mangui.HLS.muxing {
                 _readPacket();
                 i++;
             }
+            var audioTags : Vector.<Tag> = new Vector.<Tag>();
+            var videoTags : Vector.<Tag> = new Vector.<Tag>();
+            var tag_available : Boolean = false;
+            if (_audioTags.length > 1) {
+                // remove all elements except the last one, it might be needed in case frame is splitted amongst several PES packets
+                audioTags = _audioTags.splice(0, _audioTags.length - 1);
+                tag_available = true;
+            }
+
+            if (_videoTags.length > 1) {
+                // remove all elements except the last one, it might be needed in case frame is splitted amongst several PES packets
+                videoTags = _videoTags.splice(0, _videoTags.length - 1);
+                tag_available = true;
+            }
+
+            if (tag_available) {
+                _callback_progress(audioTags, videoTags);
+            }
+
             _read_position = _data.position;
             // finish reading TS fragment
             if (_data_complete && _data.bytesAvailable < 188) {
@@ -171,10 +190,9 @@ package org.mangui.HLS.muxing {
                     _curVideoData.position = _curVideoData.length;
                 }
             }
-            Log.debug("TS: successfully parsed");
-            Log.debug("TS: " + _videoTags.length + " video tags extracted");
-            Log.debug("TS: " + _audioTags.length + " audio tags extracted");
+            // push remaining tags and notify complete
             _callback_progress(_audioTags, _videoTags);
+            Log.debug("TS: parsing complete");
             _callback_complete();
         }
 
@@ -290,7 +308,7 @@ package org.mangui.HLS.muxing {
                 _videoTags.push(avccTag);
                 /* in case SPS/PPS NAL unit have been found, force video tag has being keyframe.
                  * this will fix playback issues with some streams for which there is no IDR NAL unit in same PES packet
-                */
+                 */
                 _curVideoTag.keyframe = true;
             }
             _videoTags.push(_curVideoTag);
@@ -466,7 +484,7 @@ package org.mangui.HLS.muxing {
                 var sid : uint = _data.readUnsignedShort() & 0x1fff;
                 if (typ == 0x0F) {
                     // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
-                    audioList.push(new HLSAudioTrack('TS/AAC ' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length==0)));
+                    audioList.push(new HLSAudioTrack('TS/AAC ' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length == 0)));
                 } else if (typ == 0x1B) {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
                     _avcId = sid;
@@ -474,7 +492,7 @@ package org.mangui.HLS.muxing {
                 } else if (typ == 0x03 || typ == 0x04) {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
                     // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
-                    audioList.push(new HLSAudioTrack('TS/MP3' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length==0)));
+                    audioList.push(new HLSAudioTrack('TS/MP3 ' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length == 0)));
                 }
                 // es_info_length
                 var sel : uint = _data.readUnsignedShort() & 0xFFF;
@@ -482,8 +500,8 @@ package org.mangui.HLS.muxing {
                 // loop to next stream
                 read += sel + 5;
             }
-            
-            if(audioList.length) {
+
+            if (audioList.length) {
                 Log.debug("TS: Found " + audioList.length + " audio tracks");
             }
             // provide audio track List to audio select callback. this callback will return the selected audio track

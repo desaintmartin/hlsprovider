@@ -243,9 +243,9 @@ package org.mangui.HLS.muxing {
             var pps : ByteArray;
             var sps_found : Boolean = false;
             var pps_found : Boolean = false;
-            var units : Vector.<VideoFrame> = AVC.getNALU(pes.data, pes.payload);
+            var frames : Vector.<VideoFrame> = AVC.getNALU(pes.data, pes.payload);
             // If there's no NAL unit, push all data in the previous tag, if any exists
-            if (!units.length) {
+            if (!frames.length) {
                 if (_curVideoTag) {
                     _curVideoTag.push(pes.data, pes.payload, pes.data.length - pes.payload);
                 } else {
@@ -254,7 +254,7 @@ package org.mangui.HLS.muxing {
                 return;
             }
             // If NAL units are not starting right at the beginning of the PES packet, push preceding data into the previous tag.
-            var overflow : Number = units[0].start - units[0].header - pes.payload;
+            var overflow : Number = frames[0].start - frames[0].header - pes.payload;
             if (overflow && _curVideoTag) {
                 _curVideoTag.push(pes.data, pes.payload, overflow);
             }
@@ -264,23 +264,23 @@ package org.mangui.HLS.muxing {
             }
             _curVideoTag = new Tag(Tag.AVC_NALU, pes.pts, pes.dts, false);
             // Only push NAL units 1 to 5 into tag.
-            for (var j : Number = 0; j < units.length; j++) {
-                if (units[j].type < 6) {
-                    _curVideoTag.push(pes.data, units[j].start, units[j].length);
+            for each (var frame : VideoFrame in frames) {
+                if (frame.type < 6 ) {
+                    _curVideoTag.push(pes.data, frame.start, frame.length);
                     // Unit type 5 indicates a keyframe.
-                    if (units[j].type == 5) {
+                    if (frame.type == 5) {
                         _curVideoTag.keyframe = true;
                     }
-                } else if (units[j].type == 7) {
+                } else if (frame.type == 7) {
                     sps_found = true;
                     sps = new ByteArray();
-                    pes.data.position = units[j].start;
-                    pes.data.readBytes(sps, 0, units[j].length);
-                } else if (units[j].type == 8) {
+                    pes.data.position = frame.start;
+                    pes.data.readBytes(sps, 0, frame.length);
+                } else if (frame.type == 8) {
                     pps_found = true;
                     pps = new ByteArray();
-                    pes.data.position = units[j].start;
-                    pes.data.readBytes(pps, 0, units[j].length);
+                    pes.data.position = frame.start;
+                    pes.data.readBytes(pps, 0, frame.length);
                 }
             }
             if (sps_found && pps_found) {

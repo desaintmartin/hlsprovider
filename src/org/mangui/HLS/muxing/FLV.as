@@ -3,6 +3,10 @@ package org.mangui.HLS.muxing {
 
     /** Helpers for the FLV file format. **/
     public class FLV {
+        public static var TAG_TYPE_AUDIO : Number = 8;
+        public static var TAG_TYPE_VIDEO : Number = 9;
+        //public static var TAG_TYPE_SCRIPT : Number = 18;
+
         /** Get the FLV file header. **/
         public static function getHeader() : ByteArray {
             var flv : ByteArray = new ByteArray();
@@ -23,15 +27,11 @@ package org.mangui.HLS.muxing {
         };
 
         /** Get an FLV Tag header (11 bytes). **/
-        public static function getTagHeader(audio : Boolean, length : Number, stamp : Number) : ByteArray {
+        public static function getTagHeader(type : Number, length : Number, stamp : Number) : ByteArray {
             var tag : ByteArray = new ByteArray();
             tag.length = 11;
-            // Audio (8) or Video (9) tag
-            if (audio) {
-                tag.writeByte(8);
-            } else {
-                tag.writeByte(9);
-            }
+            tag.writeByte(type);
+
             // Size of the tag in bytes after StreamID.
             tag.writeByte(length >> 16);
             tag.writeByte(length >> 8);

@@ -43,11 +43,11 @@ package org.mangui.HLS.muxing {
 
             // Render header data
             if (type == Tag.MP3_RAW) {
-                array = FLV.getTagHeader(true, length + 1, pts);
+                array = FLV.getTagHeader(FLV.TAG_TYPE_AUDIO, length + 1, pts);
                 // Presume MP3 is 44.1 stereo.
                 array.writeByte(0x2F);
             } else if (type == Tag.AVC_HEADER || type == Tag.AVC_NALU) {
-                array = FLV.getTagHeader(false, length + 5, dts);
+                array = FLV.getTagHeader(FLV.TAG_TYPE_VIDEO, length + 5, dts);
                 // keyframe/interframe switch (0x10 / 0x20) + AVC (0x07)
                 keyframe ? array.writeByte(0x17) : array.writeByte(0x27);
                 /* AVC Packet Type :
@@ -63,7 +63,7 @@ package org.mangui.HLS.muxing {
                 array.writeByte(compositionTime >> 8);
                 array.writeByte(compositionTime);
             } else {
-                array = FLV.getTagHeader(true, length + 2, pts);
+                array = FLV.getTagHeader(FLV.TAG_TYPE_AUDIO, length + 2, pts);
                 // SoundFormat, -Rate, -Size, Type and Header/Raw switch.
                 array.writeByte(0xAF);
                 type == Tag.AAC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);

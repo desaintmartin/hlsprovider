@@ -1,4 +1,5 @@
 package org.mangui.HLS.parsing {
+    import org.mangui.HLS.utils.PTS;
     import org.mangui.HLS.parsing.Fragment;
 
     /** HLS streaming quality level. **/
@@ -210,11 +211,15 @@ package org.mangui.HLS.parsing {
                 if (frag_to.start_pts != Number.NEGATIVE_INFINITY) {
                     // we know PTS[to_index]
                     frag_to.start_pts_computed = frag_to.start_pts;
-                    // update duration to fix drifts between playlist and fragment
+                    /* normalize computed PTS value based on known PTS value.
+                     * this is to avoid computing wrong fragment duration in case of PTS looping */
+                    var from_pts : Number = PTS.normalize(frag_to.start_pts, frag_from.start_pts_computed);
+                    /* update fragment duration. 
+                    it helps to fix drifts between playlist reported duration and fragment real duration */
                     if (to_index > from_index)
-                        frag_from.duration = (frag_to.start_pts - frag_from.start_pts_computed) / 1000;
+                        frag_from.duration = (frag_to.start_pts - from_pts) / 1000;
                     else
-                        frag_to.duration = (frag_from.start_pts_computed - frag_to.start_pts) / 1000;
+                        frag_to.duration = ( from_pts - frag_to.start_pts) / 1000;
                 } else {
                     // we dont know PTS[to_index]
                     if (to_index > from_index)

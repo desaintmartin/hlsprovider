@@ -109,6 +109,11 @@ package org.mangui.HLS.streaming {
         private var _seek_position_requested : Number;
         /** first fragment loaded ? **/
         private var _fragment_first_loaded : Boolean;
+        // Tags used for PTS analysis
+        private var _min_audio_pts : Number;
+        private var _max_audio_pts : Number;
+        private var _min_video_pts : Number;
+        private var _max_video_pts : Number;
         /* PTS / DTS value needed to track PTS looping */
         private var _prev_audio_pts : Number;
         private var _prev_audio_dts : Number;
@@ -200,7 +205,7 @@ package org.mangui.HLS.streaming {
         }
 
         /** key load completed. **/
-        private function _keyCompleteHandler(event : Event) : void {
+        private function _keyLoadCompleteHandler(event : Event) : void {
             Log.debug("key loading completed");
             var hlsError : HLSError;
             var frag : Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
@@ -248,18 +253,28 @@ package org.mangui.HLS.streaming {
             _need_reload = true;
         }
 
-        private function _fragHTTPStatusHandler(event : HTTPStatusEvent) : void {
+        private function _fragLoadHTTPStatusHandler(event : HTTPStatusEvent) : void {
             if (event.status >= 400) {
                 _fraghandleIOError("HTTP Status:" + event.status.toString());
             }
         }
 
-        private function _fragProgressHandler(event : ProgressEvent) : void {
+        private function _fragLoadProgressHandler(event : ProgressEvent) : void {
             if (_fragByteArray == null) {
                 _fragByteArray = new ByteArray();
                 _fragWritePosition = 0;
                 _audioTags = new Vector.<Tag>();
                 _videoTags = new Vector.<Tag>();
+                _min_audio_pts = Number.POSITIVE_INFINITY;
+                _max_audio_pts = Number.NEGATIVE_INFINITY;
+                _min_video_pts = Number.POSITIVE_INFINITY;
+                _max_video_pts = Number.NEGATIVE_INFINITY;
+                if (_hasDiscontinuity) {
+                    _prev_audio_pts = NaN;
+                    _prev_audio_dts = NaN;
+                    _prev_video_pts = NaN;
+                    _prev_video_dts = NaN;
+                }
                 // decrypt data if needed
                 if (_last_segment_decrypt_key_url != null) {
                     _frag_decrypt_start_time = new Date().valueOf();
@@ -283,7 +298,7 @@ package org.mangui.HLS.streaming {
         }
 
         /** frag load completed. **/
-        private function _fragCompleteHandler(event : Event) : void {
+        private function _fragLoadCompleteHandler(event : Event) : void {
             if (_fragByteArray == null) {
                 Log.warn("fragment size is null, invalid it and load next one");
                 _levels[_level].updateFragment(_seqnum, false);
@@ -311,7 +326,7 @@ package org.mangui.HLS.streaming {
                 if (_fragByteArray.length >= _frag_byterange_end_offset) {
                     if (_fragstreamloader.connected) {
                         _fragstreamloader.close();
-                        _fragCompleteHandler(null);
+                        _fragLoadCompleteHandler(null);
                     }
                 }
                 /* dont do progressive parsing of segment with byte range option */
@@ -412,13 +427,13 @@ package org.mangui.HLS.streaming {
         }
 
         /** Catch IO and security errors. **/
-        private function _keyErrorHandler(event : ErrorEvent) : void {
+        private function _keyLoadErrorHandler(event : ErrorEvent) : void {
             var hlsError : HLSError = new HLSError(HLSError.KEY_LOADING_ERROR, _last_segment_decrypt_key_url, event.text);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         };
 
         /** Catch IO and security errors. **/
-        private function _fragErrorHandler(event : ErrorEvent) : void {
+        private function _fragLoadErrorHandler(event : ErrorEvent) : void {
             _fraghandleIOError(event.text);
         };
 
@@ -599,15 +614,15 @@ package org.mangui.HLS.streaming {
             if (_fragstreamloader == null) {
                 var urlStreamClass : Class = _hls.URLstream as Class;
                 _fragstreamloader = (new urlStreamClass()) as URLStream;
-                _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragErrorHandler);
-                _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragErrorHandler);
-                _fragstreamloader.addEventListener(ProgressEvent.PROGRESS, _fragProgressHandler);
-                _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _fragHTTPStatusHandler);
-                _fragstreamloader.addEventListener(Event.COMPLETE, _fragCompleteHandler);
+                _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragLoadErrorHandler);
+                _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragLoadErrorHandler);
+                _fragstreamloader.addEventListener(ProgressEvent.PROGRESS, _fragLoadProgressHandler);
+                _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _fragLoadHTTPStatusHandler);
+                _fragstreamloader.addEventListener(Event.COMPLETE, _fragLoadCompleteHandler);
                 _keystreamloader = (new urlStreamClass()) as URLStream;
-                _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyErrorHandler);
-                _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyErrorHandler);
-                _keystreamloader.addEventListener(Event.COMPLETE, _keyCompleteHandler);
+                _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyLoadErrorHandler);
+                _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyLoadErrorHandler);
+                _keystreamloader.addEventListener(Event.COMPLETE, _keyLoadCompleteHandler);
             }
             _demux = null;
             _last_segment_url = frag.url;
@@ -810,10 +825,25 @@ package org.mangui.HLS.streaming {
                 Log.debug2(audioTags.length + "/" + videoTags.length + " audio/video tags extracted");
             }
             var tag : Tag;
+            // Audio PTS/DTS normalization + min/max computation
             for each (tag in audioTags) {
+                tag.pts = PTS.normalize(_prev_audio_pts, tag.pts);
+                tag.dts = PTS.normalize(_prev_audio_dts, tag.dts);
+                _min_audio_pts = Math.min(_min_audio_pts, tag.pts);
+                _max_audio_pts = Math.max(_max_audio_pts, tag.pts);
+                _prev_audio_pts = tag.pts;
+                _prev_audio_dts = tag.dts;
                 _audioTags.push(tag);
             }
+
+            // Video PTS/DTS normalization + min/max computation
             for each (tag in videoTags) {
+                tag.pts = PTS.normalize(_prev_video_pts, tag.pts);
+                tag.dts = PTS.normalize(_prev_video_dts, tag.dts);
+                _min_video_pts = Math.min(_min_video_pts, tag.pts);
+                _max_video_pts = Math.max(_max_video_pts, tag.pts);
+                _prev_video_pts = tag.pts;
+                _prev_video_dts = tag.dts;
                 _videoTags.push(tag);
             }
         }
@@ -835,82 +865,23 @@ package org.mangui.HLS.streaming {
             // Tags used for PTS analysis
             var min_pts : Number = Number.POSITIVE_INFINITY;
             var max_pts : Number = Number.NEGATIVE_INFINITY;
-            var min_audio_pts : Number = Number.POSITIVE_INFINITY;
-            var max_audio_pts : Number = Number.NEGATIVE_INFINITY;
-            var min_video_pts : Number = Number.POSITIVE_INFINITY;
-            var max_video_pts : Number = Number.NEGATIVE_INFINITY;
             var ptsTags : Vector.<Tag>;
-            // Audio PTS/DTS normalization + min/max computation
             if (_audioTags.length > 0) {
-                var cur_audio_pts : Number;
-                var cur_audio_dts : Number;
-                if (_hasDiscontinuity) {
-                    _prev_audio_pts = NaN;
-                    _prev_audio_dts = NaN;
-                }
-                for each (var audioTag : Tag in _audioTags) {
-                    cur_audio_pts = audioTag.pts;
-                    cur_audio_dts = audioTag.dts;
-                    // 2^32 / 90
-                    while (!isNaN(_prev_audio_pts) && (Math.abs(cur_audio_pts - _prev_audio_pts) > 47721858)) {
-                        // + 2^33/90
-                        // Log.info("cur_audio_pts/prev_audio_pts:" + cur_audio_pts + "/" + prev_audio_pts);
-                        cur_audio_pts += 95443717;
-                        // Log.info("cur_audio_pts:" + cur_audio_pts);
-                        audioTag.pts = cur_audio_pts;
-                    }
-                    while (!isNaN(_prev_audio_dts) && Math.abs(cur_audio_dts - _prev_audio_dts) > 47721858) {
-                        // + 2^33/90
-                        cur_audio_dts += 95443717;
-                        audioTag.dts = cur_audio_dts;
-                    }
-                    min_audio_pts = Math.min(min_audio_pts, cur_audio_pts);
-                    max_audio_pts = Math.max(max_audio_pts, cur_audio_pts);
-                    _prev_audio_pts = cur_audio_pts;
-                    _prev_audio_dts = cur_audio_dts;
-                }
                 ptsTags = _audioTags;
-                min_pts = min_audio_pts;
-                max_pts = max_audio_pts;
+                min_pts = _min_audio_pts;
+                max_pts = _max_audio_pts;
                 Log.debug("m/M audio PTS:" + min_pts + "/" + max_pts);
             }
 
-            // Video PTS/DTS normalization + min/max computation
             if (_videoTags.length > 0) {
-                var cur_video_pts : Number;
-                var cur_video_dts : Number;
-                if (_hasDiscontinuity) {
-                    _prev_video_pts = NaN;
-                    _prev_video_dts = NaN;
-                }
-                for each (var videoTag : Tag in _videoTags) {
-                    cur_video_pts = videoTag.pts;
-                    cur_video_dts = videoTag.dts;
-                    // 2^32 / 90
-                    while (!isNaN(_prev_video_pts) && Math.abs(cur_video_pts - _prev_video_pts) > 47721858) {
-                        // + 2^33/90
-                        cur_video_pts += 95443717;
-                        videoTag.pts = cur_video_pts;
-                    }
-                    // 2^32 / 90
-                    while (!isNaN(_prev_video_dts) && Math.abs(cur_video_dts - _prev_video_dts) > 47721858) {
-                        // + 2^33/90
-                        cur_video_dts += 95443717;
-                        videoTag.dts = cur_video_dts;
-                    }
-                    min_video_pts = Math.min(min_video_pts, cur_video_pts);
-                    max_video_pts = Math.max(max_video_pts, cur_video_pts);
-                    _prev_video_pts = cur_video_pts;
-                    _prev_video_dts = cur_video_dts;
-                }
-                Log.debug("m/M video PTS:" + min_video_pts + "/" + max_video_pts);
+                Log.debug("m/M video PTS:" + _min_video_pts + "/" + _max_video_pts);
                 if (_audioTags.length == 0) {
                     // no audio, video only stream
                     ptsTags = _videoTags;
-                    min_pts = min_video_pts;
-                    max_pts = max_video_pts;
+                    min_pts = _min_video_pts;
+                    max_pts = _max_video_pts;
                 } else {
-                    Log.debug("Delta audio/video m/M PTS:" + (min_video_pts - min_audio_pts) + "/" + (max_video_pts - max_audio_pts));
+                    Log.debug("Delta audio/video m/M PTS:" + (_min_video_pts - _min_audio_pts) + "/" + (_max_video_pts - _max_audio_pts));
                 }
             }
 

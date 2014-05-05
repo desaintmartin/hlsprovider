@@ -121,8 +121,9 @@ package org.mangui.HLS.streaming {
         private var _prev_video_dts : Number;
         /* demux instance */
         private var _demux : Demuxer;
-        private var _audioTags : Vector.<Tag>;
-        private var _videoTags : Vector.<Tag>;
+        private var _audio_tags_found : Boolean;
+        private var _video_tags_found : Boolean;
+        private var _tags : Vector.<Tag>;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS) : void {
@@ -263,8 +264,9 @@ package org.mangui.HLS.streaming {
             if (_fragByteArray == null) {
                 _fragByteArray = new ByteArray();
                 _fragWritePosition = 0;
-                _audioTags = new Vector.<Tag>();
-                _videoTags = new Vector.<Tag>();
+                _tags = new Vector.<Tag>();
+                _audio_tags_found = false;
+                _video_tags_found = false;
                 _min_audio_pts = Number.POSITIVE_INFINITY;
                 _max_audio_pts = Number.NEGATIVE_INFINITY;
                 _min_video_pts = Number.POSITIVE_INFINITY;
@@ -827,24 +829,26 @@ package org.mangui.HLS.streaming {
             var tag : Tag;
             // Audio PTS/DTS normalization + min/max computation
             for each (tag in audioTags) {
+                _audio_tags_found = true;
                 tag.pts = PTS.normalize(_prev_audio_pts, tag.pts);
                 tag.dts = PTS.normalize(_prev_audio_dts, tag.dts);
                 _min_audio_pts = Math.min(_min_audio_pts, tag.pts);
                 _max_audio_pts = Math.max(_max_audio_pts, tag.pts);
                 _prev_audio_pts = tag.pts;
                 _prev_audio_dts = tag.dts;
-                _audioTags.push(tag);
+                _tags.push(tag);
             }
 
             // Video PTS/DTS normalization + min/max computation
             for each (tag in videoTags) {
+                _video_tags_found = true;
                 tag.pts = PTS.normalize(_prev_video_pts, tag.pts);
                 tag.dts = PTS.normalize(_prev_video_dts, tag.dts);
                 _min_video_pts = Math.min(_min_video_pts, tag.pts);
                 _max_video_pts = Math.max(_max_video_pts, tag.pts);
                 _prev_video_pts = tag.pts;
                 _prev_video_dts = tag.dts;
-                _videoTags.push(tag);
+                _tags.push(tag);
             }
         }
 
@@ -857,7 +861,7 @@ package org.mangui.HLS.streaming {
             // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed
             _bIOError = false;
 
-            if (_audioTags.length == 0 && _videoTags.length == 0) {
+            if (!_audio_tags_found && !_video_tags_found) {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _last_segment_url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
@@ -865,19 +869,16 @@ package org.mangui.HLS.streaming {
             // Tags used for PTS analysis
             var min_pts : Number = Number.POSITIVE_INFINITY;
             var max_pts : Number = Number.NEGATIVE_INFINITY;
-            var ptsTags : Vector.<Tag>;
-            if (_audioTags.length > 0) {
-                ptsTags = _audioTags;
+            if (_audio_tags_found) {
                 min_pts = _min_audio_pts;
                 max_pts = _max_audio_pts;
                 Log.debug("m/M audio PTS:" + min_pts + "/" + max_pts);
             }
 
-            if (_videoTags.length > 0) {
+            if (_video_tags_found) {
                 Log.debug("m/M video PTS:" + _min_video_pts + "/" + _max_video_pts);
-                if (_audioTags.length == 0) {
+                if (!_audio_tags_found) {
                     // no audio, video only stream
-                    ptsTags = _videoTags;
                     min_pts = _min_video_pts;
                     max_pts = _max_video_pts;
                 } else {
@@ -904,17 +905,8 @@ package org.mangui.HLS.streaming {
                 }
             }
 
-            var tags : Vector.<Tag> = new Vector.<Tag>();
-            // Push regular tags into buffer.
-            for each (var vtag : Tag in _videoTags) {
-                tags.push(vtag);
-            }
-            for each (var atag : Tag in _audioTags) {
-                tags.push(atag);
-            }
-
             // report audio-only segment
-            if (_videoTags.length == 0) {
+            if (!_video_tags_found) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_ONLY));
             }
 
@@ -949,7 +941,7 @@ package org.mangui.HLS.streaming {
                 var start_offset : Number = _levels[_level].updateFragment(_seqnum, true, min_pts, max_pts);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
                 _fragment_loading = false;
-                _callback(tags, min_pts, max_pts, _hasDiscontinuity, start_offset);
+                _callback(_tags, min_pts, max_pts, _hasDiscontinuity, start_offset);
                 _pts_loading_in_progress = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));
                 _fragment_first_loaded = true;

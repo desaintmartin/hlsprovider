@@ -110,10 +110,14 @@ package org.mangui.HLS.streaming {
         /** first fragment loaded ? **/
         private var _fragment_first_loaded : Boolean;
         // Tags used for PTS analysis
-        private var _min_audio_pts : Number;
-        private var _max_audio_pts : Number;
-        private var _min_video_pts : Number;
-        private var _max_video_pts : Number;
+        private var _min_audio_pts_frag : Number;
+        private var _max_audio_pts_frag : Number;
+        private var _min_video_pts_frag : Number;
+        private var _max_video_pts_frag : Number;
+        private var _min_audio_pts_tags : Number;
+        private var _max_audio_pts_tags : Number;
+        private var _min_video_pts_tags : Number;
+        private var _max_video_pts_tags : Number;
         /* PTS / DTS value needed to track PTS looping */
         private var _prev_audio_pts : Number;
         private var _prev_audio_dts : Number;
@@ -267,10 +271,8 @@ package org.mangui.HLS.streaming {
                 _tags = new Vector.<Tag>();
                 _audio_tags_found = false;
                 _video_tags_found = false;
-                _min_audio_pts = Number.POSITIVE_INFINITY;
-                _max_audio_pts = Number.NEGATIVE_INFINITY;
-                _min_video_pts = Number.POSITIVE_INFINITY;
-                _max_video_pts = Number.NEGATIVE_INFINITY;
+                _min_audio_pts_frag = _min_video_pts_frag = _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
+                _max_audio_pts_frag = _max_video_pts_frag = _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
                 if (_hasDiscontinuity) {
                     _prev_audio_pts = NaN;
                     _prev_audio_dts = NaN;
@@ -832,8 +834,10 @@ package org.mangui.HLS.streaming {
                 _audio_tags_found = true;
                 tag.pts = PTS.normalize(_prev_audio_pts, tag.pts);
                 tag.dts = PTS.normalize(_prev_audio_dts, tag.dts);
-                _min_audio_pts = Math.min(_min_audio_pts, tag.pts);
-                _max_audio_pts = Math.max(_max_audio_pts, tag.pts);
+                _min_audio_pts_tags = Math.min(_min_audio_pts_tags, tag.pts);
+                _max_audio_pts_tags = Math.max(_max_audio_pts_tags, tag.pts);
+                _min_audio_pts_frag = Math.min(_min_audio_pts_frag, tag.pts);
+                _max_audio_pts_frag = Math.max(_max_audio_pts_frag, tag.pts);
                 _prev_audio_pts = tag.pts;
                 _prev_audio_dts = tag.dts;
                 _tags.push(tag);
@@ -844,11 +848,56 @@ package org.mangui.HLS.streaming {
                 _video_tags_found = true;
                 tag.pts = PTS.normalize(_prev_video_pts, tag.pts);
                 tag.dts = PTS.normalize(_prev_video_dts, tag.dts);
-                _min_video_pts = Math.min(_min_video_pts, tag.pts);
-                _max_video_pts = Math.max(_max_video_pts, tag.pts);
+                _min_video_pts_tags = Math.min(_min_video_pts_tags, tag.pts);
+                _max_video_pts_tags = Math.max(_max_video_pts_tags, tag.pts);
+                _min_video_pts_frag = Math.min(_min_video_pts_frag, tag.pts);
+                _max_video_pts_frag = Math.max(_max_video_pts_frag, tag.pts);
                 _prev_video_pts = tag.pts;
                 _prev_video_dts = tag.dts;
                 _tags.push(tag);
+            }
+
+
+            /* do progressive buffering here. 
+             * only do it in case :
+             *      first fragment is loaded (to avoid issues with accurate seeking)
+             *      no PTS analysis in progress (when PTS analysis is in progress, the buffered tags might be discarded)
+             *      no discontinuity (this condition could be removed later on)
+             */
+            if (_fragment_first_loaded && !_pts_loading_in_progress && !_hasDiscontinuity) {
+                // compute min/max PTS
+                var min_pts : Number;
+                var max_pts : Number;
+                // PTS offset to fragment start
+                var pts_offset : Number;
+
+                if (_audio_tags_found) {
+                    min_pts = _min_audio_pts_tags;
+                    max_pts = _max_audio_pts_tags;
+                    pts_offset = _min_audio_pts_tags - _min_audio_pts_frag;
+                }
+                if (_video_tags_found) {
+                    if (!_audio_tags_found) {
+                        // no audio, video only stream
+                        min_pts = _min_video_pts_tags;
+                        max_pts = _max_video_pts_tags;
+                        pts_offset = _min_video_pts_tags - _min_video_pts_frag;
+                    }
+                }
+                if (min_pts != Number.POSITIVE_INFINITY && max_pts != Number.NEGATIVE_INFINITY) {
+                    var frag : Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
+                    var offset : Number;
+                    if (frag) {
+                        offset = frag.start_time + pts_offset / 1000;
+                    } else {
+                        offset = 0;
+                    }
+                    // provide tags to HLSNetStream
+                    _callback(_tags, min_pts, max_pts, false, offset);
+                    _tags = new Vector.<Tag>();
+                    _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
+                    _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
+                }
             }
         }
 
@@ -867,22 +916,22 @@ package org.mangui.HLS.streaming {
             }
 
             // Tags used for PTS analysis
-            var min_pts : Number = Number.POSITIVE_INFINITY;
-            var max_pts : Number = Number.NEGATIVE_INFINITY;
+            var min_pts : Number;
+            var max_pts : Number;
             if (_audio_tags_found) {
-                min_pts = _min_audio_pts;
-                max_pts = _max_audio_pts;
+                min_pts = _min_audio_pts_frag;
+                max_pts = _max_audio_pts_frag;
                 Log.debug("m/M audio PTS:" + min_pts + "/" + max_pts);
             }
 
             if (_video_tags_found) {
-                Log.debug("m/M video PTS:" + _min_video_pts + "/" + _max_video_pts);
+                Log.debug("m/M video PTS:" + _min_video_pts_frag + "/" + _max_video_pts_frag);
                 if (!_audio_tags_found) {
                     // no audio, video only stream
-                    min_pts = _min_video_pts;
-                    max_pts = _max_video_pts;
+                    min_pts = _min_video_pts_frag;
+                    max_pts = _max_video_pts_frag;
                 } else {
-                    Log.debug("Delta audio/video m/M PTS:" + (_min_video_pts - _min_audio_pts) + "/" + (_max_video_pts - _max_audio_pts));
+                    Log.debug("Delta audio/video m/M PTS:" + (_min_video_pts_frag - _min_audio_pts_frag) + "/" + (_max_video_pts_frag - _max_audio_pts_frag));
                 }
             }
 
@@ -941,7 +990,9 @@ package org.mangui.HLS.streaming {
                 var start_offset : Number = _levels[_level].updateFragment(_seqnum, true, min_pts, max_pts);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
                 _fragment_loading = false;
-                _callback(_tags, min_pts, max_pts, _hasDiscontinuity, start_offset);
+                if (_tags.length) {
+                    _callback(_tags, min_pts, max_pts, _hasDiscontinuity, start_offset);
+                }
                 _pts_loading_in_progress = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));
                 _fragment_first_loaded = true;

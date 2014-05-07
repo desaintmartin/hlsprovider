@@ -1,4 +1,9 @@
 package org.mangui.osmf.plugins {
+    import org.mangui.HLS.HLSError;
+    import org.osmf.events.MediaErrorCodes;
+    import org.osmf.events.MediaError;
+    import org.osmf.events.MediaErrorEvent;
+    import org.mangui.HLS.HLSEvent;
     import org.osmf.traits.DVRTrait;
 
     import flash.net.NetStream;
@@ -34,6 +39,7 @@ package org.mangui.osmf.plugins {
             _hls = hls;
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
+            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
         }
 
         protected function createVideo() : Video {
@@ -144,6 +150,31 @@ package org.mangui.osmf.plugins {
             // setup alternative audio trait
             var alternateAudioTrait : HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls, this as MediaElement);
             addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
+        }
+
+        private function _errorHandler(event : HLSEvent) : void {
+            var errorCode : int = MediaErrorCodes.NETSTREAM_PLAY_FAILED;
+            var errorMsg : String = "Unknown error";
+            if (event && event.error) {
+                errorMsg = event.error.msg;
+                switch (event.error.code) {
+                    case HLSError.FRAGMENT_LOADING_ERROR:
+                    case HLSError.KEY_LOADING_ERROR:
+                    case HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR:
+                    case HLSError.MANIFEST_LOADING_IO_ERROR:
+                        errorCode = MediaErrorCodes.IO_ERROR;
+                        break;
+                    case HLSError.FRAGMENT_PARSING_ERROR:
+                    case HLSError.KEY_PARSING_ERROR:
+                    case HLSError.MANIFEST_PARSING_ERROR:
+                        errorCode = MediaErrorCodes.NETSTREAM_FILE_STRUCTURE_INVALID;
+                        break;
+                    case HLSError.TAG_APPENDING_ERROR:
+                        errorCode = MediaErrorCodes.ARGUMENT_ERROR;
+                        break;
+                }
+            }
+            dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, true, true, new MediaError(errorCode, errorMsg)));
         }
     }
 }

@@ -501,6 +501,7 @@ package org.mangui.HLS.streaming {
             Log.info("HLSNetStream:close");
             super.close();
             _timer.stop();
+            _fragmentLoader.stop();
             _setState(HLSStates.IDLE);
         };
     }

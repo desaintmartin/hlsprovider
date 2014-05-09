@@ -31,6 +31,8 @@ package org.mangui.HLS.streaming {
         private var _manifest_loading : Manifest;
         /** flush live URL cache **/
         private var _flushLiveURLCache : Boolean = HLSSettings.flushLiveURLCache;
+        /** is this loader closed **/
+        private var _closed : Boolean = false;
 
         /** Setup the loader. **/
         public function ManifestLoader(hls : HLS) {
@@ -77,6 +79,7 @@ package org.mangui.HLS.streaming {
         /** Load the manifest file. **/
         public function load(url : String) : void {
             _close();
+            _closed = false;
             _url = url;
             _levels = new Vector.<Level>();
             _current_level = 0;
@@ -153,6 +156,9 @@ package org.mangui.HLS.streaming {
 
         /** load/reload active M3U8 playlist **/
         private function _loadActiveLevelPlaylist() : void {
+            if (_closed) {
+                return;
+            }
             _reload_playlists_timer = getTimer();
             // load active M3U8 playlist only
             _manifest_loading = new Manifest();
@@ -174,6 +180,7 @@ package org.mangui.HLS.streaming {
 
         private function _close() : void {
             Log.debug("cancel any manifest load in progress");
+            _closed = true;
             clearTimeout(_timeoutID);
             try {
                 _urlloader.close();

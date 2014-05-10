@@ -179,6 +179,16 @@ package org.mangui.HLS {
             return _manifestLoader.flushLiveURLCache;
         }
 
+        /* get manifest loading max retry counter */
+        public function get manifestLoadMaxRetry() : Number {
+            return _manifestLoader.manifestLoadMaxRetry;
+        }
+
+        /* set manifest loading max retry counter */
+        public function set manifestLoadMaxRetry(val : Number) : void {
+            _manifestLoader.manifestLoadMaxRetry = val;
+        }
+
         /* if set to true, playback will start from lowest non-audio level after manifest loading. (default is false) */
         public function set startFromLowestLevel(val : Boolean) : void {
             _fragmentLoader.startFromLowestLevel = val;
@@ -199,6 +209,15 @@ package org.mangui.HLS {
             return _fragmentLoader.seekFromLowestLevel;
         }
 
+        /* get fragment loading max retry counter */
+        public function get fragmentLoadMaxRetry() : Number {
+            return _fragmentLoader.fragmentLoadMaxRetry;
+        }
+
+        /* set fragment loading max retry counter */
+        public function set fragmentLoadMaxRetry(val : Number) : void {
+            _fragmentLoader.fragmentLoadMaxRetry = val;
+        }
 
         /* set URL stream loader */
         public function set URLstream(urlstream : Class) : void {

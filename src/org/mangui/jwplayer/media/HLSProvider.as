@@ -226,6 +226,18 @@ package org.mangui.jwplayer.media {
                 Log.info("hls_seekmode:" + value);
                 _hls.seekMode = value as String;
             }
+            value = cfg.hls_fragmentLoadMaxRetry;
+            if (value != null) {
+                Log.info("hls_fragmentLoadMaxRetry:" + value);
+                _hls.fragmentLoadMaxRetry = value as Number;
+            }
+
+            value = cfg.hls_manifestLoadMaxRetry;
+            if (value != null) {
+                Log.info("hls_manifestLoadMaxRetry:" + value);
+                _hls.manifestLoadMaxRetry = value as Number;
+            }
+
             mute(cfg.mute);
         };
 

@@ -33,6 +33,10 @@ package org.mangui.HLS.streaming {
         private var _flushLiveURLCache : Boolean = HLSSettings.flushLiveURLCache;
         /** is this loader closed **/
         private var _closed : Boolean = false;
+        /* playlist retry timeout */
+        private var _retry_timeout : Number;
+        private var _retry_count : Number;
+        private var _retry_max : Number = HLSSettings.manifestLoadMaxRetry;
 
         /** Setup the loader. **/
         public function ManifestLoader(hls : HLS) {
@@ -54,9 +58,12 @@ package org.mangui.HLS.streaming {
                 var error : SecurityErrorEvent = event as SecurityErrorEvent;
                 code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
                 txt = "Cannot load M3U8: crossdomain access denied:" + error.text;
-            } else if (event is IOErrorEvent && _levels.length) {
-                Log.warn("I/O Error while trying to load Playlist, retry in 2s");
-                _timeoutID = setTimeout(_loadActiveLevelPlaylist, 2000);
+            } else if (event is IOErrorEvent && _levels.length && (_retry_max == -1 || _retry_count < _retry_max)) {
+                Log.warn("I/O Error while trying to load Playlist, retry in " + _retry_timeout + " ms");
+                _timeoutID = setTimeout(_loadActiveLevelPlaylist, _retry_timeout);
+                /* exponential increase of retry timeout, capped to 64s */
+                _retry_timeout = Math.min(64000, 2 * _retry_timeout);
+                _retry_count++;
                 return;
             } else {
                 code = HLSError.MANIFEST_LOADING_IO_ERROR;
@@ -85,11 +92,16 @@ package org.mangui.HLS.streaming {
             _current_level = 0;
             _canStart = false;
             _reload_playlists_timer = getTimer();
+            _retry_timeout = 1000;
+            _retry_count = 0;
             _urlloader.load(new URLRequest(url));
         };
 
         /** Manifest loaded; check and parse it **/
         private function _loaderHandler(event : Event) : void {
+            // successful loading, reset retry counter
+            _retry_timeout = 1000;
+            _retry_count = 0;
             var loader : URLLoader = URLLoader(event.target);
             _parseManifest(String(loader.data));
         };
@@ -204,6 +216,14 @@ package org.mangui.HLS.streaming {
 
         public function get flushLiveURLCache() : Boolean {
             return _flushLiveURLCache;
+        }
+
+        public function set manifestLoadMaxRetry(val : Number) : void {
+            _retry_max = val;
+        }
+
+        public function get manifestLoadMaxRetry() : Number {
+            return _retry_max;
         }
     }
 }

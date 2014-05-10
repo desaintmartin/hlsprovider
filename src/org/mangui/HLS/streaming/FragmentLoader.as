@@ -128,6 +128,11 @@ package org.mangui.HLS.streaming {
         private var _audio_tags_found : Boolean;
         private var _video_tags_found : Boolean;
         private var _tags : Vector.<Tag>;
+        /* fragment retry timeout */
+        private var _retry_timeout : Number;
+        private var _retry_count : Number;
+        private var _retry_max : Number = HLSSettings.fragmentLoadMaxRetry;
+        private var _frag_load_status : int;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS) : void {
@@ -149,6 +154,15 @@ package org.mangui.HLS.streaming {
             // check fragment loading status, try to load a new fragment if needed
             if (_fragment_loading == false || _need_reload == true) {
                 var loadstatus : Number;
+                // if previous fragment loading failed
+                if (_bIOError) {
+                    // compare current date and next retry date.
+                    if (new Date().valueOf() < _nIOErrorDate) {
+                        // too early to reload it, return...
+                        return;
+                    }
+                }
+
                 if (_fragment_first_loaded == false) {
                     // just after seek, load first fragment
                     loadstatus = _loadfirstfragment(_seek_position_requested);
@@ -180,6 +194,10 @@ package org.mangui.HLS.streaming {
         }
 
         public function seek(position : Number, callback : Function) : void {
+            // reset IO Error when seeking
+            _bIOError = false;
+            _retry_count = 0;
+            _retry_timeout = 1000;
             _fragment_loading = false;
             _callback = callback;
             _seek_position_requested = position;
@@ -248,10 +266,16 @@ package org.mangui.HLS.streaming {
             we need to report it.
              */
             Log.error("I/O Error while loading fragment:" + message);
-            if (_bIOError == false) {
+            if (_retry_max == -1 || _retry_count < _retry_max) {
                 _bIOError = true;
-                _nIOErrorDate = new Date().valueOf();
-            } else if ((new Date().valueOf() - _nIOErrorDate) > 1000 * _levels[_last_updated_level].averageduration ) {
+                _nIOErrorDate = new Date().valueOf() + _retry_timeout;
+                Log.warn("retry fragment load in " + _retry_timeout + " ms, count=" + _retry_count);
+                /* exponential increase of retry timeout, capped to 64s */
+                _retry_count++;
+                _retry_timeout = Math.min(64000, 2 * _retry_timeout);
+                // in case IO Error reload same fragment
+                _seqnum--;
+            } else {
                 var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _last_segment_url, "I/O Error :" + message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
@@ -259,9 +283,7 @@ package org.mangui.HLS.streaming {
         }
 
         private function _fragLoadHTTPStatusHandler(event : HTTPStatusEvent) : void {
-            if (event.status >= 400) {
-                _fraghandleIOError("HTTP Status:" + event.status.toString());
-            }
+            _frag_load_status = event.status;
         }
 
         private function _fragLoadProgressHandler(event : ProgressEvent) : void {
@@ -303,6 +325,9 @@ package org.mangui.HLS.streaming {
 
         /** frag load completed. **/
         private function _fragLoadCompleteHandler(event : Event) : void {
+            // load complete, reset retry counter
+            _retry_count = 0;
+            _retry_timeout = 1000;
             if (_fragByteArray == null) {
                 Log.warn("fragment size is null, invalid it and load next one");
                 _levels[_level].updateFragment(_seqnum, false);
@@ -438,7 +463,7 @@ package org.mangui.HLS.streaming {
 
         /** Catch IO and security errors. **/
         private function _fragLoadErrorHandler(event : ErrorEvent) : void {
-            _fraghandleIOError(event.text);
+            _fraghandleIOError("HTTP status:" + _frag_load_status + ",msg:" + event.text);
         };
 
         /** Get the current QOS metrics. **/
@@ -475,8 +500,6 @@ package org.mangui.HLS.streaming {
 
         private function _loadfirstfragment(position : Number) : Number {
             Log.debug("loadfirstfragment(" + position + ")");
-            // reset IO Error when loading first fragment
-            _bIOError = false;
             _need_reload = false;
             _switchlevel = true;
             _updateLevel(0);
@@ -524,10 +547,6 @@ package org.mangui.HLS.streaming {
         /** Load a fragment **/
         private function _loadnextfragment() : Number {
             Log.debug("loadnextfragment()");
-            // in case IO Error reload same fragment
-            if (_bIOError) {
-                _seqnum--;
-            }
             _need_reload = false;
 
             _updateLevel(_hls.stream.bufferLength);
@@ -857,7 +876,6 @@ package org.mangui.HLS.streaming {
                 _tags.push(tag);
             }
 
-
             /* do progressive buffering here. 
              * only do it in case :
              *      first fragment is loaded (to avoid issues with accurate seeking)
@@ -1020,5 +1038,15 @@ package org.mangui.HLS.streaming {
                 return false;
             }
         };
+
+        /* set fragment loading max retry counter */
+        public function set fragmentLoadMaxRetry(val : Number) : void {
+            _retry_max = val;
+        }
+
+        /* get fragment loading max retry counter */
+        public function get fragmentLoadMaxRetry() : Number {
+            return _retry_max;
+        }
     }
 }

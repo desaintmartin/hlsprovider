@@ -61,8 +61,8 @@ package org.mangui.flowplayer {
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
             _hls.addEventListener(HLSEvent.STATE, _stateHandler);
-            
-            var cfg:Object = _model.config;
+
+            var cfg : Object = _model.config;
             var value : Object;
 
             // parse configuration parameters
@@ -119,7 +119,19 @@ package org.mangui.flowplayer {
                 Log.info("hls_seekmode:" + value);
                 _hls.seekMode = value as String;
             }
-            
+
+            value = cfg.hls_fragmentLoadMaxRetry;
+            if (value != null) {
+                Log.info("hls_fragmentLoadMaxRetry:" + value);
+                _hls.fragmentLoadMaxRetry = value as Number;
+            }
+
+            value = cfg.hls_manifestLoadMaxRetry;
+            if (value != null) {
+                Log.info("hls_manifestLoadMaxRetry:" + value);
+                _hls.manifestLoadMaxRetry = value as Number;
+            }
+
             _model.dispatchOnLoad();
         }
 
@@ -136,11 +148,11 @@ package org.mangui.flowplayer {
             _clip.duration = _duration;
             _clip.dispatch(ClipEventType.METADATA);
             _seekable = true;
-            //if (_hls.type == HLSTypes.LIVE) {
-            //    _seekable = false;
-            //} else {
-            //    _seekable = true;
-            //}
+            // if (_hls.type == HLSTypes.LIVE) {
+            // _seekable = false;
+            // } else {
+            // _seekable = true;
+            // }
             if (_pauseAfterStart == false) {
                 _hls.stream.play();
             }

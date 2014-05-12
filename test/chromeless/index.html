@@ -82,6 +82,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <th colspan="1"><button onclick="toggleStartFromLowestLevel()">Toggle start From Lowest Level</button></th>
     <th colspan="1"><button onclick="toggleSeekFromLowestLevel()">Toggle seek From Lowest Level</button></th>    
     <th colspan="1"><button onclick="toggleJSURLStream()">Use JS URL Stream Loader</button></th>
+    <th colspan="1"><button onclick="toggleCapLeveltoStage()">Toggle Cap Max Auto-Level to Stage</button></th>
   </tr>
   <tr><td>state</td>
       <td>Relative Position</td>
@@ -98,6 +99,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
       <td>Start From Lowest Level</td>
       <td>Seek From Lowest Level</td>
       <td>Use JS Stream Loader</td>
+      <td>cap Max Auto-Level to Stage</td>
       <td>Live Playlist Sliding</td>
   </tr>
   <tr>
@@ -110,6 +112,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td>0</td>
     <td>0</td>
     <td>0</td>
+    <td>false</td>
     <td>false</td>
     <td>false</td>
     <td>false</td>
@@ -205,7 +208,7 @@ function load(url) {
     document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  0;
     document.getElementById('mediaInfo').rows[2].cells[8].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[2].cells[15].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[16].innerHTML =  0;
   }
 }
 
@@ -386,6 +389,16 @@ function toggleJSURLStream() {
   }
 }
 
+function toggleCapLeveltoStage() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getCapLeveltoStage();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[15].innerHTML =  state;
+    obj.playerCapLeveltoStage(state);
+    appendLog("toggle cap Level to Stage to:" + state);
+  }
+}
 
 
 function getAudioTrackList() {
@@ -419,15 +432,18 @@ function onHLSReady(message) {
 function onVideoSize(width, height) {
   appendLog("onVideoSize(), " + width + "x" + height);
   var obj = getFlashMovieObject(player_id);
-  if (obj != null) {
-    var ratio = width / height;
-    if (height > 720) {
-      height = 720;
-      width = height * ratio;
+  if (obj != null) {    
+    var state = obj.getCapLeveltoStage(); 
+    if(!state) {
+      var ratio = width / height;
+      if (height > 720) {
+        height = 720;
+        width = height * ratio;
+      }
+      appendLog("onVideoSize(),resize stage to " + width + "x" + height);
+      obj.width = width;
+      obj.height = height;
     }
-
-    obj.width = width;
-    obj.height = height;
   }
 }
 
@@ -453,7 +469,7 @@ function onPosition(position,duration,live_sliding) {
   document.getElementById('mediaInfo').rows[2].cells[4].innerHTML = getMinBufferLength().toFixed(2);
   document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  getbufferLength().toFixed(2);
   document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  getMaxBufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[15].innerHTML =  live_sliding.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[16].innerHTML =  live_sliding.toFixed(2);
 }
 
 function onState(newState) {

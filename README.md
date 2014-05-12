@@ -69,6 +69,18 @@ It is possible to customize HLS playback thanks to the following configuration k
 	* "ACCURATE" : seek to exact position
 	* "KEYFRAME" : seek to last keyframe before requested position
 	* "SEGMENT" : seek to beginning of segment containing requested position
+* hls_manifestloadmaxretry (default -1): max number of Manifest load retries after I/O Error.
+	* if any I/O error is met during initial Manifest load, it will not be reloaded. an HLSError will be triggered immediately.
+	* After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+		* 0, means no retry, error message will be triggered automatically
+		* -1 means infinite retry
+* hls_fragmentloadmaxretry (default -1): max number of Fragment load retries after I/O Error.
+	* any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+		* 0, means no retry, error message will be triggered automatically
+		* -1 means infinite retry
+* hls_capmaxautoleveltostage (default false) : cap levels usable in auto quality mode to the one with width smaller or equal to Stage Width.
+	* true : playlist WIDTH attribute will be used and compared with Stage width. if playlist Width is greater than Stage width, this level will not be selected in auto quality mode. However it could still be manually selected.
+	* false : don't cap levels, all could be used in auto-quality mode.
 
 ##HLSProvider in action :
 

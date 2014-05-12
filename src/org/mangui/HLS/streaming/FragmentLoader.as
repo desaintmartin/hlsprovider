@@ -1,4 +1,6 @@
 package org.mangui.HLS.streaming {
+    import flash.display.Stage;
+
     import com.hurlant.util.Hex;
 
     import flash.events.*;
@@ -1047,6 +1049,14 @@ package org.mangui.HLS.streaming {
         /* get fragment loading max retry counter */
         public function get fragmentLoadMaxRetry() : Number {
             return _retry_max;
+        }
+
+        public function set capMaxAutoLeveltoStage(stage : Stage) : void {
+            _autoLevelManager.stage = stage;
+        }
+
+        public function get capMaxAutoLeveltoStage() : Stage {
+            return _autoLevelManager.stage;
         }
     }
 }

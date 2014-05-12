@@ -1,5 +1,8 @@
 package org.mangui.HLS {
+    import flash.display.Stage;
+
     import org.mangui.HLS.parsing.AltAudioTrack;
+
     import flash.net.URLStream;
 
     import org.mangui.HLS.parsing.Level;
@@ -217,6 +220,16 @@ package org.mangui.HLS {
         /* set fragment loading max retry counter */
         public function set fragmentLoadMaxRetry(val : Number) : void {
             _fragmentLoader.fragmentLoadMaxRetry = val;
+        }
+
+        /* get stage used to cap max level in auto-level mode*/
+        public function get capMaxAutoLeveltoStage() : Stage {
+            return _fragmentLoader.capMaxAutoLeveltoStage;
+        }
+
+        /* set stage used to cap max level in auto-level mode */
+        public function set capMaxAutoLeveltoStage(val : Stage) : void {
+            _fragmentLoader.capMaxAutoLeveltoStage = val;
         }
 
         /* set URL stream loader */

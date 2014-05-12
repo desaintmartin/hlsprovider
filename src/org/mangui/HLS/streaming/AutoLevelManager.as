@@ -1,4 +1,6 @@
 package org.mangui.HLS.streaming {
+    import flash.display.Stage;
+
     import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
     import org.mangui.HLS.utils.Log;
@@ -15,12 +17,21 @@ package org.mangui.HLS.streaming {
         private var _bitrate : Array = null;
         /** nb level **/
         private var _nbLevel : Number = 0;
+        private var _stage : Stage;
 
         /** Create the loader. **/
         public function AutoLevelManager(hls : HLS) : void {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
         };
+
+        public function set stage(stage : Stage) : void {
+            _stage = stage;
+        }
+
+        public function get stage() : Stage {
+            return _stage;
+        }
 
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
@@ -57,12 +68,31 @@ package org.mangui.HLS.streaming {
         };
 
         public function getbestlevel(download_bandwidth : Number) : Number {
-            for (var i : Number = _nbLevel - 1; i >= 0; i--) {
+            var max_level : Number = _max_level;
+            for (var i : Number = max_level - 1; i >= 0; i--) {
                 if (_bitrate[i] <= download_bandwidth) {
                     return i;
                 }
             }
             return 0;
+        }
+
+        private function get _max_level() : Number {
+            var max_level : Number = 0;
+            if (_stage) {
+                var dwidth : Number = _stage.width;
+                for (var i : Number = 0; i < _nbLevel; i++) {
+                    var lwidth : Number = _hls.levels[i].width;
+                    Log.debug("stage width=" + dwidth + ",level " + i + ":width=" + lwidth);
+                    if (isNaN(lwidth) || lwidth < dwidth) {
+                        max_level++;
+                    }
+                }
+                Log.debug("max capped level: " + max_level);
+            } else {
+                max_level = _nbLevel;
+            }
+            return max_level;
         }
 
         /** Update the quality level for the next fragment load. **/
@@ -85,7 +115,7 @@ package org.mangui.HLS.streaming {
             /* to switch level up :
             rsft should be greater than switch up condition,
              */
-            if ((current_level < _nbLevel - 1) && (sftm > (1 + _switchup[current_level]))) {
+            if ((current_level < _max_level - 1) && (sftm > (1 + _switchup[current_level]))) {
                 Log.debug("sftm:> 1+_switchup[_level]=" + (1 + _switchup[current_level]));
                 Log.debug("switch to level " + (current_level + 1));
                 // level up

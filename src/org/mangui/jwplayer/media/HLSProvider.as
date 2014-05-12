@@ -226,18 +226,25 @@ package org.mangui.jwplayer.media {
                 Log.info("hls_seekmode:" + value);
                 _hls.seekMode = value as String;
             }
-            value = cfg.hls_fragmentLoadMaxRetry;
+            value = cfg.hls_fragmentloadmaxretry;
             if (value != null) {
-                Log.info("hls_fragmentLoadMaxRetry:" + value);
+                Log.info("hls_fragmentloadmaxretry:" + value);
                 _hls.fragmentLoadMaxRetry = value as Number;
             }
 
-            value = cfg.hls_manifestLoadMaxRetry;
+            value = cfg.hls_manifestloadmaxretry;
             if (value != null) {
-                Log.info("hls_manifestLoadMaxRetry:" + value);
+                Log.info("hls_manifestloadmaxretry:" + value);
                 _hls.manifestLoadMaxRetry = value as Number;
             }
 
+            value = cfg.hls_capmaxautoleveltostage;
+            if (value != null) {
+                Log.info("hls_capmaxautoleveltostage:" + value);
+                if (value as Boolean == true) {
+                    _hls.capMaxAutoLeveltoStage = RootReference.stage;
+                }
+            }
             mute(cfg.mute);
         };
 

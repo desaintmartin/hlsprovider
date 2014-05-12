@@ -61,6 +61,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getbufferLength", _getbufferLength);
             ExternalInterface.addCallback("getLogDebug", _getLogDebug);
             ExternalInterface.addCallback("getLogDebug2", _getLogDebug2);
+            ExternalInterface.addCallback("getCapLeveltoStage", _getCapLeveltoStage);
             ExternalInterface.addCallback("getflushLiveURLCache", _getflushLiveURLCache);
             ExternalInterface.addCallback("getstartFromLowestLevel", _getstartFromLowestLevel);
             ExternalInterface.addCallback("getseekFromLowestLevel", _getseekFromLowestLevel);
@@ -86,6 +87,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetseekFromLowestLevel", _setseekFromLowestLevel);
             ExternalInterface.addCallback("playerSetLogDebug", _setLogDebug);
             ExternalInterface.addCallback("playerSetLogDebug2", _setLogDebug2);
+            ExternalInterface.addCallback("playerCapLeveltoStage", _setCapLeveltoStage);
             ExternalInterface.addCallback("playerSetAudioTrack", _setAudioTrack);
             ExternalInterface.addCallback("playerSetJSURLStream", _setJSURLStream);
 
@@ -106,8 +108,8 @@ package org.mangui.chromeless {
 
         private function _errorHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                var hlsError: HLSError = event.error;
-                ExternalInterface.call("onError", hlsError.code,hlsError.url,hlsError.msg);
+                var hlsError : HLSError = event.error;
+                ExternalInterface.call("onError", hlsError.code, hlsError.url, hlsError.msg);
             }
         };
 
@@ -236,6 +238,10 @@ package org.mangui.chromeless {
             return Log.LOG_DEBUG2_ENABLED;
         };
 
+        private function _getCapLeveltoStage() : Boolean {
+            return (_hls.capMaxAutoLeveltoStage != null);
+        };
+
         private function _getJSURLStream() : Boolean {
             return (_hls.URLstream is JSURLStream);
         };
@@ -293,9 +299,9 @@ package org.mangui.chromeless {
             }
         };
 
-        private function _smoothSetLevel(level: Number) : void {
+        private function _smoothSetLevel(level : Number) : void {
             if (level != _hls.level) {
-              _hls.level = level;
+                _hls.level = level;
             }
         };
 
@@ -310,7 +316,7 @@ package org.mangui.chromeless {
         private function _setlowBufferLength(new_len : Number) : void {
             _hls.lowBufferLength = new_len;
         };
-        
+
         private function _setflushLiveURLCache(flushLiveURLCache : Boolean) : void {
             _hls.flushLiveURLCache = flushLiveURLCache;
         };
@@ -329,6 +335,14 @@ package org.mangui.chromeless {
 
         private function _setLogDebug2(debug2 : Boolean) : void {
             Log.LOG_DEBUG2_ENABLED = debug2;
+        };
+
+        private function _setCapLeveltoStage(value : Boolean) : void {
+            if (value) {
+                _hls.capMaxAutoLeveltoStage = stage;
+            } else {
+                _hls.capMaxAutoLeveltoStage = null;
+            }
         };
 
         private function _setJSURLStream(jsURLstream : Boolean) : void {
@@ -381,7 +395,7 @@ package org.mangui.chromeless {
                 _video.attachNetStream(_hls.stream);
             }
             stage.removeEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
-            //addChild(new TheMiner());
+            // addChild(new TheMiner());
         };
 
         private function _onStageResize(event : Event) : void {

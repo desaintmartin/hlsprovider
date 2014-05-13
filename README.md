@@ -1,88 +1,78 @@
-#HLSprovider
+# HLSProvider
 
-**HLSProvider** is an open-source HLS Flash plugin that allows you to play HLS streams. It is integrated with the following players :
+An Open-source HLS Flash plugin that allows you to play HLS streams.
 
-* a home made **Chromeless** Flash Player, with js controls.
-* **JWPlayer** free edition version **5.x**
-* **JWPlayer** free edition version **6.x**
-* **OSMF** version **2.0**
-* **FlowPlayer** version **3.2.12**
-* **http://mediaelementjs.com** (support being added here : https://github.com/mangui/mediaelement)
-* **http://www.videojs.com** (support being added here : https://github.com/mangui/video-js-swf)
- 
-HLSProvider could be used as library to build a custom flash player using a simple SDK/API.
+The plugin is compatible with the following players:
 
-**HLSProvider** supports the following features :
+  - [JW Player](#jw-player-6) 5 & 6 (**Free** edition only)
+  - [Flowplayer](#flowplayer) 3.2.12
+  - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
+  - video.js
+  - MediaElement.js
 
-* VOD/live playlists
-	* live playlist are also seekable (also known as DVR playlist support)
-* adaptive streaming (multiple bitrate)
-	* manual or automatic quality switching, using serial segment fetching method from [http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf](http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf)
-* configurable seeking mode in VoD and live
-	* accurate seeking to exact requested position
-	* key-frame based seeking (seek to nearest key frame before requested seek position)
-	* segment based seeking (seek to beginning of segment containing requested seek position)
-* buffer progress report
-* error resilience
-	* retry mechanism in case of I/O Errors
-	* recovery mechanism in case of badly segmented TS streams
-* AES-128 decryption
-	* the algorithm has been optimized and should allow smooth playback on low-end devices
-	* decryption is performed progressively during fragment download.
+## Features
 
-the following M3U8 tags are supported: 
+  - VoD & Live playlists
+    - Sliding window (aka DVR) support on Live playlists
+  - Adaptive streaming
+    - Manual & Auto switching
+    - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
+  - Configurable seeking method on VoD & Live
+    - Accurate seeking to exact requested position
+    - Key frame based seeking (nearest key frame)
+    - Segment based seeking (beginning of segment)
+  - AES-128 decryption 
+  - Buffer progress report
+  - Error resilience
+    - Retry mechanism on I/O errors 
+    - Recovery mechanism on badly segmented TS streams
 
-* #EXTM3U
-* #EXTINF
-* #EXT-X-STREAM-INF (multiple bitrate)
-* #EXT-X-ENDLIST (live / VOD playlist)
-* #EXT-X-MEDIA-SEQUENCE
-* #EXT-X-TARGETDURATION
-* #EXT-X-DISCONTINUITY
-* #EXT-X-DISCONTINUITY-SEQUENCE
-* #EXT-X-PROGRAM-DATE-TIME (optional, used to synchronize time-stamps and sequence number when switching from one level to another)
-* #EXT-X-KEY (AES-128 method supported only)
-* #EXT-X-BYTERANGE (because of Flash limitation, whole fragment will be downloaded. However the byte-range will be extracted correctly)
+### Supported M3U8 tags
 
-the following containers are supported:
+  - `#EXTM3U`
+  - `#EXTINF`
+  - `#EXT-X-STREAM-INF` (Multiple bitrate)
+  - `#EXT-X-ENDLIST` (VoD / Live playlist)
+  - `#EXT-X-MEDIA-SEQUENCE`
+  - `#EXT-X-TARGETDURATION`
+  - `#EXT-X-DISCONTINUITY`
+  - `#EXT-X-DISCONTINUITY-SEQUENCE`
+  - `#EXT-X-PROGRAM-DATE-TIME` (optional, used to synchronize time-stamps and sequence number when switching from one level to another)
+  - `#EXT-X-KEY` (AES-128 method supported only)
+  - `#EXT-X-BYTERANGE`
 
-* MPEG2-Transport Stream. each TS can contain :
-	* from 0 to multiple audio streams (dynamic audio switch available)
-	* 0 or 1 video stream
-* AAC and MPEG1-Layer 3 Audio Elementary streams
-	* as per HLS spec, Each Elementary Audio Stream segment MUST signal the timestamp of its first sample with an ID3 PRIV tag at the beginning of the segment.  The ID3 PRIV owner identifier MUST be      "com.apple.streaming.transportStreamTimestamp".
+## Configuration
 
-### Customization parameters for JWPlayer5/6, FlowPlayer, OSMF Based Players:
+The plugin accepts several **optional** configuration options, such as:
 
-It is possible to customize HLS playback thanks to the following configuration keys:
+  - `hls_debug` (default false) - Toggle _debug_ traces, outputted on JS console
+  - `hls_debug2` (default false) - Toggle _verbose debug_ traces, outputted on JS console
+  - `hls_minbufferlength` (default -1) - Minimum buffer length in _seconds_ that needs to be reached before playback can start (after seeking) or restart (in case of empty buffer)
+    - If set to `-1` some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall
+  - `hls_lowbufferlength` (default 3) - Low buffer threshold in _seconds_. When crossing down this threshold, HLS will switch to buffering state, usually the player will report this buffering state through a rotating icon. Playback will still continue.
+  - `hls_maxbufferlength` (default 60) - Maximum buffer length in _seconds_ (0 means infinite buffering)
+  - `hls_startfromlowestlevel` (default false) - If set to true, playback will start from lowest non-audio level after manifest download. If set to false, playback will start from level matching download bandwidth
+  - `hls_seekfromlowestlevel` (default false) - If set to true, playback will start from lowest non-audio level after any seek operation. If set to false, playback will start from level used before seeking
+  - `hls_live_flushurlcache` (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)
+  - `hls_seekmode`
+    - "ACCURATE" - Seek to exact position
+    - "KEYFRAME" - Seek to last keyframe before requested position
+    - "SEGMENT" - Seek to beginning of segment containing requested position
+  - `hls_manifestloadmaxretry` (default -1): max number of Manifest load retries after I/O Error.
+    - if any I/O error is met during initial Manifest load, it will not be reloaded. an HLSError will be triggered immediately.
+    - After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+    	- 0, means no retry, error message will be triggered automatically
+		- -1 means infinite retry
+  - `hls_fragmentloadmaxretry` (default -1): max number of Fragment load retries after I/O Error.
+	  * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+		  * 0, means no retry, error message will be triggered automatically
+		  * -1 means infinite retry      
+  - `hls_capmaxautoleveltostage` (default false) : cap levels usable in auto quality mode to the one with width smaller or equal to Stage Width.
+    - true : playlist WIDTH attribute will be used and compared with Stage width. if playlist Width is greater than Stage width, this level will not be selected in auto quality mode. However it could still be manually selected.
+    - false : don't cap levels, all could be used in auto-quality mode.
 
-* hls_debug (true/default false) : toggle debug traces, outputted on JS console
-* hls_debug2 (true/default false) : toggle verbose debug traces, outputted on JS console
-* hls_minbufferlength (default -1s) : minimum buffer length that needs to be reached before playback can start(after seeking) or restart (in case of empty buffer).
-	* if set to -1, some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall.
-* hls_lowbufferlength (default 3s) : low buffer threshold. when crossing down this threshold, HLS will switch to buffering state, usually player will report this buffering state through a rotating icon. playback will still continue.
-* hls_maxbufferlength (default 60s) : maximum buffer length (0 means infinite buffering)
-* hls_startfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after manifest download. if set to false, playback will start from level matching download bandwidth.
-* hls_seekfromlowestlevel (true/default false) : if set to true, playback will start from lowest non-audio level after any seek operation. if set to false, playback will start from level used before seeking.
-* hls\_live\_flushurlcache (true/default false) : if set to true, live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player /  IE version)
-* hls_seekmode:
-	* "ACCURATE" : seek to exact position
-	* "KEYFRAME" : seek to last keyframe before requested position
-	* "SEGMENT" : seek to beginning of segment containing requested position
-* hls_manifestloadmaxretry (default -1): max number of Manifest load retries after I/O Error.
-	* if any I/O error is met during initial Manifest load, it will not be reloaded. an HLSError will be triggered immediately.
-	* After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
-		* 0, means no retry, error message will be triggered automatically
-		* -1 means infinite retry
-* hls_fragmentloadmaxretry (default -1): max number of Fragment load retries after I/O Error.
-	* any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
-		* 0, means no retry, error message will be triggered automatically
-		* -1 means infinite retry
-* hls_capmaxautoleveltostage (default false) : cap levels usable in auto quality mode to the one with width smaller or equal to Stage Width.
-	* true : playlist WIDTH attribute will be used and compared with Stage width. if playlist Width is greater than Stage width, this level will not be selected in auto quality mode. However it could still be manually selected.
-	* false : don't cap levels, all could be used in auto-quality mode.
 
-##HLSProvider in action :
+## Examples :
 
 * http://streambox.fr/HLSProvider/chromeless
 * http://streambox.fr/HLSProvider/jwplayer5
@@ -94,163 +84,147 @@ It is possible to customize HLS playback thanks to the following configuration k
 * http://streambox.fr/HLSProvider/videojs/flash_demo.html
 
 
-##How to use it :
 
-download latest release from here : https://github.com/mangui/HLSprovider/releases
+## Usage
 
-###chromeless based setup:
-from zip, extract test/chromeless folder, and get inspired by example.html
+  - Download HLSProvider from https://github.com/mangui/HLSprovider/releases
+  - Unzip, extract and upload the appropiate version to your server
+  - In the `examples` directory you will find examples for JW Player, Flowplayer, Strobe Media Playback (SMP) and GrindPlayer
 
-###OSMF based setup:
-from zip, extract test/osmf folder, and get inspired by index.html
+### Setup
+---
 
-###FlowPlayer based setup:
-from zip, extract test/flowplayer folder, and get inspired by index.html
+#### JW Player 6
 
-#####Flowplayer customization parameters:
+Please keep in mind that HLSprovider works only with the **Free** edition of JW Player 6
 
-functional behavior can be tweaked by adding configuration keys as below :
-
-	flowplayer("player", "flowplayer.swf", {
-	// configure the required plugins
-	wmode: 'direct',
-	plugins: {
-	httpstreaming: {
-	url: 'HLSProviderFlowPlayer.swf',
-	hls_debug : false,
-	hls_debug2 : false,
-	hls_lowbufferlength : 3,	
-	hls_minbufferlength : 8,
-	hls_maxbufferlength : 60,
-	hls_startfromlowestlevel : false,
-	hls_seekfromlowestlevel : false,
-	hls_live_flushurlcache : false,
-	hls_seekmode : "ACCURATE"
-	}
-	},
-	clip: {
-	...
-
-
-
-
-###jwplayer5 based setup:
-from zip, extract test/jwplayer5 folder, and get inspired by example.html
-
-    <div style="width: 640px; height: 360px;" id="player"></div>
-    <script type="text/javascript" src="jwplayer.js"></script>
-    <script type="text/javascript">
-    
-    jwplayer("player").setup({
-    width: 640,height: 360,
-    modes: [
-    { type:'flash', src:'player.swf', config: { provider:'HLSProvider5.swf', file:'http://mysite.com/stream.m3u8' } },
-    { type:'html5', config: { file:'http://mysite.com/stream.m3u8' } }
-    ]});
-    
-    </script>
-
-
-###jwplayer6 based setup:
-from zip, extract test/jwplayer6 folder, and get inspired by example.html
-
-    <div style="width: 640px; height: 360px;" id="player"></div>
-    <script type="text/javascript" src="jwplayer.js"></script>
-    <script type="text/javascript">
-
-    jwplayer("player").setup({
-    playlist: [{
-    file:'http://mysite.com/stream.m3u8',
-    provider:'HLSProvider6.swf',
-    type:'hls'
-    }],
-    width: 640,
-    height: 480,
-    primary: "flash"
-    });
-
-###jwplayer 5/6 customization parameters:
-
-functional behavior can be tweaked by adding configuration keys as below:
-
-    jwplayer("player").setup({
-	hls_debug : false,
-	hls_debug2 : false,
-	hls_lowbufferlength : 3,
-	hls_minbufferlength : 8,
-	hls_maxbufferlength : 60,
-	hls_startfromlowestlevel : true,
-	hls_seekfromlowestlevel : true,
-	hls_live_flushurlcache : false,
-	hls_live_seekdurationthreshold : 60,
-	hls_seekmode : "ACCURATE"
-	...
-
-
-### write your own HLS flash player in less than 30 lines of code !
-
-working example below, also provided as source code,  refer to HLSProvider/src/org/mangui/basic/Player.as
-
-	package org.mangui.basic {
-    import flash.display.Sprite;
-    import flash.media.Video;
-
-    import org.mangui.HLS.*;
-
-    public class Player extends Sprite {
-        private var hls : HLS = null;
-        private var video : Video = null;
-
-        public function Player() : void {
-            hls = new HLS();
-
-            video = new Video(640, 480);
-            addChild(video);
-            video.x = 0;
-            video.y = 0;
-            video.smoothing = true;
-            video.attachNetStream(hls.stream);
-            hls.addEventListener(HLSEvent.MANIFEST_LOADED, manifestHandler);
-            hls.load("http://domain.com/hls/m1.m3u8");
-        }
-
-        public function manifestHandler(event : HLSEvent) : void {
-            hls.stream.play();
-        };
+```javascript
+jwplayer("player").setup({
+  // JW Player configuration options
+  // ...
+  playlist: [
+    {
+      file: 'http://mysite.com/stream.m3u8',
+      provider: 'HLSProvider6.swf',
+      type: 'hls'
     }
+  ],
+  // HLSProvider configuration options
+  hls_debug: false,
+  hls_debug2: false,
+  hls_minbufferlength: -1,
+  hls_lowbufferlength: 2,
+  hls_maxbufferlength: 60,
+  hls_startfromlowestlevel: false,
+  hls_seekfromlowestlevel: false,
+  hls_live_flushurlcache: false,
+  hls_seekmode: 'ACCURATE'
+});
+```
+---
 
+#### JW Player 5
 
-###License
-the following files (from [jwplayer.com](http://www.jwplayer.com)) are governed by a Creative Commons license:
+```javascript
+jwplayer("player").setup({
+  // JW Player configuration options
+  // ...
+  modes: [
+    {
+      type: 'flash',
+      src: 'player.swf',
+      config: {
+        provider: 'HLSProvider5.swf',
+        file: 'http://example.com/stream.m3u8'
+      }
+    }, {
+      type: 'html5',
+      config: {
+        file: 'http://example.com/stream.m3u8'
+      }
+    }
+  ],
+  // HLSProvider configuration options
+  hls_debug: false,
+  hls_debug2: false,
+  hls_minbufferlength: -1,
+  hls_lowbufferlength: 2,
+  hls_maxbufferlength: 60,
+  hls_startfromlowestlevel: false,
+  hls_seekfromlowestlevel: false,
+  hls_live_flushurlcache: false,
+  hls_seekmode: 'ACCURATE'
+});
+```
+---
 
-* lib/jw5/jwplayer-5-lib.swc
-* lib/jw5/jwplayer-5-classes.xml
-* lib/jw6/jwplayer-6-lib.swc
-* lib/jw6/jwplayer-6-classes.xml
-* test/HLSProvider5/jwplayer.js
-* test/HLSProvider5/player.swf
-* test/HLSProvider6/jwplayer.js
-* test/HLSProvider6/jwplayer.html5.js
-* test/HLSProvider6/jwplayer.flash.swf
+#### Flowplayer
 
-You can use, modify, copy, and distribute them as long as it's for non-commercial use, you provide attribution, and share under a similar license.
+```javascript
+flowplayer("player", 'http://releases.flowplayer.org/swf/flowplayer-3.2.12.swf', {
+  // Flowplayer configuration options
+  // ...
+  plugins: {
+    httpstreaming: {
+      // HLSProvider configuration options
+      url: 'HLSProviderFlowPlayer.swf',
+      hls_debug: false,
+      hls_debug2: false,
+      hls_lowbufferlength: 3,
+      hls_minbufferlength: 8,
+      hls_maxbufferlength: 60,
+      hls_startfromlowestlevel: false,
+      hls_seekfromlowestlevel: false,
+      hls_live_flushurlcache: false,
+      hls_seekmode: 'ACCURATE'
+    }
+  }
+});
+```
+---
 
-The license summary and full text can be found here: [CC BY-NC-SA 3.0](http://creativecommons.org/licenses/by-nc-sa/3.0/ "CC BY-NC-SA 3.0")
+#### Strobe Media Playback (SMP) and other OSMF based players
 
-the following file (from [https://github.com/timkurvers/as3-crypto]) is governed by BSD License:
+```javascript
+var playerOptions = {
+  // Strobe Media Playback configuration options
+  // ...
+  source: 'http://example.com/stream.m3u8',
+  // HLSProvider configuration options
+  plugin_hls: "HLSProvider.swf",
+  hls_debug: false,
+  hls_debug2: false,
+  hls_minbufferlength: -1,
+  hls_lowbufferlength: 2,
+  hls_maxbufferlength: 60,
+  hls_startfromlowestlevel: false,
+  hls_seekfromlowestlevel: false,
+  hls_live_flushurlcache: false,
+  hls_seekmode: 'ACCURATE'
+};
 
-* lib/as3crypto.swc
+swfobject.embedSWF('StrobeMediaPlayback.swf', 'player', 640, 360, '10.2', null, playerOptions, {
+  allowFullScreen: true,
+  allowScriptAccess: 'always',
+  bgColor: '#000000',
+  wmode: 'opaque'
+}, {
+  name: 'player'
+});
+```
 
-The license full text of as3crypto lib can be found here: [as3-crypto](https://github.com/timkurvers/as3-crypto/blob/master/LICENSE.md)
+## License
 
+  - [MPL 2.0](https://github.com/mangui/HLSprovider/LICENSE)
+  - JW Player files are governed by a `CC BY-NC-SA 3.0` license
+  - [as3crypto.swc](https://github.com/timkurvers/as3-crypto) is governed by a `BSD` license
 
-**All other files (source code and executable) are governed by MPL 2.0** (Mozilla Public License 2.0).
-The license full text can be found here: [MPL 2.0](http://www.mozilla.org/MPL/2.0/)
+## Donation
 
-###Donate
-If you'd like to support future development and new product features, please make a donation via PayPal - a secure online banking service.These donations are used to cover my ongoing expenses - web hosting, domain registrations, and software and hardware purchases.
+If you'd like to support future development and new product features, please make a donation via PayPal. These donations are used to cover my ongoing expenses - web hosting, domain registrations, and software and hardware purchases.
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=463RB2ALVXJLA)
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mangui/hlsprovider/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+---
 
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mangui/hlsprovider/trend.png)](https://bitdeli.com/free "Bitdeli Badge")

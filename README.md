@@ -74,14 +74,14 @@ The plugin accepts several **optional** configuration options, such as:
 
 ## Examples :
 
-* http://streambox.fr/HLSProvider/chromeless
-* http://streambox.fr/HLSProvider/jwplayer5
-* http://streambox.fr/HLSProvider/jwplayer6
-* http://streambox.fr/HLSProvider/osmf/GrindPlayer.html
-* http://streambox.fr/HLSProvider/osmf/StrobeMediaPlayback.html
-* http://streambox.fr/HLSProvider/flowplayer/index.html
-* http://streambox.fr/HLSProvider/mediaelement/demo/mediaelementplayer-hls.html
-* http://streambox.fr/HLSProvider/videojs/flash_demo.html
+* http://www.hlsprovider.org/latest/test/chromeless
+* http://www.hlsprovider.org/latest/test/jwplayer5
+* http://www.hlsprovider.org/latest/test/jwplayer6
+* http://www.hlsprovider.org/latest/test/osmf/GrindPlayer.html
+* http://www.hlsprovider.org/latest/test/osmf/StrobeMediaPlayback.html
+* http://www.hlsprovider.org/latest/test/flowplayer/index.html
+* http://www.hlsprovider.org/mediaelement/demo/mediaelementplayer-hls.html
+* http://www.hlsprovider.org/videojs/flash_demo.html
 
 
 

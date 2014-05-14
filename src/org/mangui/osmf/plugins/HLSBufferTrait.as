@@ -2,7 +2,7 @@ package org.mangui.osmf.plugins {
     import org.osmf.traits.BufferTrait;
     import org.mangui.HLS.HLS;
     import org.mangui.HLS.HLSEvent;
-    import org.mangui.HLS.HLSStates;
+    import org.mangui.HLS.HLSPlayStates;
     import org.mangui.HLS.utils.*;
 
     public class HLSBufferTrait extends BufferTrait {
@@ -12,12 +12,12 @@ package org.mangui.osmf.plugins {
             Log.debug("HLSBufferTrait()");
             super();
             _hls = hls;
-            _hls.addEventListener(HLSEvent.STATE, _stateChangedHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
         }
 
         override public function dispose() : void {
             Log.debug("HLSBufferTrait:dispose");
-            _hls.removeEventListener(HLSEvent.STATE, _stateChangedHandler);
+            _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
             super.dispose();
         }
 
@@ -28,8 +28,8 @@ package org.mangui.osmf.plugins {
         /** state changed handler **/
         private function _stateChangedHandler(event : HLSEvent) : void {
             switch(event.state) {
-                case HLSStates.PLAYING_BUFFERING:
-                case HLSStates.PAUSED_BUFFERING:
+                case HLSPlayStates.PLAYING_BUFFERING:
+                case HLSPlayStates.PAUSED_BUFFERING:
                     Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(true)");
                     setBuffering(true);
                     break;

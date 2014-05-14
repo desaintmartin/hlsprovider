@@ -112,18 +112,18 @@ package org.mangui.jwplayer.media {
         /** Forward state changes from the framework. **/
         private function _stateHandler(event : HLSEvent) : void {
             switch(event.state) {
-                case HLSStates.IDLE:
+                case HLSPlayStates.IDLE:
                     setState(PlayerState.IDLE);
                     break;
-                case HLSStates.PLAYING_BUFFERING:
-                case HLSStates.PAUSED_BUFFERING:
+                case HLSPlayStates.PLAYING_BUFFERING:
+                case HLSPlayStates.PAUSED_BUFFERING:
                     setState(PlayerState.BUFFERING);
                     break;
-                case HLSStates.PLAYING:
+                case HLSPlayStates.PLAYING:
                     _video.visible = true;
                     setState(PlayerState.PLAYING);
                     break;
-                case HLSStates.PAUSED:
+                case HLSPlayStates.PAUSED:
                     setState(PlayerState.PAUSED);
                     break;
             }
@@ -144,7 +144,7 @@ package org.mangui.jwplayer.media {
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
-            _hls.addEventListener(HLSEvent.STATE, _stateHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.AUDIO_ONLY, _audioHandler);
 
             // Allow stagevideo to be disabled by user config

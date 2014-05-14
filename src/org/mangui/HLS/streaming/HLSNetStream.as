@@ -45,7 +45,9 @@ package org.mangui.HLS.streaming {
         /** previous buffer time. **/
         private var _last_buffer : Number;
         /** Current playback state. **/
-        private var _state : String;
+        private var _playbackState : String;
+        /** Current seek state. **/
+        private var _seekState : String;
         /** max buffer length (default 60s)**/
         private var _buffer_max_len : Number = HLSSettings.maxBufferLength;
         /** min buffer length (default -1 = auto)**/
@@ -71,7 +73,8 @@ package org.mangui.HLS.streaming {
             _fragmentLoader = fragmentLoader;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
-            _setState(HLSStates.IDLE);
+            _playbackState = HLSPlayStates.IDLE;
+            _seekState = HLSSeekStates.IDLE;
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
         };
@@ -108,7 +111,8 @@ package org.mangui.HLS.streaming {
                             _timer.stop();
                             Log.debug("reached end of VOD playlist, notify playback complete");
                             _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                            _setState(HLSStates.IDLE);
+                            _setPlaybackState(HLSPlayStates.IDLE);
+                            _setSeekState(HLSSeekStates.IDLE);
                             return;
                         } else {
                             // pause Netstream in really low buffer condition
@@ -122,12 +126,12 @@ package org.mangui.HLS.streaming {
                     }
                     // dont switch to buffering state in case we reached end of a VOD playlist
                     if (!_reached_vod_end) {
-                        if (_state == HLSStates.PLAYING) {
+                        if (_playbackState == HLSPlayStates.PLAYING) {
                             // low buffer condition and play state. switch to play buffering state
-                            _setState(HLSStates.PLAYING_BUFFERING);
-                        } else if (_state == HLSStates.PAUSED) {
+                            _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+                        } else if (_playbackState == HLSPlayStates.PAUSED) {
                             // low buffer condition and pause state. switch to paused buffering state
-                            _setState(HLSStates.PAUSED_BUFFERING);
+                            _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                         }
                     }
                 }
@@ -145,11 +149,11 @@ package org.mangui.HLS.streaming {
                     }
 
                     // no more in low buffer state
-                    if (_state == HLSStates.PLAYING_BUFFERING) {
+                    if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         super.resume();
-                        _setState(HLSStates.PLAYING);
-                    } else if (_state == HLSStates.PAUSED_BUFFERING) {
-                        _setState(HLSStates.PAUSED);
+                        _setPlaybackState(HLSPlayStates.PLAYING);
+                    } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
+                        _setPlaybackState(HLSPlayStates.PAUSED);
                     }
                 }
             }
@@ -167,6 +171,7 @@ package org.mangui.HLS.streaming {
                     _seek_in_progress = false;
                     // dispatch event to mimic NetStream behaviour
                     dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
+                    _setSeekState(HLSSeekStates.SEEKED);
                 }
                 // Log.debug("appending data into NetStream");
                 while (0 < _flvTagBuffer.length) {
@@ -205,8 +210,13 @@ package org.mangui.HLS.streaming {
         };
 
         /** Return the current playback state. **/
-        public function get state() : String {
-            return _state;
+        public function get playbackState() : String {
+            return _playbackState;
+        };
+
+        /** Return the current seek state. **/
+        public function get seekState() : String {
+            return _seekState;
         };
 
         /** Add a fragment to the buffer. **/
@@ -336,11 +346,20 @@ package org.mangui.HLS.streaming {
         }
 
         /** Change playback state. **/
-        private function _setState(state : String) : void {
-            if (state != _state) {
-                Log.debug('[STATE] from ' + _state + ' to ' + state);
-                _state = state;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.STATE, _state));
+        private function _setPlaybackState(state : String) : void {
+            if (state != _playbackState) {
+                Log.debug('[PLAYBACK_STATE] from ' + _playbackState + ' to ' + state);
+                _playbackState = state;
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_STATE, _playbackState));
+            }
+        };
+
+        /** Change seeking state. **/
+        private function _setSeekState(state : String) : void {
+            if (state != _seekState) {
+                Log.debug('[SEEK_STATE] from ' + _seekState + ' to ' + state);
+                _seekState = state;
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.SEEK_STATE, _seekState));
             }
         };
 
@@ -376,34 +395,36 @@ package org.mangui.HLS.streaming {
             }
             Log.info("HLSNetStream:play(" + _playStart + ")");
             seek(_playStart);
+            _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
         }
 
         override public function play2(param : NetStreamPlayOptions) : void {
             Log.info("HLSNetStream:play2(" + param.start + ")");
             seek(param.start);
+            _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
         }
 
         /** Pause playback. **/
         override public function pause() : void {
             Log.info("HLSNetStream:pause");
-            if (_state == HLSStates.PLAYING) {
+            if (_playbackState == HLSPlayStates.PLAYING) {
                 super.pause();
-                _setState(HLSStates.PAUSED);
-            } else if (_state == HLSStates.PLAYING_BUFFERING) {
+                _setPlaybackState(HLSPlayStates.PAUSED);
+            } else if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                 super.pause();
-                _setState(HLSStates.PAUSED_BUFFERING);
+                _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
             }
         };
 
         /** Resume playback. **/
         override public function resume() : void {
             Log.info("HLSNetStream:resume");
-            if (_state == HLSStates.PAUSED) {
+            if (_playbackState == HLSPlayStates.PAUSED) {
                 super.resume();
-                _setState(HLSStates.PLAYING);
-            } else if (_state == HLSStates.PAUSED_BUFFERING) {
+                _setPlaybackState(HLSPlayStates.PLAYING);
+            } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
                 // dont resume NetStream here, it will be resumed by Timer. this avoids resuming playback while seeking is in progress
-                _setState(HLSStates.PLAYING_BUFFERING);
+                _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
             }
         };
 
@@ -477,18 +498,19 @@ package org.mangui.HLS.streaming {
              * switch to paused buffering state
              * otherwise, switch to playing buffering state
              */
-            switch(_state) {
-                case HLSStates.PAUSED:
-                case HLSStates.PAUSED_BUFFERING:
-                    _setState(HLSStates.PAUSED_BUFFERING);
+            switch(_playbackState) {
+                case HLSPlayStates.PAUSED:
+                case HLSPlayStates.PAUSED_BUFFERING:
+                    _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                     break;
-                case HLSStates.IDLE:
-                case HLSStates.PLAYING:
-                case HLSStates.PLAYING_BUFFERING:
+                case HLSPlayStates.PLAYING:
+                case HLSPlayStates.PLAYING_BUFFERING:
+                    _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+                    break;
                 default:
-                    _setState(HLSStates.PLAYING_BUFFERING);
                     break;
             }
+            _setSeekState(HLSSeekStates.SEEKING);
             /* always pause NetStream while seeking, even if we are in play state
              * in that case, NetStream will be resumed after first fragment loading
              */
@@ -502,7 +524,8 @@ package org.mangui.HLS.streaming {
             super.close();
             _timer.stop();
             _fragmentLoader.stop();
-            _setState(HLSStates.IDLE);
+            _setPlaybackState(HLSPlayStates.IDLE);
+            _setSeekState(HLSSeekStates.IDLE);
         };
     }
 }

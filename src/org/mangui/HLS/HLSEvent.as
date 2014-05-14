@@ -19,7 +19,9 @@ package org.mangui.HLS {
         /** Identifier for a playback media time change event. **/
         public static const MEDIA_TIME : String = "hlsEventMediaTime";
         /** Identifier for a playback state switch event. **/
-        public static const STATE : String = "hlsEventState";
+        public static const PLAYBACK_STATE : String = "hlsPlaybackState";
+        /** Identifier for a seek state switch event. **/
+        public static const SEEK_STATE : String = "hlsSeekState";
         /** Identifier for a quality level switch event. **/
         public static const QUALITY_SWITCH : String = "hlsEventQualitySwitch";
         /** Identifier for a level updated event (playlist loaded) **/
@@ -68,7 +70,8 @@ package org.mangui.HLS {
                 case HLSEvent.MEDIA_TIME:
                     mediatime = parameter as HLSMediatime;
                     break;
-                case HLSEvent.STATE:
+                case HLSEvent.PLAYBACK_STATE:
+                case HLSEvent.SEEK_STATE:
                     state = parameter as String;
                     break;
                 case HLSEvent.QUALITY_SWITCH:

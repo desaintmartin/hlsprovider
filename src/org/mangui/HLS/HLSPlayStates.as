@@ -1,6 +1,6 @@
 package org.mangui.HLS {
     /** Identifiers for the different playback states. **/
-    public class HLSStates {
+    public class HLSPlayStates {
         /** idle state. **/
         public static const IDLE : String = "IDLE";
         /** playing state. **/

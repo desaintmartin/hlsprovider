@@ -7,7 +7,7 @@ package org.mangui.flowplayer {
 
     import org.mangui.HLS.HLS;
     import org.mangui.HLS.HLSEvent;
-    import org.mangui.HLS.HLSStates;
+    import org.mangui.HLS.HLSPlayStates;
     import org.mangui.HLS.utils.Log;
     import org.flowplayer.model.Plugin;
     import org.flowplayer.model.PluginModel;
@@ -32,7 +32,6 @@ package org.mangui.flowplayer {
         private var _video : Video;
         /** reference to the framework. **/
         private var _hls : HLS;
-        private var _hlsState : String = HLSStates.IDLE;
         // event values
         private var _position : Number = 0;
         private var _duration : Number = 0;
@@ -60,7 +59,7 @@ package org.mangui.flowplayer {
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.STATE, _stateHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
 
             var cfg : Object = _model.config;
             var value : Object;
@@ -188,21 +187,20 @@ package org.mangui.flowplayer {
         };
 
         private function _stateHandler(event : HLSEvent) : void {
-            _hlsState = event.state;
-            // Log.txt("state:"+ _hlsState);
+            // Log.txt("state:"+ event.state);
             switch(event.state) {
-                case HLSStates.IDLE:
-                case HLSStates.PLAYING:
+                case HLSPlayStates.IDLE:
+                case HLSPlayStates.PLAYING:
                     _clip.dispatch(ClipEventType.BUFFER_FULL);
                     break;
-                case HLSStates.PLAYING_BUFFERING:
+                case HLSPlayStates.PLAYING_BUFFERING:
                     _clip.dispatch(ClipEventType.BUFFER_EMPTY);
                     break;
-                case HLSStates.PAUSED_BUFFERING:
+                case HLSPlayStates.PAUSED_BUFFERING:
                     _clip.dispatch(ClipEventType.BUFFER_EMPTY);
                     _clip.dispatch(ClipEventType.PAUSE);
                     break;
-                case HLSStates.PAUSED:
+                case HLSPlayStates.PAUSED:
                     _clip.dispatch(ClipEventType.BUFFER_FULL);
                     _clip.dispatch(ClipEventType.PAUSE);
                     break;

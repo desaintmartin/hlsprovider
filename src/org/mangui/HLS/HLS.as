@@ -76,8 +76,13 @@ package org.mangui.HLS {
         };
 
         /** Return the current playback state. **/
-        public function get state() : String {
-            return _hlsNetStream.state;
+        public function get playbackState() : String {
+            return _hlsNetStream.playbackState;
+        };
+
+        /** Return the current seek state. **/
+        public function get seekState() : String {
+            return _hlsNetStream.seekState;
         };
 
         /** Return the type of stream (VOD/LIVE). **/

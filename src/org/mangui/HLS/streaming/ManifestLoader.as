@@ -41,7 +41,7 @@ package org.mangui.HLS.streaming {
         /** Setup the loader. **/
         public function ManifestLoader(hls : HLS) {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.STATE, _stateHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.QUALITY_SWITCH, _levelSwitchHandler);
             _levels = new Vector.<Level>();
             _urlloader = new URLLoader();
@@ -205,7 +205,7 @@ package org.mangui.HLS.streaming {
 
         /** When the framework idles out, stop reloading manifest **/
         private function _stateHandler(event : HLSEvent) : void {
-            if (event.state == HLSStates.IDLE) {
+            if (event.state == HLSPlayStates.IDLE) {
                 _close();
             }
         };

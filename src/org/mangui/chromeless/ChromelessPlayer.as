@@ -53,7 +53,8 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getMetrics", _getMetrics);
             ExternalInterface.addCallback("getDuration", _getDuration);
             ExternalInterface.addCallback("getPosition", _getPosition);
-            ExternalInterface.addCallback("getState", _getState);
+            ExternalInterface.addCallback("getPlaybackState", _getPlaybackState);
+            ExternalInterface.addCallback("getSeekState", _getSeekState);
             ExternalInterface.addCallback("getType", _getType);
             ExternalInterface.addCallback("getmaxBufferLength", _getmaxBufferLength);
             ExternalInterface.addCallback("getminBufferLength", _getminBufferLength);
@@ -194,8 +195,12 @@ package org.mangui.chromeless {
             return _hls.position;
         };
 
-        private function _getState() : String {
-            return _hls.state;
+        private function _getPlaybackState() : String {
+            return _hls.playbackState;
+        };
+
+        private function _getSeekState() : String {
+            return _hls.seekState;
         };
 
         private function _getType() : String {
@@ -379,7 +384,7 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.STATE, _stateHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.QUALITY_SWITCH, _switchHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_CHANGE, _audioTrackChange);

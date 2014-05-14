@@ -2,7 +2,7 @@ package org.mangui.osmf.plugins {
     import org.osmf.traits.SeekTrait;
     import org.osmf.traits.TimeTrait;
     import org.mangui.HLS.HLS;
-    import org.mangui.HLS.HLSStates;
+    import org.mangui.HLS.HLSSeekStates;
     import org.mangui.HLS.HLSEvent;
     import org.mangui.HLS.utils.*;
 
@@ -13,12 +13,12 @@ package org.mangui.osmf.plugins {
             Log.debug("HLSSeekTrait()");
             super(timeTrait);
             _hls = hls;
-            _hls.addEventListener(HLSEvent.STATE, _stateChangedHandler);
+            _hls.addEventListener(HLSEvent.SEEK_STATE, _stateChangedHandler);
         }
 
         override public function dispose() : void {
             Log.debug("HLSSeekTrait:dispose");
-            _hls.removeEventListener(HLSEvent.STATE, _stateChangedHandler);
+            _hls.removeEventListener(HLSEvent.SEEK_STATE, _stateChangedHandler);
             super.dispose();
         }
 
@@ -30,7 +30,7 @@ package org.mangui.osmf.plugins {
          */
         override protected function seekingChangeStart(newSeeking : Boolean, time : Number) : void {
             if (newSeeking) {
-                Log.info("HLSSeekTrait:seekingChangeStart(newSeeking/time):(" + newSeeking  + "/" + time + ")");
+                Log.info("HLSSeekTrait:seekingChangeStart(newSeeking/time):(" + newSeeking + "/" + time + ")");
                 _hls.stream.seek(time);
             }
             super.seekingChangeStart(newSeeking, time);
@@ -38,7 +38,7 @@ package org.mangui.osmf.plugins {
 
         /** state changed handler **/
         private function _stateChangedHandler(event : HLSEvent) : void {
-            if (seeking && (event.state != HLSStates.PAUSED_BUFFERING && event.state != HLSStates.PLAYING_BUFFERING)) {
+            if (seeking && event.state != HLSSeekStates.SEEKING) {
                 Log.debug("HLSSeekTrait:setSeeking(false);");
                 setSeeking(false, timeTrait.currentTime);
             }

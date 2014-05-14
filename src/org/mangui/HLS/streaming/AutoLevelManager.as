@@ -1,6 +1,4 @@
 package org.mangui.HLS.streaming {
-    import flash.display.Stage;
-
     import org.mangui.HLS.parsing.Level;
     import org.mangui.HLS.*;
     import org.mangui.HLS.utils.Log;
@@ -17,21 +15,12 @@ package org.mangui.HLS.streaming {
         private var _bitrate : Array = null;
         /** nb level **/
         private var _nbLevel : Number = 0;
-        private var _stage : Stage;
 
         /** Create the loader. **/
         public function AutoLevelManager(hls : HLS) : void {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
         };
-
-        public function set stage(stage : Stage) : void {
-            _stage = stage;
-        }
-
-        public function get stage() : Stage {
-            return _stage;
-        }
 
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
@@ -79,8 +68,8 @@ package org.mangui.HLS.streaming {
 
         private function get _max_level() : Number {
             var max_level : Number = 0;
-            if (_stage) {
-                var dwidth : Number = _stage.width;
+            if (_hls.capLeveltoStage && _hls.stage) {
+                var dwidth : Number = _hls.stage.width;
                 for (var i : Number = 0; i < _nbLevel; i++) {
                     var lwidth : Number = _hls.levels[i].width;
                     Log.debug("stage width=" + dwidth + ",level " + i + ":width=" + lwidth);

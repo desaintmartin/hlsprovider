@@ -139,6 +139,7 @@ package org.mangui.jwplayer.media {
         override public function initializeMediaProvider(cfg : PlayerConfig) : void {
             super.initializeMediaProvider(cfg);
             _hls = new HLS();
+            _hls.stage = RootReference.stage;
             _hls.stream.soundTransform = new SoundTransform(cfg.volume / 100);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
@@ -238,11 +239,11 @@ package org.mangui.jwplayer.media {
                 _hls.manifestLoadMaxRetry = value as Number;
             }
 
-            value = cfg.hls_capmaxautoleveltostage;
+            value = cfg.hls_capleveltostage;
             if (value != null) {
-                Log.info("hls_capmaxautoleveltostage:" + value);
+                Log.info("hls_capleveltostage:" + value);
                 if (value as Boolean == true) {
-                    _hls.capMaxAutoLeveltoStage = RootReference.stage;
+                    _hls.capLeveltoStage = true;
                 }
             }
             mute(cfg.mute);

@@ -67,7 +67,7 @@ The plugin accepts several **optional** configuration options, such as:
 	  * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
 		  * 0, means no retry, error message will be triggered automatically
 		  * -1 means infinite retry      
-  - `hls_capmaxautoleveltostage` (default false) : cap levels usable in auto quality mode to the one with width smaller or equal to Stage Width.
+  - `hls_capleveltostage` (default false) : cap levels usable in auto quality mode to the one with width smaller or equal to Stage Width.
     - true : playlist WIDTH attribute will be used and compared with Stage width. if playlist Width is greater than Stage width, this level will not be selected in auto quality mode. However it could still be manually selected.
     - false : don't cap levels, all could be used in auto-quality mode.
 

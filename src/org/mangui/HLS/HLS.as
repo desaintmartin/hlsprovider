@@ -24,6 +24,8 @@ package org.mangui.HLS {
         /** HLS URLStream **/
         private var _hlsURLStream : Class;
         private var _client : Object = {};
+        private var _stage : Stage;
+        private var _capLeveltoStage : Boolean = HLSSettings.capLeveltoStage;
 
         /** Create and connect all components. **/
         public function HLS() {
@@ -228,13 +230,23 @@ package org.mangui.HLS {
         }
 
         /* get stage used to cap max level in auto-level mode*/
-        public function get capMaxAutoLeveltoStage() : Stage {
-            return _fragmentLoader.capMaxAutoLeveltoStage;
+        public function get capLeveltoStage() : Boolean {
+            return _capLeveltoStage;
         }
 
         /* set stage used to cap max level in auto-level mode */
-        public function set capMaxAutoLeveltoStage(val : Stage) : void {
-            _fragmentLoader.capMaxAutoLeveltoStage = val;
+        public function set capLeveltoStage(val : Boolean) : void {
+            _capLeveltoStage = val;
+        }
+
+        /* set stage */
+        public function set stage(stage : Stage) : void {
+            _stage = stage;
+        }
+
+        /* get stage */
+        public function get stage() : Stage {
+            return _stage;
         }
 
         /* set URL stream loader */

@@ -1,10 +1,23 @@
 package org.mangui.HLS {
     public final class HLSSettings extends Object {
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
+        //
+        // org.mangui.HLS
+        //
+        // // // // // ///////////////////////////////////
+        /**
+         * Defines whether max level selectable in auto quality mode
+         * should be restricted to level with width  smaller or equal to 
+         * player width
+         * 
+         * Default is false
+         */
+        public static var capLeveltoStage : Boolean = false;
+        // // // // // ///////////////////////////////////
         //
         // org.mangui.HLS.streaming.HLSNetStream
         //
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
         /**
          * Defines minimum buffer length in seconds before playback can start, after seeking or buffer stalling.
          * 
@@ -34,11 +47,11 @@ package org.mangui.HLS {
          * Default is HLSSeekmode.ACCURATE_SEEK.
          */
         public static var seekMode : String = HLSSeekmode.ACCURATE_SEEK;
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
         //
         // org.mangui.HLS.streaming.FragmentLoader
         //
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
         /**
          * If set to true, playback will start from lowest non-audio level after manifest download. 
          * If set to false, playback will start from level matching download bandwidth.
@@ -53,17 +66,16 @@ package org.mangui.HLS {
          * Default is false
          */
         public static var seekFromLowestLevel : Boolean = false;
-        
         /** max nb of retries for Fragment Loading in case I/O errors are met,
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry 
-         */        
+         */
         public static var fragmentLoadMaxRetry : Number = -1;
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
         //
         // org.mangui.HLS.streaming.ManifestLoader
         //
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
         /**
          * If set to true, live playlist will be flushed from URL cache before reloading 
          * (this is to workaround some cache issues with some combination of Flash Player / IE version)
@@ -71,17 +83,16 @@ package org.mangui.HLS {
          * Default is false
          */
         public static var flushLiveURLCache : Boolean = false;
-        
         /** max nb of retries for Manifest Loading in case I/O errors are met,
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry 
          */
         public static var manifestLoadMaxRetry : Number = -1;
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
         //
         // org.mangui.HLS.utils.Log
         //
-        // // // // /////////////////////////////////////
+        // // // // // ///////////////////////////////////
         /**
          * Defines whether INFO level log messages will will appear in the console
          * Default is true.

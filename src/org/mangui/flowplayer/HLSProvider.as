@@ -55,6 +55,7 @@ package org.mangui.flowplayer {
             Log.info("onLoad()");
             _player = player;
             _hls = new HLS();
+            _hls.stage = player.screen.getDisplayObject().stage;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
@@ -131,11 +132,11 @@ package org.mangui.flowplayer {
                 _hls.manifestLoadMaxRetry = value as Number;
             }
 
-            value = cfg.hls_capmaxautoleveltostage;
+            value = cfg.hls_capleveltostage;
             if (value != null) {
-                Log.info("hls_capmaxautoleveltostage:" + value);
+                Log.info("hls_capleveltostage:" + value);
                 if (value as Boolean == true) {
-                    _hls.capMaxAutoLeveltoStage = player.screen.getDisplayObject().stage;
+                    _hls.capLeveltoStage = true;
                 }
             }
 

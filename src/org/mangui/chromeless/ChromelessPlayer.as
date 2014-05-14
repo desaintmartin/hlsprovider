@@ -244,7 +244,7 @@ package org.mangui.chromeless {
         };
 
         private function _getCapLeveltoStage() : Boolean {
-            return (_hls.capMaxAutoLeveltoStage != null);
+            return _hls.capLeveltoStage;
         };
 
         private function _getJSURLStream() : Boolean {
@@ -343,11 +343,7 @@ package org.mangui.chromeless {
         };
 
         private function _setCapLeveltoStage(value : Boolean) : void {
-            if (value) {
-                _hls.capMaxAutoLeveltoStage = stage;
-            } else {
-                _hls.capMaxAutoLeveltoStage = null;
-            }
+            _hls.capLeveltoStage = value;
         };
 
         private function _setJSURLStream(jsURLstream : Boolean) : void {
@@ -379,6 +375,7 @@ package org.mangui.chromeless {
         private function _onStageVideoState(event : StageVideoAvailabilityEvent) : void {
             var available : Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
             _hls = new HLS();
+            _hls.stage = stage;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentHandler);

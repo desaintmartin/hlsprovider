@@ -16,6 +16,7 @@ package org.mangui.osmf.plugins {
         public static const FLUSH_LIVE_URL_CACHE : String = "live_flushurlcache";
         public static const MANIFEST_LOAD_MAX_RETRY : String = "manifestloadmaxretry";
         public static const FRAGMENT_LOAD_MAX_RETRY : String = "segmentloadmaxretry";
+        public static const CAP_LEVEL_TO_STAGE : String = "capleveltostage";
         public static const LOG_INFO : String = "info";
         public static const LOG_DEBUG : String = "debug";
         public static const LOG_DEBUG2 : String = "debug2";
@@ -39,6 +40,7 @@ package org.mangui.osmf.plugins {
         paramMap[HLSPluginParams.FLUSH_LIVE_URL_CACHE] = "flushLiveURLCache";
         paramMap[HLSPluginParams.MANIFEST_LOAD_MAX_RETRY] = "manifestLoadMaxRetry";
         paramMap[HLSPluginParams.FRAGMENT_LOAD_MAX_RETRY] = "segmentLoadMaxRetry";
+        paramMap[HLSPluginParams.CAP_LEVEL_TO_STAGE] = "capLeveltoStage";
         paramMap[HLSPluginParams.LOG_INFO] = "logInfo";
         paramMap[HLSPluginParams.LOG_DEBUG] = "logDebug";
         paramMap[HLSPluginParams.LOG_DEBUG2] = "logDebug2";

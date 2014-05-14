@@ -88,7 +88,10 @@ function listStreams(list, container) {
                 hls_debug: false,
                 hls_debug2: false,
                 hls_warn: true,
-                hls_error: true
+                hls_error: true,
+                hls_fragmentloadmaxretry : -1,
+                hls_manifestloadmaxretry : -1,
+                hls_capleveltostage : false
             };
             
             for (var i = 0; i < parameterNames.length; i++) {

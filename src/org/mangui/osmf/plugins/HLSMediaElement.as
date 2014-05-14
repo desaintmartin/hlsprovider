@@ -120,7 +120,7 @@ package org.mangui.osmf.plugins {
             var timeTrait : TimeTrait = new HLSTimeTrait(_hls, _defaultduration);
             addTrait(MediaTraitType.TIME, timeTrait);
 
-            var displayObjectTrait : HLSDisplayObjectTrait = new HLSDisplayObjectTrait(videoSurface, NaN, NaN);
+            var displayObjectTrait : HLSDisplayObjectTrait = new HLSDisplayObjectTrait(_hls,videoSurface, NaN, NaN);
             addTrait(MediaTraitType.DISPLAY_OBJECT, displayObjectTrait);
 
             var playTrait : PlayTrait = new HLSPlayTrait(_hls);

@@ -1,4 +1,8 @@
 package org.mangui.osmf.plugins {
+    import flash.display.Stage;
+
+    import org.mangui.HLS.HLS;
+
     import flash.display.DisplayObject;
     import flash.events.Event;
 
@@ -7,8 +11,12 @@ package org.mangui.osmf.plugins {
     import org.osmf.media.videoClasses.VideoSurface;
 
     public class HLSDisplayObjectTrait extends DisplayObjectTrait {
-        public function HLSDisplayObjectTrait(videoSurface : DisplayObject, mediaWidth : Number = 0, mediaHeight : Number = 0) {
+        private var videoSurface : VideoSurface;
+        private var _hls : HLS;
+
+        public function HLSDisplayObjectTrait(hls : HLS, videoSurface : DisplayObject, mediaWidth : Number = 0, mediaHeight : Number = 0) {
             Log.debug("HLSDisplayObjectTrait()");
+            _hls = hls;
             super(videoSurface, mediaWidth, mediaHeight);
             this.videoSurface = videoSurface as VideoSurface;
 
@@ -23,6 +31,7 @@ package org.mangui.osmf.plugins {
         }
 
         private function onStage(event : Event) : void {
+            _hls.stage = event.target.stage as Stage;
             videoSurface.removeEventListener(Event.ADDED_TO_STAGE, onStage);
             videoSurface.addEventListener(Event.ENTER_FRAME, onFrame);
         }
@@ -41,7 +50,5 @@ package org.mangui.osmf.plugins {
             }
             // videoSurface.removeEventListener(Event.ENTER_FRAME, onFrame);
         }
-
-        private var videoSurface : VideoSurface;
     }
 }

@@ -21,6 +21,12 @@ package org.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         };
 
+        public function dispose() : void {
+            _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.removeEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
+            _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+        }
+
         public function get minBufferLength() : Number {
             return _minBufferLength;
         }

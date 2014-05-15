@@ -147,6 +147,14 @@ package org.mangui.HLS.streaming {
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
         };
 
+        public function dispose():void {
+            stop();
+            _autoLevelManager.dispose();
+            _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.removeEventListener(HLSEvent.LEVEL_UPDATED, _levelUpdatedHandler);
+            _hls.removeEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE, _altAudioTracksListChangedHandler);
+        }
+
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
             // dont try to load any fragment if _level is not defined (should be the case if manifest not yet loaded for example

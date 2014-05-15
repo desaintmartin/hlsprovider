@@ -22,6 +22,10 @@ package org.mangui.HLS.streaming {
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
         };
 
+        public function dispose() : void {
+            _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+        }
+
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             var levels : Vector.<Level>= event.levels;

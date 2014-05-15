@@ -50,6 +50,15 @@ package org.mangui.HLS.streaming {
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler);
         };
 
+        public function dispose() : void {
+            _close();
+            _urlloader.removeEventListener(Event.COMPLETE, _loaderHandler);
+            _urlloader.removeEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
+            _urlloader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler);
+            _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.removeEventListener(HLSEvent.QUALITY_SWITCH, _levelSwitchHandler);
+        }
+
         /** Loading failed; return errors. **/
         private function _errorHandler(event : ErrorEvent) : void {
             var txt : String;

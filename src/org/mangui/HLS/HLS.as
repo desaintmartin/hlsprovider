@@ -46,6 +46,19 @@ package org.mangui.HLS {
             }
             return super.dispatchEvent(event);
         };
+        
+        
+        public function dispose():void {
+            _fragmentLoader.dispose();
+            _manifestLoader.dispose();
+            _hlsNetStream.dispose_();
+            _fragmentLoader = null;
+            _manifestLoader = null;
+            _hlsNetStream = null;
+            _client = null;
+            _stage = null;
+            _hlsNetStream = null;
+        }
 
         /** Return the playback quality level of last loaded fragment **/
         public function get level() : Number {

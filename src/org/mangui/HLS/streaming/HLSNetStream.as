@@ -527,5 +527,12 @@ package org.mangui.HLS.streaming {
             _setPlaybackState(HLSPlayStates.IDLE);
             _setSeekState(HLSSeekStates.IDLE);
         };
+
+        public function dispose_() : void {
+            close();
+            _autoBufferManager.dispose();
+            _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
+        }
     }
 }

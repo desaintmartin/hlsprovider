@@ -150,6 +150,7 @@ package org.mangui.HLS.streaming {
 
                     // no more in low buffer state
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
+                        Log.debug("resume playback");
                         super.resume();
                         _setPlaybackState(HLSPlayStates.PLAYING);
                     } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
@@ -196,11 +197,10 @@ package org.mangui.HLS.streaming {
                 }
                 // FLV tag buffer drained, reset its duration
                 _flvTagBufferDuration = 0;
-
-                // update buffer threshold here if needed
-                if (_buffer_min_len == -1) {
-                    _buffer_threshold = _autoBufferManager.minBufferLength;
-                }
+            }
+            // update buffer threshold here if needed
+            if (_buffer_min_len == -1) {
+                _buffer_threshold = _autoBufferManager.minBufferLength;
             }
         };
 

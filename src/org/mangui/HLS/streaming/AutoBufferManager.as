@@ -7,7 +7,7 @@ package org.mangui.HLS.streaming {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
         // max nb of samples used for bw checking. the bigger it is, the more conservative it is.
-        private static const MAX_SAMPLES : Number = 3;
+        private static const MAX_SAMPLES : Number = 30;
         private var _bw : Vector.<Number>;
         private var _nb_samples : uint;
         private var _targetduration : Number;
@@ -17,6 +17,7 @@ package org.mangui.HLS.streaming {
         public function AutoBufferManager(hls : HLS) : void {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.addEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         };
 
@@ -32,7 +33,7 @@ package org.mangui.HLS.streaming {
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
-            var cur_bw:Number = event.metrics.bandwidth;
+            var cur_bw : Number = event.metrics.bandwidth;
             _bw[_nb_samples % MAX_SAMPLES] = cur_bw;
             _nb_samples++;
 
@@ -43,7 +44,7 @@ package org.mangui.HLS.streaming {
                 min_bw = Math.min(min_bw, _bw[i]);
             }
 
-             // give more weight to current bandwidth
+            // give more weight to current bandwidth
             var bw_ratio : Number = 2 * cur_bw / (min_bw + cur_bw);
 
             /* predict time to dl next segment using a conservative approach.
@@ -57,7 +58,9 @@ package org.mangui.HLS.streaming {
              */
             _minBufferLength = event.metrics.frag_processing_time * (_targetduration / event.metrics.frag_duration) * bw_ratio;
             // avoid min > max
-            _minBufferLength = Math.min(_hls.maxBufferLength, _minBufferLength);
+            if (HLSSettings.maxBufferLength) {
+                _minBufferLength = Math.min(_hls.maxBufferLength, _minBufferLength);
+            }
             Log.debug("AutoBufferManager:minBufferLength:" + _minBufferLength);
         };
     }

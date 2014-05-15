@@ -10,6 +10,8 @@ package org.mangui.HLS {
         public static const PLAYBACK_COMPLETE : String = "hlsEventPlayBackComplete";
         /** Identifier for a playback error event. **/
         public static const ERROR : String = "hlsEventError";
+        /** Identifier for audio/video TAGS load event. **/
+        public static const TAGS_LOADED : String = "hlsEventTagsLoaded";
         /** Identifier for a fragment load event. **/
         public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
         /** Identifier when last fragment of playlist has been loaded **/
@@ -61,6 +63,7 @@ package org.mangui.HLS {
                 case HLSEvent.ERROR:
                     error = parameter as HLSError;
                     break;
+                case HLSEvent.TAGS_LOADED:
                 case HLSEvent.FRAGMENT_LOADED:
                     metrics = parameter as HLSMetrics;
                     break;

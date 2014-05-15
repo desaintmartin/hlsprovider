@@ -37,8 +37,8 @@ function getlink(url) {
 
 function listStreams(list, container) {
   for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
-    entry.innerHTML = "<a href=" + getlink(list[i].file) + ">" +list[i].title+"</a>";
-    //entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";	
+    //entry.innerHTML = "<a href=" + getlink(list[i].file) + ">" +list[i].title+"</a>";
+    entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";	
     document.getElementById(container).appendChild(entry);
   }
   //loadStream(list[0].file);

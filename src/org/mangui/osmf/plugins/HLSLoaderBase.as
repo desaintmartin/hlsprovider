@@ -59,10 +59,13 @@ package org.mangui.osmf.plugins {
         override protected function executeLoad(loadTrait : LoadTrait) : void {
             _loadTrait = loadTrait;
             updateLoadTrait(loadTrait, LoadState.LOADING);
-            if (_hls == null) {
-                _hls = new HLS();
-                _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+
+            if (_hls != null) {
+                _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+                _hls = null;
             }
+            _hls = new HLS();
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             /* load playlist */
             _hls.load(URLResource(loadTrait.resource).url);
         }

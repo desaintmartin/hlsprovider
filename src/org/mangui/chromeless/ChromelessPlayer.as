@@ -31,6 +31,8 @@ package org.mangui.chromeless {
         /** current media position */
         private var _media_position : Number;
         private var _duration : Number;
+	/** URL autoload feature */
+	private var _autoLoad : Boolean = false;
 
         /** Initialization. **/
         public function ChromelessPlayer() {
@@ -122,6 +124,11 @@ package org.mangui.chromeless {
 
         private function _manifestHandler(event : HLSEvent) : void {
             _duration = event.levels[0].duration;
+
+            if (_autoLoad) {
+                _play();
+            }
+
             if (ExternalInterface.available) {
                 ExternalInterface.call("onManifest", event.levels[0].duration);
             }
@@ -398,6 +405,12 @@ package org.mangui.chromeless {
             }
             stage.removeEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
             // addChild(new TheMiner());
+
+            var autoLoadUrl : String = root.loaderInfo.parameters.url as String;
+            if (autoLoadUrl != null) {
+                _autoLoad = true;
+                _load(autoLoadUrl);
+            }
         };
 
         private function _onStageResize(event : Event) : void {

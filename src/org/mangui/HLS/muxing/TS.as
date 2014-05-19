@@ -258,7 +258,7 @@ package org.mangui.HLS.muxing {
         /** parse AVC PES packet **/
         private function _parseAVCPES(pes : PES) : void {
             var sps : ByteArray;
-            var pps : ByteArray;
+            var ppsvect : Vector.<ByteArray>;
             var sps_found : Boolean = false;
             var pps_found : Boolean = false;
             var frames : Vector.<VideoFrame> = AVC.getNALU(pes.data, pes.payload);
@@ -295,14 +295,18 @@ package org.mangui.HLS.muxing {
                     pes.data.position = frame.start;
                     pes.data.readBytes(sps, 0, frame.length);
                 } else if (frame.type == 8) {
-                    pps_found = true;
-                    pps = new ByteArray();
+                    if (!pps_found) {
+                        pps_found = true;
+                        ppsvect = new Vector.<ByteArray>();
+                    }
+                    var pps : ByteArray = new ByteArray();
                     pes.data.position = frame.start;
                     pes.data.readBytes(pps, 0, frame.length);
+                    ppsvect.push(pps);
                 }
             }
             if (sps_found && pps_found) {
-                var avcc : ByteArray = AVC.getAVCC(sps, pps);
+                var avcc : ByteArray = AVC.getAVCC(sps, ppsvect);
                 var avccTag : Tag = new Tag(Tag.AVC_HEADER, pes.pts, pes.dts, true);
                 avccTag.push(avcc, 0, avcc.length);
                 _videoTags.push(avccTag);

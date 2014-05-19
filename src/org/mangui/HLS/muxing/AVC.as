@@ -26,7 +26,7 @@ package org.mangui.HLS.muxing {
         /** Get Avcc header from AVC stream 
         See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
          **/
-        public static function getAVCC(sps : ByteArray, pps : ByteArray) : ByteArray {
+        public static function getAVCC(sps : ByteArray, ppsVect : Vector.<ByteArray>) : ByteArray {
             // Write startbyte
             var avcc : ByteArray = new ByteArray();
             avcc.writeByte(0x01);
@@ -41,11 +41,13 @@ package org.mangui.HLS.muxing {
             // data of SPS
             avcc.writeBytes(sps, 0, sps.length);
             // Number of PPS
-            avcc.writeByte(0x01);
+            avcc.writeByte(ppsVect.length);
+            for each(var pps:ByteArray in ppsVect) {
             // 2 bytes for length of PPS
             avcc.writeShort(pps.length);
             // data of PPS
             avcc.writeBytes(pps, 0, pps.length);
+            }
             if (Log.LOG_DEBUG_ENABLED) {
                 // Grab profile/level
                 sps.position = 1;

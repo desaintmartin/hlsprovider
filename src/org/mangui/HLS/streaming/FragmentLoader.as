@@ -118,11 +118,8 @@ package org.mangui.HLS.streaming {
         private var _max_audio_pts_tags : Number;
         private var _min_video_pts_tags : Number;
         private var _max_video_pts_tags : Number;
-        /* PTS / DTS value needed to track PTS looping */
-        private var _prev_audio_pts : Number;
-        private var _prev_audio_dts : Number;
-        private var _prev_video_pts : Number;
-        private var _prev_video_dts : Number;
+        /* ref PTS / DTS value for PTS looping */
+        private var _ref_pts : Number;
         /* demux instance */
         private var _demux : Demuxer;
         private var _audio_tags_found : Boolean;
@@ -147,7 +144,7 @@ package org.mangui.HLS.streaming {
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
         };
 
-        public function dispose():void {
+        public function dispose() : void {
             stop();
             _autoLevelManager.dispose();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
@@ -306,10 +303,12 @@ package org.mangui.HLS.streaming {
                 _min_audio_pts_frag = _min_video_pts_frag = _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
                 _max_audio_pts_frag = _max_video_pts_frag = _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
                 if (_hasDiscontinuity) {
-                    _prev_audio_pts = NaN;
-                    _prev_audio_dts = NaN;
-                    _prev_video_pts = NaN;
-                    _prev_video_dts = NaN;
+                    var frag : Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
+                    if (frag && frag.start_pts_computed != Number.NEGATIVE_INFINITY) {
+                        _ref_pts = frag.start_pts_computed;
+                    } else {
+                        _ref_pts = NaN;
+                    }
                 }
                 // decrypt data if needed
                 if (_last_segment_decrypt_key_url != null) {
@@ -866,28 +865,24 @@ package org.mangui.HLS.streaming {
             // Audio PTS/DTS normalization + min/max computation
             for each (tag in audioTags) {
                 _audio_tags_found = true;
-                tag.pts = PTS.normalize(_prev_audio_pts, tag.pts);
-                tag.dts = PTS.normalize(_prev_audio_dts, tag.dts);
+                tag.pts = PTS.normalize(_ref_pts, tag.pts);
+                tag.dts = PTS.normalize(_ref_pts, tag.dts);
                 _min_audio_pts_tags = Math.min(_min_audio_pts_tags, tag.pts);
                 _max_audio_pts_tags = Math.max(_max_audio_pts_tags, tag.pts);
                 _min_audio_pts_frag = Math.min(_min_audio_pts_frag, tag.pts);
                 _max_audio_pts_frag = Math.max(_max_audio_pts_frag, tag.pts);
-                _prev_audio_pts = tag.pts;
-                _prev_audio_dts = tag.dts;
                 _tags.push(tag);
             }
 
             // Video PTS/DTS normalization + min/max computation
             for each (tag in videoTags) {
                 _video_tags_found = true;
-                tag.pts = PTS.normalize(_prev_video_pts, tag.pts);
-                tag.dts = PTS.normalize(_prev_video_dts, tag.dts);
+                tag.pts = PTS.normalize(_ref_pts, tag.pts);
+                tag.dts = PTS.normalize(_ref_pts, tag.dts);
                 _min_video_pts_tags = Math.min(_min_video_pts_tags, tag.pts);
                 _max_video_pts_tags = Math.max(_max_video_pts_tags, tag.pts);
                 _min_video_pts_frag = Math.min(_min_video_pts_frag, tag.pts);
                 _max_video_pts_frag = Math.max(_max_video_pts_frag, tag.pts);
-                _prev_video_pts = tag.pts;
-                _prev_video_dts = tag.dts;
                 _tags.push(tag);
             }
 
@@ -947,9 +942,9 @@ package org.mangui.HLS.streaming {
                     }
                     // provide tags to HLSNetStream
                     _callback(_tags, min_pts, max_pts, _hasDiscontinuity, min_offset);
-                    var processing_duration:Number = (new Date().valueOf() - _frag_loading_start_time);
-                    var bandwidth:Number = Math.round(_fragWritePosition * 8000 / processing_duration);
-                    var tagsMetrics:HLSMetrics = new HLSMetrics(_level, bandwidth, pts_end_offset, processing_duration);
+                    var processing_duration : Number = (new Date().valueOf() - _frag_loading_start_time);
+                    var bandwidth : Number = Math.round(_fragWritePosition * 8000 / processing_duration);
+                    var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     _hasDiscontinuity = false;
                     _tags = new Vector.<Tag>();

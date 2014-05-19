@@ -1,9 +1,16 @@
 package org.mangui.HLS.utils {
-    /**
-     * @author Gpontavic
-     */
     public class PTS {
-        /* normalize a given PTS value, relative to a given reference PTS value */
+        /* find PTS value nearest a given reference PTS value 
+         * 
+         * PTS retrieved from demux are within a range of
+         * (+/-) 2^32/90 - 1 = (+/-) 47721858
+         * when reaching upper limit, PTS will loop to lower limit
+         * this cause some issues with fragment duration calculation
+         * this method will normalize a given PTS value and output a result 
+         * that is closest to provided PTS reference value.
+         * i.e it could output values bigger than the (+/-) 2^32/90.
+         * this will avoid PTS looping issues.  
+         */
         public static function normalize(reference : Number, value : Number) : Number {
             var offset : Number;
             if (reference < value) {

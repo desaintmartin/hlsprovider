@@ -261,9 +261,9 @@ package org.mangui.jwplayer.media {
         override public function load(itm : PlaylistItem) : void {
             // Check flash player version
             var ver : Number = _checkVersion();
-            var minVersion : Number = 10.1;
+            var minVersion : Number = 11.6;
             if ( ver < minVersion ) {
-                sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_ERROR, {message:"HLS streaming requires Flash Player 10.1 at mimimum"});
+                sendMediaEvent(MediaEvent.JWPLAYER_MEDIA_ERROR, {message:"This application requires Flash Player 11.6 at mimimum"});
             } else {
                 super.load(itm);
                 play();
@@ -274,6 +274,12 @@ package org.mangui.jwplayer.media {
         override public function get display() : DisplayObject {
             return _video;
         };
+
+		public override function getRawMedia():DisplayObject
+		{
+			return display;	
+			
+		}
 
         /** Resume playback of a paused item. **/
         override public function play() : void {

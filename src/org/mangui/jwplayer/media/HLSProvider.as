@@ -104,7 +104,7 @@ package org.mangui.jwplayer.media {
                     _videoWidth = videoWidth;
                     Log.info("video size changed to " + _videoWidth + "/" + _videoHeight);
                     // force resize to adjust video A/R
-                    resize(_width, _height);
+                    resize(videoWidth, _videoHeight);
                 }
             }
         };

@@ -152,12 +152,12 @@ package org.mangui.jwplayer.media {
             if (cfg.hasOwnProperty('stagevideo') && cfg['stagevideo'].toString() == "false") {
                 _stageEnabled = false;
             }
-            _video = new Video(1920, 960);
+            _video = new Video(1706, 960);
             _video.smoothing = true;
             // Use stageVideo when available
             if (_stageEnabled && RootReference.stage.stageVideos.length > 0) {
                 _stageVideo = RootReference.stage.stageVideos[0];
-                _stageVideo.viewPort = new Rectangle(0, 0, 1920, 960);
+                _stageVideo.viewPort = new Rectangle(0, 0, 1706, 960);
                 _stageVideo.attachNetStream(_hls.stream);
                 Log.info("stage video enabled");
             } else {
